@@ -1,5 +1,5 @@
 //--------------------------------------------------------------------------------------
-// File: WildvineEngine.cpp
+// File: MinerEngine.cpp
 //
 // This application demonstrates texturing
 //
