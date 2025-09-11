@@ -15,16 +15,19 @@
     <Filter Include="Include">
       <UniqueIdentifier>{d5ef6912-7e8c-475e-9215-942efc154600}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Src">
+    <Filter Include="Source">
       <UniqueIdentifier>{0a34b7e6-ccf3-4478-a283-b4e3c21fe9a0}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
-      <Filter>Src</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Source\Window.cpp">
-      <Filter>Src</Filter>
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Device.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +46,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Prerequisites.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Device.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

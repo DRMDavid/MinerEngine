@@ -424,12 +424,14 @@
   <ItemGroup />
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp" />
+    <ClCompile Include="Source\Device.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\Device.h" />
     <ClInclude Include="Include\Prerequisites.h" />
     <ClInclude Include="Include\Window.h" />
     <CLInclude Include="resource.h" />
