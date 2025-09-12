@@ -29,6 +29,9 @@
     <ClCompile Include="Source\Device.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\DeviceContext.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -49,6 +52,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Device.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\DeviceContext.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
