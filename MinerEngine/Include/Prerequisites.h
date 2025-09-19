@@ -11,7 +11,6 @@
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dcompiler.h>
-
 #include "Resource.h"
 #include "resource.h"
 
@@ -62,4 +61,10 @@ struct CBChangesEveryFrame
 {
   XMMATRIX mWorld;
   XMFLOAT4 vMeshColor;
+};
+
+enum ExtensionType {
+  DDS = 0,
+  PNG = 1,
+  JPG = 2
 };
