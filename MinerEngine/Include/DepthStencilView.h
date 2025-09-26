@@ -7,80 +7,86 @@ class Texture;
 
 /**
  * @class DepthStencilView
- * @brief Encapsula un @c ID3D11DepthStencilView para usar un recurso de profundidad/esténcil en el pipeline.
+ * @brief Clase encargada de gestionar la vista de profundidad/esténcil en Direct3D 11.
  *
- * Esta clase administra la creación, aplicación y liberación de un @c DepthStencilView en Direct3D 11,
- * necesario para vincular un buffer de profundidad/esténcil a la etapa de Output-Merger.
+ * Proporciona una interfaz para crear, aplicar y liberar un objeto
+ * @c ID3D11DepthStencilView, el cual es fundamental para habilitar el uso
+ * de un buffer de profundidad/esténcil dentro del pipeline gráfico
+ * (fase de Output-Merger).
  *
- * @note No administra directamente la vida de @c Texture ni de @c DeviceContext.
+ * @note Esta clase no se hace responsable de la administración de memoria
+ * de los objetos @c Texture ni @c DeviceContext.
  */
-class
-  DepthStencilView {
+class DepthStencilView {
 public:
   /**
-   * @brief Constructor por defecto (no crea recursos).
+   * @brief Construye un objeto vacío sin asignar recursos.
+   *
+   * No se realiza ninguna operación de creación durante esta fase.
    */
   DepthStencilView() = default;
 
   /**
-   * @brief Destructor por defecto.
-   * @details No libera automáticamente; llamar a destroy() explícitamente.
+   * @brief Destructor trivial.
+   *
+   * No se liberan recursos automáticamente. Se recomienda invocar
+   * @c destroy() explícitamente antes de la destrucción del objeto.
    */
   ~DepthStencilView() = default;
 
   /**
-   * @brief Inicializa el @c ID3D11DepthStencilView a partir de una textura de profundidad.
+   * @brief Crea la vista de profundidad/esténcil a partir de una textura válida.
    *
-   * Crea y asocia un @c DepthStencilView con el recurso proporcionado (generalmente una
-   * textura creada con @c D3D11_BIND_DEPTH_STENCIL).
+   * Este método inicializa internamente un @c ID3D11DepthStencilView que se
+   * asociará con el recurso proporcionado, siempre que este haya sido
+   * creado con la bandera @c D3D11_BIND_DEPTH_STENCIL.
    *
-   * @param device        Dispositivo con el que se creará el recurso.
-   * @param depthStencil  Textura que servirá como buffer de profundidad/esténcil.
-   * @param format        Formato DXGI con el que se creará la vista (ejemplo: @c DXGI_FORMAT_D24_UNORM_S8_UINT).
-   * @return @c S_OK si la creación fue exitosa; código @c HRESULT en caso contrario.
+   * @param device        Referencia al dispositivo gráfico responsable de la creación.
+   * @param depthStencil  Textura que actuará como buffer de profundidad/esténcil.
+   * @param format        Formato DXGI en el que se generará la vista
+   *                      (ejemplo: @c DXGI_FORMAT_D24_UNORM_S8_UINT).
+   * @return @c S_OK si la creación se realizó con éxito. En caso contrario,
+   *         devuelve el código de error correspondiente.
    *
-   * @post Si retorna @c S_OK, @c m_depthStencilView != nullptr.
-   * @sa destroy()
+   * @post Si la función es exitosa, @c m_depthStencilView contendrá un puntero válido.
    */
-  HRESULT
-    init(Device& device, Texture& depthStencil, DXGI_FORMAT format);
+  HRESULT init(Device& device, Texture& depthStencil, DXGI_FORMAT format);
 
   /**
-   * @brief Actualiza parámetros internos si se requieren cambios en el estado.
+   * @brief Actualiza el estado de la vista de profundidad/esténcil.
    *
-   * Método de marcador para actualizar la configuración del recurso.
-   *
-   * @note Actualmente no realiza ninguna operación.
+   * Método definido como marcador. Actualmente no realiza operaciones,
+   * pero se deja como punto de extensión para futuras necesidades.
    */
-  void
-    update() {};
+  void update() {};
 
   /**
-   * @brief Asigna la vista de profundidad/esténcil al pipeline de render.
+   * @brief Enlaza la vista de profundidad/esténcil al contexto de render.
    *
-   * Llama a @c OMSetRenderTargets para asociar @c m_depthStencilView al @c DeviceContext.
+   * Invoca internamente a @c OMSetRenderTargets para adjuntar el
+   * @c m_depthStencilView al @c DeviceContext indicado.
    *
-   * @param deviceContext Contexto de dispositivo donde se enlazará el depth-stencil view.
+   * @param deviceContext Contexto de dispositivo donde se activará la vista.
    *
-   * @pre @c m_depthStencilView debe haberse creado con init().
+   * @pre El objeto debe haber sido correctamente inicializado mediante @c init().
    */
-  void
-    render(DeviceContext& deviceContext);
+  void render(DeviceContext& deviceContext);
 
   /**
-   * @brief Libera el recurso asociado al @c ID3D11DepthStencilView.
+   * @brief Libera la vista de profundidad/esténcil asociada.
    *
-   * Idempotente: puede llamarse múltiples veces de forma segura.
-   *
-   * @post @c m_depthStencilView == nullptr.
+   * Este método es seguro de llamar múltiples veces. Una vez liberado,
+   * @c m_depthStencilView se establece en @c nullptr.
    */
-  void
-    destroy();
+  void destroy();
 
 public:
   /**
-   * @brief Vista de profundidad/esténcil de Direct3D 11.
-   * @details Válido después de una llamada exitosa a init(); @c nullptr tras destroy().
+   * @brief Puntero al recurso @c ID3D11DepthStencilView.
+   *
+   * Se inicializa en @c nullptr por defecto. Solo contendrá una referencia
+   * válida después de una creación exitosa mediante @c init().
+   * Se restablece a @c nullptr tras llamar a @c destroy().
    */
   ID3D11DepthStencilView* m_depthStencilView = nullptr;
 };
