@@ -424,8 +424,10 @@
   <ItemGroup />
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp" />
+    <ClCompile Include="Source\DepthStencilView.cpp" />
     <ClCompile Include="Source\Device.cpp" />
     <ClCompile Include="Source\DeviceContext.cpp" />
+    <ClCompile Include="Source\RenderTargetView.cpp" />
     <ClCompile Include="Source\SwapChain.cpp" />
     <ClCompile Include="Source\Texture.cpp" />
     <ClCompile Include="Source\Window.cpp" />
@@ -434,9 +436,11 @@
     <None Include="MinerEngine.fx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\DepthStencilView.h" />
     <ClInclude Include="Include\Device.h" />
     <ClInclude Include="Include\DeviceContext.h" />
     <ClInclude Include="Include\Prerequisites.h" />
+    <ClInclude Include="Include\RenderTargetView.h" />
     <ClInclude Include="Include\SwapChain.h" />
     <ClInclude Include="Include\Texture.h" />
     <ClInclude Include="Include\Window.h" />
