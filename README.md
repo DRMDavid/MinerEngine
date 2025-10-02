@@ -15,7 +15,7 @@
 
 ## 📘 Resumen
 
-**MinerEngine** implementa el pipeline base de render en **Direct3D 11** (C++), gestionando:
+**⛏️MinerEngine** implementa el pipeline base de render en **Direct3D 11** (C++), gestionando:
 ventana (**Win32**), dispositivo y contexto (**ID3D11Device/Context**), **swap chain**, **RTV/DSV**, buffers, shaders y texturas.  
 Se renderiza un **cubo 3D texturizado** con rotación y actualización de constantes por frame.
 
