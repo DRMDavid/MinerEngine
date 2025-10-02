@@ -50,9 +50,9 @@ public:
    * @note Este método es útil para render targets secundarios, como buffers diferidos o mapas de sombras.
    */
   HRESULT init(Device& device,
-    Texture& inTex,
-    D3D11_RTV_DIMENSION ViewDimension,
-    DXGI_FORMAT Format);
+               Texture& inTex,
+               D3D11_RTV_DIMENSION ViewDimension,
+               DXGI_FORMAT Format);
 
   /**
    * @brief Punto de extensión para actualizar parámetros internos del RTV.
@@ -70,9 +70,9 @@ public:
    * @pre Debe haberse invocado previamente `init()` con éxito.
    */
   void render(DeviceContext& deviceContext,
-    DepthStencilView& depthStencilView,
-    unsigned int numViews,
-    const float ClearColor[4]);
+              DepthStencilView& depthStencilView,
+              unsigned int numViews,
+              const float ClearColor[4]);
 
   /**
    * @brief Asigna el RTV al pipeline sin realizar operaciones de limpieza.

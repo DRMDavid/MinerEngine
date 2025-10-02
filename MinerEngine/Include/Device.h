@@ -63,10 +63,9 @@ public:
    * @param ppRTView  Referencia de salida para la interfaz creada.
    * @return @c S_OK si la creación fue exitosa; código de error en caso contrario.
    */
-  HRESULT CreateRenderTargetView(
-    ID3D11Resource* pResource,
-    const D3D11_RENDER_TARGET_VIEW_DESC* pDesc,
-    ID3D11RenderTargetView** ppRTView);
+  HRESULT CreateRenderTargetView(ID3D11Resource* pResource,
+                                 const D3D11_RENDER_TARGET_VIEW_DESC* pDesc,
+                                 ID3D11RenderTargetView** ppRTView);
 
   /**
    * @brief Crea una textura 2D en memoria de GPU.
@@ -76,10 +75,9 @@ public:
    * @param ppTexture2D  Referencia de salida para la textura resultante.
    * @return @c HRESULT indicando el estado de la operación.
    */
-  HRESULT CreateTexture2D(
-    const D3D11_TEXTURE2D_DESC* pDesc,
-    const D3D11_SUBRESOURCE_DATA* pInitialData,
-    ID3D11Texture2D** ppTexture2D);
+  HRESULT CreateTexture2D(const D3D11_TEXTURE2D_DESC* pDesc,
+                          const D3D11_SUBRESOURCE_DATA* pInitialData,
+                          ID3D11Texture2D** ppTexture2D);
 
   /**
    * @brief Crea una vista de Depth Stencil.
@@ -89,38 +87,37 @@ public:
    * @param ppDepthStencilView  Referencia de salida para la vista resultante.
    * @return @c HRESULT con el resultado de la operación.
    */
-  HRESULT CreateDepthStencilView(
-    ID3D11Resource* pResource,
-    const D3D11_DEPTH_STENCIL_VIEW_DESC* pDesc,
-    ID3D11DepthStencilView** ppDepthStencilView);
+  HRESULT CreateDepthStencilView(ID3D11Resource* pResource,
+                                 const D3D11_DEPTH_STENCIL_VIEW_DESC* pDesc,
+                                 ID3D11DepthStencilView** ppDepthStencilView);
 
   /// @brief Crea un shader de vértices desde bytecode compilado.
   HRESULT CreateVertexShader(const void* pShaderBytecode,
-    SIZE_T BytecodeLength,
-    ID3D11ClassLinkage* pClassLinkage,
-    ID3D11VertexShader** ppVertexShader);
+                             SIZE_T BytecodeLength,
+                             ID3D11ClassLinkage* pClassLinkage,
+                             ID3D11VertexShader** ppVertexShader);
 
   /// @brief Genera un layout de entrada para la etapa de ensamblado de vértices.
   HRESULT CreateInputLayout(const D3D11_INPUT_ELEMENT_DESC* pInputElementDescs,
-    UINT NumElements,
-    const void* pShaderBytecodeWithInputSignature,
-    SIZE_T BytecodeLength,
-    ID3D11InputLayout** ppInputLayout);
+                            UINT NumElements,
+                            const void* pShaderBytecodeWithInputSignature,
+                            SIZE_T BytecodeLength,
+                            ID3D11InputLayout** ppInputLayout);
 
   /// @brief Crea un shader de píxeles desde bytecode compilado.
   HRESULT CreatePixelShader(const void* pShaderBytecode,
-    SIZE_T BytecodeLength,
-    ID3D11ClassLinkage* pClassLinkage,
-    ID3D11PixelShader** ppPixelShader);
+                            SIZE_T BytecodeLength,
+                            ID3D11ClassLinkage* pClassLinkage,
+                            ID3D11PixelShader** ppPixelShader);
 
   /// @brief Reserva un buffer en GPU para vértices, índices u otros datos.
   HRESULT CreateBuffer(const D3D11_BUFFER_DESC* pDesc,
-    const D3D11_SUBRESOURCE_DATA* pInitialData,
-    ID3D11Buffer** ppBuffer);
+                       const D3D11_SUBRESOURCE_DATA* pInitialData,
+                       ID3D11Buffer** ppBuffer);
 
   /// @brief Crea un estado de muestreo de texturas.
   HRESULT CreateSamplerState(const D3D11_SAMPLER_DESC* pSamplerDesc,
-    ID3D11SamplerState** ppSamplerState);
+                             ID3D11SamplerState** ppSamplerState);
 
 public:
   /**

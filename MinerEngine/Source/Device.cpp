@@ -5,8 +5,8 @@ void Device::destroy() {
 }
 //CreateRenderTargetView
 HRESULT Device::CreateRenderTargetView(ID3D11Resource* pResource,
-  const D3D11_RENDER_TARGET_VIEW_DESC* pDesc,
-  ID3D11RenderTargetView** ppRTView) {
+                                       const D3D11_RENDER_TARGET_VIEW_DESC* pDesc,
+                                       ID3D11RenderTargetView** ppRTView) {
   // Validar parametros de entrada
   if (!pResource) {
     ERROR("Device", "CreateRenderTargetView", "pResource is nullptr");
@@ -36,9 +36,9 @@ HRESULT Device::CreateRenderTargetView(ID3D11Resource* pResource,
 
 //CreateTexture2D
 HRESULT Device::CreateTexture2D(
-  const D3D11_TEXTURE2D_DESC* pDesc,
-  const D3D11_SUBRESOURCE_DATA* pInitialData,
-  ID3D11Texture2D** ppTexture2D)
+                const D3D11_TEXTURE2D_DESC* pDesc,
+                const D3D11_SUBRESOURCE_DATA* pInitialData,
+                ID3D11Texture2D** ppTexture2D)
 {
   if (!m_device) {
     ERROR("Device", "CreateTexture2D", "m_device is nullptr");
@@ -72,9 +72,9 @@ HRESULT Device::CreateTexture2D(
 
 //CreateDepthStencilView
 HRESULT Device::CreateDepthStencilView(
-  ID3D11Resource* pResource,
-  const D3D11_DEPTH_STENCIL_VIEW_DESC* pDesc,
-  ID3D11DepthStencilView** ppDepthStencilView)
+                ID3D11Resource* pResource,
+                const D3D11_DEPTH_STENCIL_VIEW_DESC* pDesc,
+                ID3D11DepthStencilView** ppDepthStencilView)
 {
   if (!m_device) {
     ERROR("Device", "CreateDepthStencilView", "m_device is nullptr");
@@ -108,10 +108,10 @@ HRESULT Device::CreateDepthStencilView(
 #include "Device.h"
 
 HRESULT Device::CreateVertexShader(
-  const void* pShaderBytecode,
-  SIZE_T BytecodeLength,
-  ID3D11ClassLinkage* pClassLinkage,
-  ID3D11VertexShader** ppVertexShader)
+                const void* pShaderBytecode,
+                SIZE_T BytecodeLength,
+                ID3D11ClassLinkage* pClassLinkage,
+                ID3D11VertexShader** ppVertexShader)
 {
   if (!m_device) {
     ERROR("Device", "CreateVertexShader", "m_device is nullptr");
@@ -140,11 +140,11 @@ HRESULT Device::CreateVertexShader(
 }
 
 HRESULT Device::CreateInputLayout(
-  const D3D11_INPUT_ELEMENT_DESC* pInputElementDescs,
-  UINT NumElements,
-  const void* pShaderBytecodeWithInputSignature,
-  SIZE_T BytecodeLength,
-  ID3D11InputLayout** ppInputLayout)
+                const D3D11_INPUT_ELEMENT_DESC* pInputElementDescs,
+                UINT NumElements,
+                const void* pShaderBytecodeWithInputSignature,
+                SIZE_T BytecodeLength,
+                ID3D11InputLayout** ppInputLayout)
 {
   if (!m_device) {
     ERROR("Device", "CreateInputLayout", "m_device is nullptr");
@@ -178,10 +178,10 @@ HRESULT Device::CreateInputLayout(
 }
 
 HRESULT Device::CreatePixelShader(
-  const void* pShaderBytecode,
-  SIZE_T BytecodeLength,
-  ID3D11ClassLinkage* pClassLinkage,
-  ID3D11PixelShader** ppPixelShader)
+                const void* pShaderBytecode,
+                SIZE_T BytecodeLength,
+                ID3D11ClassLinkage* pClassLinkage,
+                ID3D11PixelShader** ppPixelShader)
 {
   if (!m_device) {
     ERROR("Device", "CreatePixelShader", "m_device is nullptr");
@@ -210,9 +210,9 @@ HRESULT Device::CreatePixelShader(
 }
 
 HRESULT Device::CreateBuffer(
-  const D3D11_BUFFER_DESC* pDesc,
-  const D3D11_SUBRESOURCE_DATA* pInitialData,
-  ID3D11Buffer** ppBuffer)
+                const D3D11_BUFFER_DESC* pDesc,
+                const D3D11_SUBRESOURCE_DATA* pInitialData,
+                ID3D11Buffer** ppBuffer)
 {
   if (!m_device) {
     ERROR("Device", "CreateBuffer", "m_device is nullptr");
@@ -240,8 +240,8 @@ HRESULT Device::CreateBuffer(
 }
 
 HRESULT Device::CreateSamplerState(
-  const D3D11_SAMPLER_DESC* pSamplerDesc,
-  ID3D11SamplerState** ppSamplerState)
+                const D3D11_SAMPLER_DESC* pSamplerDesc,
+                ID3D11SamplerState** ppSamplerState)
 {
   if (!m_device) {
     ERROR("Device", "CreateSamplerState", "m_device is nullptr");

@@ -41,8 +41,8 @@ public:
    * @post `m_texture` y `m_textureFromImg` apuntarán a recursos válidos si la operación fue exitosa.
    */
   HRESULT init(Device& device,
-    const std::string& textureName,
-    ExtensionType extensionType);
+               const std::string& textureName,
+               ExtensionType extensionType);
 
   /**
    * @brief Crea una textura 2D en memoria sin depender de archivos externos.
@@ -57,12 +57,12 @@ public:
    * @note Este método se usa comúnmente para texturas renderizables o buffers auxiliares.
    */
   HRESULT init(Device& device,
-    unsigned int width,
-    unsigned int height,
-    DXGI_FORMAT Format,
-    unsigned int BindFlags,
-    unsigned int sampleCount = 1,
-    unsigned int qualityLevels = 0);
+               unsigned int width,
+               unsigned int height,
+               DXGI_FORMAT Format,
+               unsigned int BindFlags,
+               unsigned int sampleCount = 1,
+               unsigned int qualityLevels = 0);
 
   /**
    * @brief Crea una nueva textura copiando la configuración de otra existente.
@@ -91,7 +91,9 @@ public:
    * @pre La textura debe haberse inicializado correctamente con `init()`.
    * @note Suele llamarse antes de ejecutar un shader que consuma esta textura.
    */
-  void render(DeviceContext& deviceContext, unsigned int StartSlot, unsigned int NumViews);
+  void render(DeviceContext& deviceContext, 
+              unsigned int StartSlot, 
+              unsigned int NumViews);
 
   /**
    * @brief Libera todos los recursos asociados a la textura.

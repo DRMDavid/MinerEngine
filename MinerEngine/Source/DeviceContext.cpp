@@ -7,7 +7,7 @@ DeviceContext::destroy() {
 
 void
 DeviceContext::RSSetViewports(unsigned int NumViewports,
-	const D3D11_VIEWPORT* pViewports) {
+	                            const D3D11_VIEWPORT* pViewports) {
 	if (!pViewports) {
 		ERROR("DeviceContext", "RSSetViewports", "pViewports is nullptr");
 		return;
@@ -17,8 +17,8 @@ DeviceContext::RSSetViewports(unsigned int NumViewports,
 
 void
 DeviceContext::PSSetShaderResources(unsigned int StartSlot,
-	unsigned int NumViews,
-	ID3D11ShaderResourceView* const* ppShaderResourceViews) {
+	                                  unsigned int NumViews,
+	                                  ID3D11ShaderResourceView* const* ppShaderResourceViews) {
 	if (!ppShaderResourceViews) {
 		ERROR("DeviceContext", "PSSetShaderResources", "ppShaderResourceViews is nullptr");
 		return;
@@ -37,8 +37,8 @@ DeviceContext::IASetInputLayout(ID3D11InputLayout* pInputLayout) {
 
 void
 DeviceContext::VSSetShader(ID3D11VertexShader* pVertexShader,
-	ID3D11ClassInstance* const* ppClassInstances,
-	unsigned int NumClassInstances) {
+	                         ID3D11ClassInstance* const* ppClassInstances,
+	                         unsigned int NumClassInstances) {
 	if (!pVertexShader) {
 		ERROR("DeviceContext", "VSSetShader", "pVertexShader is nullptr");
 		return;
@@ -97,8 +97,8 @@ DeviceContext::IASetVertexBuffers(unsigned int StartSlot,
 
 void
 DeviceContext::IASetIndexBuffer(ID3D11Buffer* pIndexBuffer,
-	DXGI_FORMAT Format,
-	unsigned int Offset) {
+	                              DXGI_FORMAT Format,
+	                              unsigned int Offset) {
 	if (!pIndexBuffer) {
 		ERROR("DeviceContext", "IASetIndexBuffer", "pIndexBuffer is nullptr");
 		return;
@@ -108,8 +108,8 @@ DeviceContext::IASetIndexBuffer(ID3D11Buffer* pIndexBuffer,
 
 void
 DeviceContext::PSSetSamplers(unsigned int StartSlot,
-	unsigned int NumSamplers,
-	ID3D11SamplerState* const* ppSamplers) {
+	                           unsigned int NumSamplers,
+	                           ID3D11SamplerState* const* ppSamplers) {
 	if (!ppSamplers) {
 		ERROR("DeviceContext", "PSSetSamplers", "ppSamplers is nullptr");
 		return;
@@ -128,8 +128,8 @@ DeviceContext::RSSetState(ID3D11RasterizerState* pRasterizerState) {
 
 void
 DeviceContext::OMSetBlendState(ID3D11BlendState* pBlendState,
-	const float BlendFactor[4],
-	unsigned int SampleMask) {
+	                             const float BlendFactor[4],
+	                             unsigned int SampleMask) {
 	if (!pBlendState) {
 		ERROR("DeviceContext", "OMSetBlendState", "pBlendState is nullptr");
 		return;
@@ -139,8 +139,8 @@ DeviceContext::OMSetBlendState(ID3D11BlendState* pBlendState,
 
 void
 DeviceContext::OMSetRenderTargets(unsigned int NumViews,
-	ID3D11RenderTargetView* const* ppRenderTargetViews,
-	ID3D11DepthStencilView* pDepthStencilView) {
+	                                ID3D11RenderTargetView* const* ppRenderTargetViews,
+	                                ID3D11DepthStencilView* pDepthStencilView) {
 	// Validar los parámetros
 	if (!ppRenderTargetViews && !pDepthStencilView) {
 		ERROR("DeviceContext", "OMSetRenderTargets",
@@ -190,9 +190,9 @@ DeviceContext::ClearRenderTargetView(ID3D11RenderTargetView* pRenderTargetView,
 
 void
 DeviceContext::ClearDepthStencilView(ID3D11DepthStencilView* pDepthStencilView,
-	unsigned int ClearFlags,
-	float Depth,
-	UINT8 Stencil) {
+	                                   unsigned int ClearFlags,
+	                                   float Depth,
+	                                   UINT8 Stencil) {
 	// Validar parámetros
 	if (!pDepthStencilView) {
 		ERROR("DeviceContext", "ClearDepthStencilView",
@@ -213,8 +213,8 @@ DeviceContext::ClearDepthStencilView(ID3D11DepthStencilView* pDepthStencilView,
 
 void
 DeviceContext::VSSetConstantBuffers(unsigned int StartSlot,
-	unsigned int NumBuffers,
-	ID3D11Buffer* const* ppConstantBuffers) {
+	                                  unsigned int NumBuffers,
+	                                  ID3D11Buffer* const* ppConstantBuffers) {
 	// Validar parámetros
 	if (!ppConstantBuffers) {
 		ERROR("DeviceContext", "VSSetConstantBuffers", "ppConstantBuffers is nullptr");
@@ -227,8 +227,8 @@ DeviceContext::VSSetConstantBuffers(unsigned int StartSlot,
 
 void
 DeviceContext::PSSetConstantBuffers(unsigned int StartSlot,
-	unsigned int NumBuffers,
-	ID3D11Buffer* const* ppConstantBuffers) {
+	                                  unsigned int NumBuffers,
+	                                  ID3D11Buffer* const* ppConstantBuffers) {
 	// Validar parámetros
 	if (!ppConstantBuffers) {
 		ERROR("DeviceContext", "PSSetConstantBuffers", "ppConstantBuffers is nullptr");
@@ -241,8 +241,8 @@ DeviceContext::PSSetConstantBuffers(unsigned int StartSlot,
 
 void
 DeviceContext::DrawIndexed(unsigned int IndexCount,
-	unsigned int StartIndexLocation,
-	int BaseVertexLocation) {
+	                         unsigned int StartIndexLocation,
+	                         int BaseVertexLocation) {
 	// Validar parámetros
 	if (IndexCount == 0) {
 		ERROR("DeviceContext", "DrawIndexed", "IndexCount is zero");

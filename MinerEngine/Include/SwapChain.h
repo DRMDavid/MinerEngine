@@ -41,9 +41,9 @@ public:
    * @post `m_swapChain` apuntará a un objeto válido si la función tiene éxito.
    */
   HRESULT init(Device& device,
-    DeviceContext& deviceContext,
-    Texture& backBuffer,
-    Window window);
+               DeviceContext& deviceContext,
+               Texture& backBuffer,
+               Window window);
 
   /**
    * @brief Punto de entrada para actualizaciones dinámicas de la cadena de intercambio.
