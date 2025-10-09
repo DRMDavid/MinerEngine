@@ -44,6 +44,12 @@
     <ClCompile Include="Source\DepthStencilView.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Viewport.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\InputLayout.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -79,6 +85,15 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\DepthStencilView.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Viewport.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\InputLayout.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ShaderProgram.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

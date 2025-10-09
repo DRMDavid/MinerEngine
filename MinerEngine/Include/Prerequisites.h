@@ -169,3 +169,8 @@ enum ExtensionType {
   PNG = 1, ///< Formato PNG (sin pérdida, soporta transparencia).
   JPG = 2  ///< Formato JPG/JPEG (con pérdida).
 };
+
+enum ShaderType {
+  VERTEX_SHADER = 0,
+  PIXEL_SHADER = 1
+};
