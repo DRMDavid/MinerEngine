@@ -14,7 +14,7 @@
 #include "RenderTargetView.h"
 #include "DepthStencilView.h"
 #include "Viewport.h"
-#include "InputLayout.h"
+#include "ShaderProgram.h"
 //--------------------------------------------------------------------------------------
 // Global Variables
 //--------------------------------------------------------------------------------------
@@ -30,19 +30,9 @@ RenderTargetView									  g_renderTargetView;
 Texture                             g_depthStencil;
 DepthStencilView									  g_depthStencilView;
 Viewport                            g_viewport;
-InputLayout                         g_inputLayout;
+ShaderProgram												g_shaderProgram;
 
-//D3D_DRIVER_TYPE                     g_driverType = D3D_DRIVER_TYPE_NULL;
-//D3D_FEATURE_LEVEL                   g_featureLevel = D3D_FEATURE_LEVEL_11_0;
-//ID3D11Device*                       g_device.m_device = NULL;
-//ID3D11DeviceContext*                g_deviceContext.m_deviceContext = NULL;
-//IDXGISwapChain*                     g_pSwapChain = NULL;
-//ID3D11RenderTargetView*             g_pRenderTargetView = NULL;
-//ID3D11Texture2D*                    g_pDepthStencil = NULL;
-//ID3D11DepthStencilView*             g_pDepthStencilView = NULL;
-ID3D11VertexShader* g_pVertexShader = NULL;
-ID3D11PixelShader* g_pPixelShader = NULL;
-//ID3D11InputLayout*                  g_pVertexLayout = NULL;
+
 ID3D11Buffer* g_pVertexBuffer = NULL;
 ID3D11Buffer* g_pIndexBuffer = NULL;
 ID3D11Buffer* g_pCBNeverChanges = NULL;
@@ -103,37 +93,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	return (int)msg.wParam;
 }
 
-
-//--------------------------------------------------------------------------------------
-// Helper for compiling shaders with D3DX11
-//--------------------------------------------------------------------------------------
-HRESULT CompileShaderFromFile(char* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
-{
-	HRESULT hr = S_OK;
-
-	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#if defined( DEBUG ) || defined( _DEBUG )
-	// Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
-	// Setting this flag improves the shader debugging experience, but still allows 
-	// the shaders to be optimized and to run exactly the way they will run in 
-	// the release configuration of this program.
-	dwShaderFlags |= D3DCOMPILE_DEBUG;
-#endif
-
-	ID3DBlob* pErrorBlob;
-	hr = D3DX11CompileFromFile(szFileName, NULL, NULL, szEntryPoint, szShaderModel,
-		dwShaderFlags, 0, NULL, ppBlobOut, &pErrorBlob, NULL);
-	if (FAILED(hr))
-	{
-		if (pErrorBlob != NULL)
-			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-		if (pErrorBlob) pErrorBlob->Release();
-		return hr;
-	}
-	if (pErrorBlob) pErrorBlob->Release();
-
-	return S_OK;
-}
 
 
 //--------------------------------------------------------------------------------------
@@ -200,24 +159,6 @@ HRESULT InitDevice()
 	// Load Resources
 
 
-	// Compile the vertex shader
-	ID3DBlob* pVSBlob = NULL;
-	hr = CompileShaderFromFile("MinerEngine.fx", "VS", "vs_4_0", &pVSBlob);
-	if (FAILED(hr))
-	{
-		MessageBox(NULL,
-			"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", "Error", MB_OK);
-		return hr;
-	}
-
-	// Create the vertex shader
-	hr = g_device.m_device->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &g_pVertexShader);
-	if (FAILED(hr))
-	{
-		pVSBlob->Release();
-		return hr;
-	}
-
 	// Define the input layout
 	std::vector<D3D11_INPUT_ELEMENT_DESC> Layout;
 	D3D11_INPUT_ELEMENT_DESC position;
@@ -240,33 +181,13 @@ HRESULT InitDevice()
 	texcoord.InstanceDataStepRate = 0;
 	Layout.push_back(texcoord);
 
-	// Create the Input Layout
-	hr = g_inputLayout.init(g_device, Layout, pVSBlob);
-	SAFE_RELEASE(pVSBlob);
-
+	// Create the Shader Program
+	hr = g_shaderProgram.init(g_device, "MinerEngine.fx", Layout);
 	if (FAILED(hr)) {
-		ERROR("ShaderProgram", "CreateInputLayout", "Failed to create input layout.");
+		ERROR("Main", "InitDevice",
+			("Failed to initialize ShaderProgram. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
-
-	// Set the input layout
-	g_deviceContext.IASetInputLayout(g_inputLayout.m_inputLayout);
-
-	// Compile the pixel shader
-	ID3DBlob* pPSBlob = NULL;
-	hr = CompileShaderFromFile("MinerEngine.fx", "PS", "ps_4_0", &pPSBlob);
-	if (FAILED(hr))
-	{
-		MessageBox(NULL,
-			"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", "Error", MB_OK);
-		return hr;
-	}
-
-	// Create the pixel shader
-	hr = g_device.m_device->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &g_pPixelShader);
-	pPSBlob->Release();
-	if (FAILED(hr))
-		return hr;
 
 	// Create vertex buffer
 	SimpleVertex vertices[] =
@@ -434,11 +355,7 @@ void CleanupDevice()
 	if (g_pCBChangesEveryFrame) g_pCBChangesEveryFrame->Release();
 	if (g_pVertexBuffer) g_pVertexBuffer->Release();
 	if (g_pIndexBuffer) g_pIndexBuffer->Release();
-	g_inputLayout.destroy();
-	//if (g_pVertexLayout) g_pVertexLayout->Release();
-	if (g_pVertexShader) g_pVertexShader->Release();
-	if (g_pPixelShader) g_pPixelShader->Release();
-
+	g_shaderProgram.destroy();
 	g_depthStencil.destroy();
 	g_depthStencilView.destroy();
 	g_renderTargetView.destroy();
@@ -514,6 +431,8 @@ void Render()
 	// Set depth stencil view
 	g_depthStencilView.render(g_deviceContext);
 
+	// Set shader program
+	g_shaderProgram.render(g_deviceContext);
 	//
 	// Update variables that change once per frame
 	//
@@ -525,12 +444,10 @@ void Render()
 	//
 	// Render the cube
 	//
-	g_inputLayout.render(g_deviceContext);
-	g_deviceContext.VSSetShader(g_pVertexShader, NULL, 0);
+
 	g_deviceContext.VSSetConstantBuffers(0, 1, &g_pCBNeverChanges);
 	g_deviceContext.VSSetConstantBuffers(1, 1, &g_pCBChangeOnResize);
 	g_deviceContext.VSSetConstantBuffers(2, 1, &g_pCBChangesEveryFrame);
-	g_deviceContext.PSSetShader(g_pPixelShader, NULL, 0);
 	g_deviceContext.PSSetConstantBuffers(2, 1, &g_pCBChangesEveryFrame);
 	g_deviceContext.PSSetShaderResources(0, 1, &g_pTextureRV);
 	g_deviceContext.PSSetSamplers(0, 1, &g_pSamplerLinear);
