@@ -19,8 +19,6 @@
 // Global Variables
 //--------------------------------------------------------------------------------------
 
-//HINSTANCE                           g_hInst = NULL;
-//HWND                                g_hWnd = NULL;
 Window                              g_window;
 Device															g_device;
 DeviceContext												g_deviceContext;

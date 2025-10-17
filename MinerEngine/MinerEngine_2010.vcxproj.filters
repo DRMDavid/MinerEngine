@@ -53,6 +53,9 @@
     <ClCompile Include="Source\ShaderProgram.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Buffer.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -97,6 +100,12 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\ShaderProgram.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Buffer.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\MeshComponent.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
