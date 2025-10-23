@@ -2,7 +2,7 @@
 #include "Device.h"
 #include "DeviceContext.h"
 
-HRESULT 
+HRESULT
 Buffer::init(Device& device, const MeshComponent& mesh, unsigned int bindFlag) {
 	if (!device.m_device) {
 		ERROR("ShaderProgram", "init", "Device is null.");
@@ -40,7 +40,7 @@ Buffer::init(Device& device, const MeshComponent& mesh, unsigned int bindFlag) {
 	return createBuffer(device, desc, &data);
 }
 
-HRESULT 
+HRESULT
 Buffer::init(Device& device, unsigned int ByteWidth) {
 	if (!device.m_device) {
 		ERROR("ShaderProgram", "init", "Device is null.");
@@ -61,14 +61,14 @@ Buffer::init(Device& device, unsigned int ByteWidth) {
 	return createBuffer(device, desc, nullptr);
 }
 
-void 
-Buffer::update(DeviceContext& deviceContext, 
-							 ID3D11Resource* pDstResource,
-							 unsigned int DstSubresource, 
-							 const D3D11_BOX* pDstBox, 
-							 const void* pSrcData, 
-							 unsigned int SrcRowPitch, 
-							 unsigned int SrcDepthPitch) {
+void
+Buffer::update(DeviceContext& deviceContext,
+	ID3D11Resource* pDstResource,
+	unsigned int DstSubresource,
+	const D3D11_BOX* pDstBox,
+	const void* pSrcData,
+	unsigned int SrcRowPitch,
+	unsigned int SrcDepthPitch) {
 	if (!m_buffer) {
 		ERROR("ShaderProgram", "update", "m_buffer is null.");
 		return;
@@ -77,22 +77,22 @@ Buffer::update(DeviceContext& deviceContext,
 		ERROR("ShaderProgram", "update", "pSrcData is null.");
 		return;
 	}
-	deviceContext.m_deviceContext->UpdateSubresource(m_buffer, 
-																									 DstSubresource, 
-																									 pDstBox, 
-																									 pSrcData, 
-																									 SrcRowPitch, 
-																									 SrcDepthPitch);
+	deviceContext.m_deviceContext->UpdateSubresource(m_buffer,
+		DstSubresource,
+		pDstBox,
+		pSrcData,
+		SrcRowPitch,
+		SrcDepthPitch);
 
 
 }
 
-void 
-Buffer::render(DeviceContext& deviceContext, 
-							 unsigned int StartSlot, 
-							 unsigned int NumBuffers, 
-							 bool setPixelShader, 
-							 DXGI_FORMAT format) {
+void
+Buffer::render(DeviceContext& deviceContext,
+	unsigned int StartSlot,
+	unsigned int NumBuffers,
+	bool setPixelShader,
+	DXGI_FORMAT format) {
 	if (!deviceContext.m_deviceContext) {
 		ERROR("RenderTargetView", "render", "DeviceContext is nullptr.");
 		return;
@@ -127,9 +127,9 @@ Buffer::destroy() {
 }
 
 HRESULT
-Buffer::createBuffer(Device& device, 
-										 D3D11_BUFFER_DESC& desc, 
-										 D3D11_SUBRESOURCE_DATA* initData) {
+Buffer::createBuffer(Device& device,
+	D3D11_BUFFER_DESC& desc,
+	D3D11_SUBRESOURCE_DATA* initData) {
 	if (!device.m_device) {
 		ERROR("Buffer", "createBuffer", "Device is nullptr");
 		return E_POINTER;

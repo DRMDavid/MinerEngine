@@ -1,4 +1,6 @@
 #include "Window.h"
+#include "Device.h"
+#include "BaseApp.h"
 
 HRESULT
 Window::init(HINSTANCE hInstance, int nCmdShow, WNDPROC wndproc) {
@@ -23,7 +25,7 @@ Window::init(HINSTANCE hInstance, int nCmdShow, WNDPROC wndproc) {
     return E_FAIL;
 
   // Create window
-  RECT rc = { 0, 0, 1200, 1080 };
+  RECT rc = { 0, 0, 1200, 950 };
   m_rect = rc;
 
   AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
@@ -69,5 +71,3 @@ Window::render() {
 void
 Window::destroy() {
 }
-
-

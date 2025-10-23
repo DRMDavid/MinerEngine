@@ -56,6 +56,12 @@
     <ClCompile Include="Source\Buffer.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Include\SamplerState.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\BaseApp.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -106,6 +112,12 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\MeshComponent.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\BaseApp.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SamplerState.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

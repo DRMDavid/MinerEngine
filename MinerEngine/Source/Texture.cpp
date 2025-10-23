@@ -6,7 +6,53 @@ HRESULT
 Texture::init(Device& device,
   const std::string& textureName,
   ExtensionType extensionType) {
-  return E_NOTIMPL;
+  if (!device.m_device) {
+    ERROR("Texture", "init", "Device is null.");
+    return E_POINTER;
+  }
+  if (textureName.empty()) {
+    ERROR("Texture", "init", "Texture name cannot be empty.");
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr = S_OK;
+
+  switch (extensionType) {
+  case DDS: {
+    m_textureName = textureName + ".dds";
+
+    // Cargar textura DDS
+    hr = D3DX11CreateShaderResourceViewFromFile(
+      device.m_device,
+      m_textureName.c_str(),
+      nullptr,
+      nullptr,
+      &m_textureFromImg,
+      nullptr
+    );
+
+    if (FAILED(hr)) {
+      ERROR("Texture", "init",
+        ("Failed to load DDS texture. Verify filepath: " + m_textureName).c_str());
+      return hr;
+    }
+    break;
+  }
+
+  case PNG: {
+
+    break;
+  }
+  case JPG: {
+
+    break;
+  }
+  default:
+    ERROR("Texture", "init", "Unsupported extension type");
+    return E_INVALIDARG;
+  }
+
+  return hr;
 }
 
 HRESULT
@@ -58,14 +104,12 @@ Texture::init(Device& device, Texture& textureRef, DXGI_FORMAT format) {
     ERROR("Texture", "init", "Device is null.");
     return E_POINTER;
   }
-
   if (!textureRef.m_texture) {
     ERROR("Texture", "init", "Texture is null.");
     return E_POINTER;
   }
-
   // Create Shader Resource View
-  D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {}; // Inicialización moderna
+  D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
   srvDesc.Format = format;
   srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
   srvDesc.Texture2D.MipLevels = 1;
@@ -77,9 +121,11 @@ Texture::init(Device& device, Texture& textureRef, DXGI_FORMAT format) {
 
   if (FAILED(hr)) {
     ERROR("Texture", "init",
-      ("Failed to create shader resource view. HRESULT: " + std::to_string(hr)).c_str());
+      ("Failed to create shader resource view for PNG textures. HRESULT: " + std::to_string(hr)).c_str());
     return hr;
   }
+
+  return S_OK;
 }
 
 void
@@ -89,8 +135,8 @@ Texture::update() {
 
 void
 Texture::render(DeviceContext& deviceContext,
-                unsigned int StartSlot,
-                unsigned int NumViews) {
+  unsigned int StartSlot,
+  unsigned int NumViews) {
   if (!deviceContext.m_deviceContext) {
     ERROR("Texture", "render", "Device Context is null.");
     return;
