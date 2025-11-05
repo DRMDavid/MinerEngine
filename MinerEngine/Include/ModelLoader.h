@@ -23,7 +23,6 @@ public:
 
   HRESULT init(MeshComponent& mesh, const std::string& fileName);
 
-  // [CORRECCIÓN C2084] Solo se declaran, no se implementan aquí.
   void update();
   void render();
   void destroy();

@@ -12,7 +12,7 @@
 #include "MeshComponent.h"
 #include "Buffer.h"
 #include "SamplerState.h"
-#include "ModelLoader.h" // [INCLUIDO]
+#include "ModelLoader.h" 
 
 class
 	BaseApp {
@@ -59,8 +59,11 @@ private:
 	Texture 														m_textureCube;
 	SamplerState												m_samplerState;
 
-	// Declaración del cargador de modelos
 	ModelLoader                         m_modelLoader;
+
+	// [AÑADIDO] Texturas para el modelo OBJ
+	Texture                             m_diffuseTexture;
+	Texture                             m_normalTexture;
 
 	XMMATRIX                            m_World;
 	XMMATRIX                            m_View;
