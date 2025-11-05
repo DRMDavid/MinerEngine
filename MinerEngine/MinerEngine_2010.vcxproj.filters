@@ -62,6 +62,9 @@
     <ClCompile Include="Source\BaseApp.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ModelLoader.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -118,6 +121,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\SamplerState.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ModelLoader.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

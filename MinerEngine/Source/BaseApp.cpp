@@ -97,27 +97,42 @@ BaseApp::init() {
 	// Load Resources
 
 
-	// Define the input layout
+	// Define the input layout (MODIFICADO: Incluye NORMAL)
 	std::vector<D3D11_INPUT_ELEMENT_DESC> Layout;
+
+	// 1. POSICIÓN (XMFLOAT3)
 	D3D11_INPUT_ELEMENT_DESC position;
 	position.SemanticName = "POSITION";
 	position.SemanticIndex = 0;
 	position.Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	position.InputSlot = 0;
-	position.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT /*0*/;
+	position.AlignedByteOffset = 0;
 	position.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	position.InstanceDataStepRate = 0;
 	Layout.push_back(position);
 
+	// 2. NORMAL (XMFLOAT3)
+	D3D11_INPUT_ELEMENT_DESC normal;
+	normal.SemanticName = "NORMAL";
+	normal.SemanticIndex = 0;
+	normal.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	normal.InputSlot = 0;
+	normal.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	normal.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+	normal.InstanceDataStepRate = 0;
+	Layout.push_back(normal);
+
+	// 3. TEXCOORD (XMFLOAT2)
 	D3D11_INPUT_ELEMENT_DESC texcoord;
 	texcoord.SemanticName = "TEXCOORD";
 	texcoord.SemanticIndex = 0;
 	texcoord.Format = DXGI_FORMAT_R32G32_FLOAT;
 	texcoord.InputSlot = 0;
-	texcoord.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT /*0*/;
+	texcoord.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 	texcoord.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	texcoord.InstanceDataStepRate = 0;
 	Layout.push_back(texcoord);
+
 
 	// Create the Shader Program
 	hr = m_shaderProgram.init(m_device, "MinerEngine.fx", Layout);
@@ -127,74 +142,20 @@ BaseApp::init() {
 		return hr;
 	}
 
-	// Create vertex buffer
-	SimpleVertex vertices[] =
-	{
-			{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
 
-			{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
+	// LÓGICA DE CARGA DEL MODELO OBJ (Reemplaza el cubo hardcodeado)
+	const std::string modelFileName = "m4a1_s.obj";
+	hr = m_modelLoader.init(m_mesh, modelFileName);
 
-			{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-
-			{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-
-			{ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, -1.0f, -1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, 1.0f, -1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(-1.0f, 1.0f, -1.0f), XMFLOAT2(0.0f, 1.0f) },
-
-			{ XMFLOAT3(-1.0f, -1.0f, 1.0f), XMFLOAT2(0.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, -1.0f, 1.0f), XMFLOAT2(1.0f, 0.0f) },
-			{ XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT2(1.0f, 1.0f) },
-			{ XMFLOAT3(-1.0f, 1.0f, 1.0f), XMFLOAT2(0.0f, 1.0f) },
-	};
-
-	unsigned int indices[] =
-	{
-			3,1,0,
-			2,1,3,
-
-			6,4,5,
-			7,4,6,
-
-			11,9,8,
-			10,9,11,
-
-			14,12,13,
-			15,12,14,
-
-			19,17,16,
-			18,17,19,
-
-			22,20,21,
-			23,20,22
-	};
-
-	// Integrar los vertices a meshcomponent
-	for (unsigned int i = 0; i < 24; i++) {
-		m_mesh.m_vertex.push_back(vertices[i]);
+	if (FAILED(hr)) {
+		ERROR("Main", "InitDevice",
+			("Failed to initialize ModelLoader and load mesh: " + modelFileName).c_str());
+		return hr;
 	}
-	m_mesh.m_numVertex = 24;
 
-	// Integrar los indices a meshcomponent
-	for (unsigned int i = 0; i < 36; i++) {
-		m_mesh.m_index.push_back(indices[i]);
-	}
-	m_mesh.m_numIndex = 36;
+	// El código del cubo hardcodeado fue ELIMINADO/REEMPLAZADO aquí.
 
-	// Create vertex buffer
+// Create vertex buffer
 	hr = m_vertexBuffer.init(m_device, m_mesh, D3D11_BIND_VERTEX_BUFFER);
 
 	if (FAILED(hr)) {
@@ -299,8 +260,26 @@ void BaseApp::update(float deltaTime)
 	m_vMeshColor.y = (cosf(t * 3.0f) + 1.0f) * 0.5f;
 	m_vMeshColor.z = (sinf(t * 5.0f) + 1.0f) * 0.5f;
 
-	// Rotate cube around the origin
-	m_World = XMMatrixRotationY(t);
+	// Rotate and Scale the model [MODIFICADO: Escala y Rotación para centrado]
+
+		// 1. Definir la Rotación (basada en el tiempo 't')
+	XMMATRIX rotationMatrix = XMMatrixRotationY(t);
+
+	// 2. Definir la Escala (AJUSTE CRÍTICO: 0.01f para modelos grandes)
+	// *** Si sigue viéndose grande, cambia 0.01f por 0.005f ***
+	float scaleFactor = 0.05f;
+	XMMATRIX scaleMatrix = XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor);
+
+	// 3. Definir la Traslación (Centrado/Posicionamiento - 0.0f mantiene el centro)
+	float offsetX = 0.0f;
+	float offsetY = 0.0f;
+	float offsetZ = 0.0f;
+	XMMATRIX translateMatrix = XMMatrixTranslation(offsetX, offsetY, offsetZ);
+
+	// 4. Combinar las matrices (Escala * Rotación * Traslación)
+	XMMATRIX localTransform = XMMatrixMultiply(scaleMatrix, rotationMatrix);
+	m_World = XMMatrixMultiply(localTransform, translateMatrix);
+
 	cb.mWorld = XMMatrixTranspose(m_World);
 	cb.vMeshColor = m_vMeshColor;
 	m_cbChangesEveryFrame.update(m_deviceContext, nullptr, 0, nullptr, &cb, 0, 0);
@@ -321,7 +300,7 @@ BaseApp::render() {
 	// Set shader program
 	m_shaderProgram.render(m_deviceContext);
 
-	// Render the cube
+	// Render the model
 	 // Asignar buffers Vertex e Index
 	m_vertexBuffer.render(m_deviceContext, 0, 1);
 	m_indexBuffer.render(m_deviceContext, 0, 1, false, DXGI_FORMAT_R32_UINT);
@@ -335,6 +314,8 @@ BaseApp::render() {
 	// Asignar textura y sampler
 	m_textureCube.render(m_deviceContext, 0, 1);
 	m_samplerState.render(m_deviceContext, 0, 1);
+
+	// Dibujar el modelo cargado (el número de índices es dinámico)
 	m_deviceContext.DrawIndexed(m_mesh.m_numIndex, 0, 0);
 
 	// Present our back buffer to our front buffer

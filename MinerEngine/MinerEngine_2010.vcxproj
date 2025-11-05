@@ -431,6 +431,7 @@
     <ClCompile Include="Source\Device.cpp" />
     <ClCompile Include="Source\DeviceContext.cpp" />
     <ClCompile Include="Source\InputLayout.cpp" />
+    <ClCompile Include="Source\ModelLoader.cpp" />
     <ClCompile Include="Source\RenderTargetView.cpp" />
     <ClCompile Include="Source\ShaderProgram.cpp" />
     <ClCompile Include="Source\SwapChain.cpp" />
@@ -449,6 +450,7 @@
     <ClInclude Include="Include\DeviceContext.h" />
     <ClInclude Include="Include\InputLayout.h" />
     <ClInclude Include="Include\MeshComponent.h" />
+    <ClInclude Include="Include\ModelLoader.h" />
     <ClInclude Include="Include\Prerequisites.h" />
     <ClInclude Include="Include\RenderTargetView.h" />
     <ClInclude Include="Include\SamplerState.h" />

@@ -12,6 +12,7 @@
 #include "MeshComponent.h"
 #include "Buffer.h"
 #include "SamplerState.h"
+#include "ModelLoader.h" // [INCLUIDO]
 
 class
 	BaseApp {
@@ -57,6 +58,9 @@ private:
 	Buffer															m_cbChangesEveryFrame;
 	Texture 														m_textureCube;
 	SamplerState												m_samplerState;
+
+	// Declaración del cargador de modelos
+	ModelLoader                         m_modelLoader;
 
 	XMMATRIX                            m_World;
 	XMMATRIX                            m_View;

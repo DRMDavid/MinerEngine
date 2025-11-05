@@ -104,11 +104,28 @@
     * @var SimpleVertex::Tex
     *      Coordenadas de textura (u, v) asociadas al vértice.
     */
+
+    /**
+        * @struct SimpleVertex
+        * @brief Representa un vértice con posición, normal y coordenadas de textura. (ACTUALIZADO para OBJ)
+        * @var SimpleVertex::Pos
+        * Posición del vértice en espacio 3D (x, y, z).
+        * @var SimpleVertex::Normal
+        * Vector normal del vértice (x, y, z). (NUEVO)
+        * @var SimpleVertex::Tex
+        * Coordenadas de textura (u, v) asociadas al vértice.
+        */
 struct SimpleVertex
+{
+  XMFLOAT3 Pos;    ///< Posición 3D del vértice.
+  XMFLOAT3 Normal; ///< Vector normal 3D del vértice (NUEVO).
+  XMFLOAT2 Tex;    ///< Coordenadas (u, v) para mapeo de textura.
+};
+/*struct SimpleVertex
 {
   XMFLOAT3 Pos;  ///< Posición 3D del vértice.
   XMFLOAT2 Tex;  ///< Coordenadas (u, v) para mapeo de textura.
-};
+};*/
 
 /**
  * @struct CBNeverChanges
