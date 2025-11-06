@@ -2,7 +2,7 @@
 #include "Device.h"
 #include "DeviceContext.h"
 
-HRESULT
+/*HRESULT
 SamplerState::init(Device& device) {
   if (!device.m_device) {
     ERROR("SamplerState", "init", "Device is nullptr");
@@ -11,6 +11,34 @@ SamplerState::init(Device& device) {
 
   D3D11_SAMPLER_DESC sampDesc = {};
   sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+  sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+  sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+  sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+  sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+  sampDesc.MinLOD = 0;
+  sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+  HRESULT hr = device.CreateSamplerState(&sampDesc, &m_sampler);
+  if (FAILED(hr)) {
+    ERROR("SamplerState", "init", "Failed to create SamplerState");
+    return hr;
+  }
+
+  return S_OK;
+} */
+HRESULT
+SamplerState::init(Device& device) {
+  if (!device.m_device) {
+    ERROR("SamplerState", "init", "Device is nullptr");
+    return E_POINTER;
+  }
+
+  D3D11_SAMPLER_DESC sampDesc = {};
+
+  // [CORRECCIÓN] Usar Filtrado Anisotrópico para mejor calidad
+  sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+  sampDesc.MaxAnisotropy = 8; // Nivel de calidad (8x o 16x)
+
   sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
   sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
   sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
