@@ -7,7 +7,7 @@
 <h1 align="center">⛏️MinerEngine – Motor Gráfico Direct3D 11 (C++)</h1>
 
 <p align="center">
-  <i>Proyecto académico – Primer Parcial | Materia: Gráficas 3D</i>
+  <i>Proyecto académico – Segundo Parcial | Materia: Gráficas 3D</i>
 </p>
 
 ---
