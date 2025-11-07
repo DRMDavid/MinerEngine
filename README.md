@@ -152,8 +152,4 @@ Se renderiza un **modelo 3D cargado (`Desert.obj`)** con rotación, iluminación
 | Ejecutar | `Ctrl + F5` |
 
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Estado-Estudiante-6f42c1?style=for-the-badge" alt="Estado Estudiante"/>
-  <img src="https://img.shields.io/badge/Objetivo-Aprendizaje-success?style=for-the-badge" alt="Objetivo Aprendizaje"/>
-  <img src="https://img.shields.io/badge/Render-OBJ%20%2B%20Normal%20Map-blueviolet?style=for-the-badge" alt="Render OBJ + Normal Map"/>
-</p>
+
