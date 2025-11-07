@@ -146,27 +146,27 @@ BaseApp::init() {
 	}
 
 
-	// LÓGICA DE CARGA DEL MODELO OBJ (m4a1_s.obj)
-	const std::string modelFileName = "m4a1_s.obj";
+	// LÓGICA DE CARGA DEL MODELO OBJ 
+	const std::string modelFileName = "Desert.obj";
 	hr = m_modelLoader.init(m_mesh, modelFileName);
 
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize ModelLoader and load mesh: " + modelFileName;
+		const std::string error_msg = "Failed to initialize ModelLoader and load mesh " + modelFileName;
 		ERROR("Main", "InitDevice", error_msg.c_str());
 		return hr;
 	}
 
 	// Carga de texturas (DDS)
-	hr = m_diffuseTexture.init(m_device, "Printstream_M4A1-S_Diffuse", ExtensionType::DDS);
+	hr = m_diffuseTexture.init(m_device, "Deagle_Diffuse", ExtensionType::DDS);
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize Diffuse Texture: Printstream_M4A1-S_Diffuse.dds";
+		const std::string error_msg = "Failed to initialize Diffuse Texture";
 		ERROR("Main", "InitDevice", error_msg.c_str());
 		return hr;
 	}
 
-	hr = m_normalTexture.init(m_device, "Printstream_M4A1-S_Normal", ExtensionType::DDS);
+	hr = m_normalTexture.init(m_device, "Deagle_Normal", ExtensionType::DDS);
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize Normal Texture: Printstream_M4A1-S_Normal.dds";
+		const std::string error_msg = "Failed to initialize Normal Texture";
 		ERROR("Main", "InitDevice", error_msg.c_str());
 		return hr;
 	}
@@ -277,8 +277,8 @@ void BaseApp::update(float deltaTime)
 		// 1. Definir la Rotación (basada en el tiempo 't')
 	XMMATRIX rotationMatrix = XMMatrixRotationY(t);
 
-	// 2. Definir la Escala: Ajuste a 0.02f
-	float scaleFactor = 0.05f;
+	// 2. Definir la Escala: Ajuste 
+	float scaleFactor = 0.2f;
 	XMMATRIX scaleMatrix = XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor);
 
 	// 3. Definir la Traslación (Centrado)
@@ -299,7 +299,7 @@ void BaseApp::update(float deltaTime)
 void
 BaseApp::render() {
 	// Set Render Target View
-	float ClearColor[4] = { 0.8f, 0.35f, 0.1f, 1.0f };
+	float ClearColor[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
 	m_renderTargetView.render(m_deviceContext, m_depthStencilView, 1, ClearColor);
 
 	// Set Viewport
