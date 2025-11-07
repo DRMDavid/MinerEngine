@@ -1,4 +1,3 @@
-<!-- Banner / Título -->
 <p align="center">
   <img src="https://img.shields.io/badge/Direct3D-11-1155BA?style=for-the-badge&logo=windows&logoColor=white" alt="D3D11"/>
   <img src="https://img.shields.io/badge/C++-17-00599C?style=for-the-badge&logo=cplusplus&logoColor=white" alt="C++17"/>
@@ -15,9 +14,12 @@
 
 ## 📘 Resumen
 
-**⛏️MinerEngine** implementa el pipeline base de render en **Direct3D 11** (C++), gestionando:
-ventana (**Win32**), dispositivo y contexto (**ID3D11Device/Context**), **swap chain**, **RTV/DSV**, buffers, shaders y texturas.  
-Se renderiza un **cubo 3D texturizado** con rotación y actualización de constantes por frame.
+**⛏️MinerEngine** implementa el pipeline base de render en **Direct3D 11** (C++), gestionando: ventana (**Win32**), dispositivo y contexto (**ID3D11Device/Context**), **swap chain**, **RTV/DSV**, buffers, shaders y texturas.
+
+**Mejoras Recientes (OBJ Loading, Normal Mapping y Anisotropic Filtering):**
+El motor ahora soporta la **carga dinámica de modelos OBJ** con re-indexación, la **iluminación con Normal Mapping** (usando mapas de difusas y normales) y aplica **Filtro Anisotrópico (8x)** para mejorar la calidad de las texturas.
+
+Se renderiza un **modelo 3D cargado (`Desert.obj`)** con rotación, iluminación y multi-texturizado con constantes por frame.
 
 ---
 
@@ -39,13 +41,15 @@ Se renderiza un **cubo 3D texturizado** con rotación y actualización de consta
 
 ## 🎯 Objetivos del Proyecto
 
-| Objetivo | Descripción |
-|---|---|
-| Arquitectura base D3D11 | Separación de responsabilidades (ventana, dispositivo, contexto, recursos, presentación). |
-| Comprensión del pipeline | Recorrer creación de recursos, configuración del pipeline y ciclo de render. |
-| Gestión de recursos | Uso de RTV/DSV, buffers, SRV y texturas; limpieza y presentación cada frame. |
-| Render mínimo | Dibujar un **cubo texturizado** con rotación y constantes por frame. |
-| Base para extensiones | Puntos de extensión (`update()`/`render()`) y TODOs (carga de texturas desde archivo). |
+| Objetivo | Descripción | Nuevo Estado |
+|---|---|---|
+| Arquitectura base D3D11 | Separación de responsabilidades (ventana, dispositivo, contexto, recursos, presentación). | ✅ |
+| Comprensión del pipeline | Recorrer creación de recursos, configuración del pipeline y ciclo de render. | ✅ |
+| Gestión de recursos | Uso de RTV/DSV, buffers, SRV y texturas; limpieza y presentación cada frame. | ✅ |
+| **Carga de Modelos 3D** | **Implementar OBJ Parser manual con re-indexación y triangulación.** | 🆕 ✅ |
+| **Normal Mapping** | **Actualizar el formato de vértice (Pos/Normal/Tex) e implementar la vinculación de texturas de normales.** | 🆕 ✅ |
+| **Calidad de Texturas** | **Uso de Filtro Anisotrópico (8x) para mejorar la calidad visual.** | 🆕 ✅ |
+| Base para extensiones | Puntos de extensión (`update()`/`render()`) y TODOs. | ✅ |
 
 ---
 
@@ -61,15 +65,17 @@ Se renderiza un **cubo 3D texturizado** con rotación y actualización de consta
 | SwapChain | Crear `ID3D11Device`, `ID3D11DeviceContext` y `IDXGISwapChain`; configurar MSAA; `present` | `init(device,context,backBuffer,window)`, `present()` | `SwapChain.h/.cpp` |
 | Device | Fábrica de recursos D3D11 | `Create{RenderTargetView,DepthStencilView,Texture2D,Buffer,Sampler,VertexShader,PixelShader,InputLayout}` | `Device.h/.cpp` |
 | DeviceContext | Comandos de render y estado del pipeline | `RSSetViewports`, `OMSetRenderTargets`, `DrawIndexed`, `Clear*`, `VS/PSSet*`, `IASet*`, `UpdateSubresource` | `DeviceContext.h/.cpp` |
-| Texture | Crear texturas (en memoria o desde otra), SRV | `init(...)` (sobrecargas), `m_texture`, `m_textureFromImg` | `Texture.h/.cpp` |
+| **ModelLoader** | **Carga, parseo (OBJ) y optimización (re-indexación) de geometría.** | `init(mesh, fileName)` | `ModelLoader.h/.cpp` |
+| Texture | Crear texturas (en memoria o desde otra), SRV | `init(...)` (soporte DDS), `m_texture`, `m_textureFromImg` | `Texture.h/.cpp` |
 | RenderTargetView | RTV desde back buffer o textura; limpieza y bind | `init(...)`, `render(...)` | `RenderTargetView.h/.cpp` |
 | DepthStencilView | DSV desde textura depth; limpieza y bind | `init(...)`, `render(context)` | `DepthStencilView.h/.cpp` |
-| App / Main | Orquestación (inicialización, shaders, buffers, loop) | `InitDevice()`, `Render()`, `CleanupDevice()` | `MinerEngine.cpp` |
+| App / Main | Orquestación (inicialización, shaders, buffers, loop) | `InitDevice()`, `Render()`, `CleanupDevice()` | `MinerEngine.cpp`, `BaseApp.cpp` |
 
 ### Relaciones Operativas
 
 | Origen → | Acción | → Destino | Resultado |
 |---|---|---|---|
+| App | **`ModelLoader::init("Desert.obj")`** | MeshComponent | Geometría compleja cargada, re-indexada y lista. |
 | App | `Window::init()` | Window | Crea ventana y obtiene `HWND`, `width`, `height`. |
 | App | `SwapChain::init(device,context,backBuffer,window)` | DXGI/D3D11 | Crea Device + Context + SwapChain; obtiene back buffer. |
 | Device | `CreateRenderTargetView(backBuffer)` | RTV | RTV válido para OM (Output Merger). |
@@ -89,23 +95,10 @@ Se renderiza un **cubo 3D texturizado** con rotación y actualización de consta
 | 2. Dispositivo/Contexto/SwapChain | Crea `ID3D11Device`, `ID3D11DeviceContext`, `IDXGISwapChain`; configura MSAA | `D3D11CreateDevice`, `IDXGIFactory::CreateSwapChain` |
 | 3. BackBuffer RTV | Crear RTV desde back buffer | `CreateRenderTargetView` |
 | 4. Depth/Stencil | Crear textura depth y DSV | `CreateTexture2D`, `CreateDepthStencilView` |
-| 5. Viewport y Shaders | Definir viewport; compilar VS/PS; crear input layout | `RSSetViewports`, *CompileFromFile*, `Create{Vertex,Pixel}Shader`, `CreateInputLayout` |
-| 6. Buffers y Recursos | Crear vertex/index/constant buffers; SRV y sampler | `CreateBuffer`, `PSSetShaderResources`, `CreateSamplerState` |
-| 7. Render Loop | Clear RTV/DSV, actualizar constantes, draw indexed, present | `Clear*`, `UpdateSubresource`, `DrawIndexed`, `present()` |
-
----
-
-## 🚀 Flujo de Inicialización
-
-| # | Llamada | Entrada | Salida / Estado |
-|---:|---|---|---|
-| 1 | `Window::init(...)` | `hInstance`, `nCmdShow`, `WndProc` | `m_hWnd` válido; `m_width`, `m_height` establecidos |
-| 2 | `SwapChain::init(device,context,backBuffer,window)` | `window.m_hWnd` | Device + Context + SwapChain creados; MSAA configurado |
-| 3 | `RenderTargetView::init(device, backBuffer, format)` | `backBuffer.m_texture` | RTV válido y listo para OM |
-| 4 | `Texture::init(device, w, h, D24S8, BIND_DEPTH_STENCIL, msaa)` | dimensiones/flags | Textura depth creada (`m_texture`) |
-| 5 | `DepthStencilView::init(device, depthTex, D24S8)` | `m_texture` depth | DSV válido y listo para OM |
-| 6 | Viewport + Shaders + Layout | Dimensiones + `.fx` | Viewport en RS; VS/PS compilados; input layout creado |
-| 7 | Buffers de geometría y constantes | Datos de cubo + CBs | VB/IB/CB listos; SRV y Sampler creados |
+| 5. Model Loading | **Carga la geometría (vértices y normales) y los índices a partir de un archivo OBJ.** | **`ModelLoader::init()`** |
+| 6. Viewport y Shaders | Definir viewport; compilar VS/PS; **crear input layout con POSITION, NORMAL y TEXCOORD** | `RSSetViewports`, *CompileFromFile*, `Create{Vertex,Pixel}Shader`, `CreateInputLayout` |
+| 7. Buffers y Recursos | Crear vertex/index/constant buffers; **SRV para Difusa y Normales**; **Sampler Anisotrópico** | `CreateBuffer`, `PSSetShaderResources`, `CreateSamplerState` |
+| 8. Render Loop | Clear RTV/DSV, actualizar constantes, draw indexed, present | `Clear*`, `UpdateSubresource`, `DrawIndexed(m_mesh.m_numIndex,...)`, `present()` |
 
 ---
 
@@ -117,9 +110,11 @@ Se renderiza un **cubo 3D texturizado** con rotación y actualización de consta
 | 2 | Limpiar DSV | `DeviceContext::ClearDepthStencilView` | Z y stencil reiniciados |
 | 3 | Set RTV/DSV | `OMSetRenderTargets(RTV, DSV)` | OM preparado para dibujar |
 | 4 | Actualizar constantes | `UpdateSubresource(CBs)` | `World/View/Proj` y color por frame |
-| 5 | Bind shaders/recursos | `VSSetShader`, `PSSetShader`, `PSSetShaderResources`, `PSSetSamplers` | VS/PS, SRV y Sampler activos |
-| 6 | Dibujar | `IASet*`, `DrawIndexed(36,...)` | Render del cubo texturizado |
-| 7 | Presentar | `SwapChain::present()` | Intercambio de buffers; imagen en pantalla |
+| 5 | Bind shaders/recursos | `VSSetShader`, `PSSetShader` | VS/PS activos |
+| **6** | **Bind Texturas (Multi-slot)** | **`m_diffuseTexture.render(..., 0, 1)`, `m_normalTexture.render(..., 1, 1)`** | **Textura Difusa (t0) y Normal (t1) activas** |
+| **7** | **Bind Sampler** | **`m_samplerState.render(..., 0, 1)`** | **Filtro Anisotrópico activado** |
+| 8 | Dibujar | `IASet*`, **`DrawIndexed(m_mesh.m_numIndex,...)`** | Render del modelo cargado |
+| 9 | Presentar | `SwapChain::present()` | Intercambio de buffers; imagen en pantalla |
 
 ---
 
@@ -129,9 +124,11 @@ Se renderiza un **cubo 3D texturizado** con rotación y actualización de consta
 |---|---|---|
 | `Window` | `init()`, `destroy()` | Crea y administra la ventana (`HWND`, ancho/alto). |
 | `SwapChain` | `init()`, `present()`, `destroy()` | Crea Device/Context/SwapChain; MSAA; `Present`. |
-| `Device` | `Create{RenderTargetView,DepthStencilView,Texture2D,Buffer,Sampler,VertexShader,PixelShader,InputLayout}`, `destroy()` | Fábrica de recursos sobre `ID3D11Device`. |
+| `Device` | `Create{...}` | Fábrica de recursos sobre `ID3D11Device`. |
 | `DeviceContext` | `RSSetViewports`, `OMSetRenderTargets`, `Clear*`, `VS/PSSet*`, `IASet*`, `DrawIndexed`, `UpdateSubresource`, `destroy()` | Comandos a GPU y estados del pipeline. |
-| `Texture` | `init(device,w,h,format,bindFlags,...)`, `init(device,textureRef,format)`, `render(context,slot,views)`, `destroy()` | Texturas y SRV; **TODO** cargar desde archivo. |
+| **`ModelLoader`** | **`init(MeshComponent&, const std::string&)`** | **Parser de archivos OBJ (Pos/Tex/Normal), triangulación y deduplicación de vértices (re-indexación).** |
+| `Texture` | `init(...)`, `render(...)`, `destroy()` | Texturas y SRV; ahora soporta **DDS** (carga de textura y normales). |
+| `SamplerState` | **`init(Device&)`**, `render(...)` | **Configura y enlaza el Sampler con filtro Anisotrópico (8x)**. |
 | `RenderTargetView` | `init(...)`, `render(context, dsv, numViews, clearColor)`, `destroy()` | RTV (back buffer o textura); clean + bind. |
 | `DepthStencilView` | `init(...)`, `render(context)`, `destroy()` | DSV (depth/stencil); limpieza por frame. |
 | `App/Main` | `InitDevice()`, `Render()`, `CleanupDevice()` | Orquesta inicialización, ciclo y liberación. |
@@ -158,4 +155,5 @@ Se renderiza un **cubo 3D texturizado** con rotación y actualización de consta
 <p align="center">
   <img src="https://img.shields.io/badge/Estado-Estudiante-6f42c1?style=for-the-badge" alt="Estado Estudiante"/>
   <img src="https://img.shields.io/badge/Objetivo-Aprendizaje-success?style=for-the-badge" alt="Objetivo Aprendizaje"/>
+  <img src="https://img.shields.io/badge/Render-OBJ%20%2B%20Normal%20Map-blueviolet?style=for-the-badge" alt="Render OBJ + Normal Map"/>
 </p>
