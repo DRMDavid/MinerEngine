@@ -459,6 +459,14 @@
     <ClInclude Include="Include\ECS\Component.h" />
     <ClInclude Include="Include\ECS\Entity.h" />
     <ClInclude Include="Include\ECS\Transform.h" />
+    <ClInclude Include="Include\EngineUtilities\Memory\TSharedPointer.h" />
+    <ClInclude Include="Include\EngineUtilities\Memory\TStaticPtr.h" />
+    <ClInclude Include="Include\EngineUtilities\Memory\TUniquePtr.h" />
+    <ClInclude Include="Include\EngineUtilities\Memory\TWeakPointer.h" />
+    <ClInclude Include="Include\EngineUtilities\Utilities\EngineMath.h" />
+    <ClInclude Include="Include\EngineUtilities\Vectors\Vector2.h" />
+    <ClInclude Include="Include\EngineUtilities\Vectors\Vector3.h" />
+    <ClInclude Include="Include\EngineUtilities\Vectors\Vector4.h" />
     <ClInclude Include="Include\InputLayout.h" />
     <ClInclude Include="Include\IResource.h" />
     <ClInclude Include="Include\MeshComponent.h" />
