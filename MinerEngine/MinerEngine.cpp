@@ -1,4 +1,3 @@
-#include "Prerequisites.h"
 #include "BaseApp.h"
 
 //--------------------------------------------------------------------------------------
@@ -7,6 +6,6 @@
 //--------------------------------------------------------------------------------------
 int WINAPI
 wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
-	BaseApp app(hInstance, nCmdShow);
+	BaseApp app;
 	return app.run(hInstance, nCmdShow);
 }

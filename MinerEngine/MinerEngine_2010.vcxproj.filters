@@ -18,6 +18,9 @@
     <Filter Include="Source">
       <UniqueIdentifier>{0a34b7e6-ccf3-4478-a283-b4e3c21fe9a0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\Patterns">
+      <UniqueIdentifier>{5a2c8bf5-80dd-490f-9916-4413af346920}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
@@ -62,7 +65,7 @@
     <ClCompile Include="Source\BaseApp.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ModelLoader.cpp">
+    <ClCompile Include="Source\Model3D.cpp">
       <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -123,7 +126,16 @@
     <ClInclude Include="Include\SamplerState.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ModelLoader.h">
+    <ClInclude Include="Include\stb_image.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Model3D.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\IResource.h">
+      <Filter>Include\Patterns</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ResourceManager.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

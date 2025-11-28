@@ -1,9 +1,5 @@
 #include "BaseApp.h"
-
-BaseApp::BaseApp(HINSTANCE hInst, int nCmdShow)
-{
-}
-
+#include "ResourceManager.h"
 int
 BaseApp::run(HINSTANCE hInst, int nCmdShow) {
 	if (FAILED(m_window.init(hInst, nCmdShow, WndProc))) {
@@ -44,9 +40,8 @@ BaseApp::init() {
 	hr = m_swapChain.init(m_device, m_deviceContext, m_backBuffer, m_window);
 
 	if (FAILED(hr)) {
-		// CORRECCIÓN C2228/E0153: Almacenar la concatenación.
-		const std::string error_msg = "Failed to initialize SwpaChian. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize SwpaChian. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
@@ -54,9 +49,8 @@ BaseApp::init() {
 	hr = m_renderTargetView.init(m_device, m_backBuffer, DXGI_FORMAT_R8G8B8A8_UNORM);
 
 	if (FAILED(hr)) {
-		// CORRECCIÓN C2228/E0153
-		const std::string error_msg = "Failed to initialize RenderTargetView. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize RenderTargetView. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
@@ -70,9 +64,8 @@ BaseApp::init() {
 		0);
 
 	if (FAILED(hr)) {
-		// CORRECCIÓN C2228/E0153
-		const std::string error_msg = "Failed to initialize DepthStencil. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize DepthStencil. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
@@ -82,8 +75,8 @@ BaseApp::init() {
 		DXGI_FORMAT_D24_UNORM_S8_UINT);
 
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize DepthStencilView. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize DepthStencilView. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
@@ -92,106 +85,69 @@ BaseApp::init() {
 	hr = m_viewport.init(m_window);
 
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize Viewport. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize Viewport. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
 	// Load Resources
 
 
-	// Define the input layout (MODIFICADO: Incluye NORMAL)
+	// Define the input layout
 	std::vector<D3D11_INPUT_ELEMENT_DESC> Layout;
-
-	// 1. POSICIÓN (XMFLOAT3)
 	D3D11_INPUT_ELEMENT_DESC position;
 	position.SemanticName = "POSITION";
 	position.SemanticIndex = 0;
 	position.Format = DXGI_FORMAT_R32G32B32_FLOAT;
 	position.InputSlot = 0;
-	position.AlignedByteOffset = 0;
+	position.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT /*0*/;
 	position.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	position.InstanceDataStepRate = 0;
 	Layout.push_back(position);
 
-	// 2. NORMAL (XMFLOAT3)
-	D3D11_INPUT_ELEMENT_DESC normal;
-	normal.SemanticName = "NORMAL";
-	normal.SemanticIndex = 0;
-	normal.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	normal.InputSlot = 0;
-	normal.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-	normal.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	normal.InstanceDataStepRate = 0;
-	Layout.push_back(normal);
-
-	// 3. TEXCOORD (XMFLOAT2)
 	D3D11_INPUT_ELEMENT_DESC texcoord;
 	texcoord.SemanticName = "TEXCOORD";
 	texcoord.SemanticIndex = 0;
 	texcoord.Format = DXGI_FORMAT_R32G32_FLOAT;
 	texcoord.InputSlot = 0;
-	texcoord.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+	texcoord.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT /*0*/;
 	texcoord.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 	texcoord.InstanceDataStepRate = 0;
 	Layout.push_back(texcoord);
 
-
 	// Create the Shader Program
-	hr = m_shaderProgram.init(m_device, "MinerEngine.fx", Layout);
+	hr = m_shaderProgram.init(m_device, "WildvineEngine.fx", Layout);
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize ShaderProgram. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize ShaderProgram. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
-
-	// LÓGICA DE CARGA DEL MODELO OBJ 
-	const std::string modelFileName = "Desert.obj";
-	hr = m_modelLoader.init(m_mesh, modelFileName);
-
-	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize ModelLoader and load mesh " + modelFileName;
-		ERROR("Main", "InitDevice", error_msg.c_str());
-		return hr;
-	}
-
-	// Carga de texturas (DDS)
-	hr = m_diffuseTexture.init(m_device, "Deagle_Diffuse", ExtensionType::DDS);
-	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize Diffuse Texture";
-		ERROR("Main", "InitDevice", error_msg.c_str());
-		return hr;
-	}
-
-	hr = m_normalTexture.init(m_device, "Deagle_Normal", ExtensionType::DDS);
-	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize Normal Texture";
-		ERROR("Main", "InitDevice", error_msg.c_str());
-		return hr;
-	}
-
-	// Mantenemos m_textureCube para compatibilidad
-	hr = m_textureCube.init(m_device, "seafloor", ExtensionType::DDS);
+	m_model = new Model3D("CyberGun.fbx", ModelType::FBX);
+	TRex = m_model->GetMeshes();
 
 
 	// Create vertex buffer
-	hr = m_vertexBuffer.init(m_device, m_mesh, D3D11_BIND_VERTEX_BUFFER);
+	hr = m_vertexBuffer.init(m_device, TRex[0], D3D11_BIND_VERTEX_BUFFER);
 
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize VertexBuffer. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize VertexBuffer. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
 	// Create index buffer
-	hr = m_indexBuffer.init(m_device, m_mesh, D3D11_BIND_INDEX_BUFFER);
+	hr = m_indexBuffer.init(m_device, TRex[0], D3D11_BIND_INDEX_BUFFER);
 
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize IndexBuffer. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize IndexBuffer. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
+
+	auto& resourceMan = ResourceManager::getInstance();
+
+	//std::shared_ptr<Model3D> model = resourceMan.GetOrLoad<Model3D>("CubeModel", "CyberGun.fbx", ModelType::FBX);
 
 	// Set primitive topology
 	m_deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -199,30 +155,38 @@ BaseApp::init() {
 	// Create the constant buffers
 	hr = m_cbNeverChanges.init(m_device, sizeof(CBNeverChanges));
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize NeverChanges Buffer. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize NeverChanges Buffer. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
 	hr = m_cbChangeOnResize.init(m_device, sizeof(CBChangeOnResize));
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize ChangeOnResize Buffer. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize ChangeOnResize Buffer. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
 	hr = m_cbChangesEveryFrame.init(m_device, sizeof(CBChangesEveryFrame));
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize ChangesEveryFrame Buffer. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize ChangesEveryFrame Buffer. HRESULT: " + std::to_string(hr)).c_str());
+		return hr;
+	}
+
+	hr = m_textureCube.init(m_device, "base.tga", ExtensionType::PNG);
+	// Load the Texture
+	if (FAILED(hr)) {
+		ERROR("Main", "InitDevice",
+			("Failed to initialize texture Cube. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
 	// Create the sample state
 	hr = m_samplerState.init(m_device);
 	if (FAILED(hr)) {
-		const std::string error_msg = "Failed to initialize SamplerState. HRESULT: " + std::to_string(hr);
-		ERROR("Main", "InitDevice", error_msg.c_str());
+		ERROR("Main", "InitDevice",
+			("Failed to initialize SamplerState. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
@@ -268,29 +232,19 @@ void BaseApp::update(float deltaTime)
 	m_cbChangeOnResize.update(m_deviceContext, nullptr, 0, nullptr, &cbChangesOnResize, 0, 0);
 
 	// Modify the color
-	m_vMeshColor.x = (sinf(t * 1.0f) + 1.0f) * 0.5f;
-	m_vMeshColor.y = (cosf(t * 3.0f) + 1.0f) * 0.5f;
-	m_vMeshColor.z = (sinf(t * 5.0f) + 1.0f) * 0.5f;
+	m_vMeshColor.x = 1.0f;
+	m_vMeshColor.y = 1.0f;
+	m_vMeshColor.z = 1.0f;
+	// Rotate cube around the origin
+	// Aplicar escala
+	XMMATRIX scaleMatrix = XMMatrixScaling(1.0f, 1.0f, 1.0f);
+	// Aplicar rotacion
+	XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(-0.60f, 3.0f, -0.20f);
+	// Aplicar traslacion
+	XMMATRIX translationMatrix = XMMatrixTranslation(2.0f, -4.9f, 11.0f);
 
-	// Rotate and Scale the model 
-
-		// 1. Definir la Rotación (basada en el tiempo 't')
-	XMMATRIX rotationMatrix = XMMatrixRotationY(t);
-
-	// 2. Definir la Escala: Ajuste 
-	float scaleFactor = 0.2f;
-	XMMATRIX scaleMatrix = XMMatrixScaling(scaleFactor, scaleFactor, scaleFactor);
-
-	// 3. Definir la Traslación (Centrado)
-	float offsetX = 0.0f;
-	float offsetY = 0.5f;
-	float offsetZ = 0.0f;
-	XMMATRIX translateMatrix = XMMatrixTranslation(offsetX, offsetY, offsetZ);
-
-	// 4. Combinar las matrices (Escala * Rotación * Traslación)
-	XMMATRIX localTransform = XMMatrixMultiply(scaleMatrix, rotationMatrix);
-	m_World = XMMatrixMultiply(localTransform, translateMatrix);
-
+	// Componer la matriz final en el orden: scale -> rotation -> translation
+	m_World = scaleMatrix * rotationMatrix * translationMatrix;
 	cb.mWorld = XMMatrixTranspose(m_World);
 	cb.vMeshColor = m_vMeshColor;
 	m_cbChangesEveryFrame.update(m_deviceContext, nullptr, 0, nullptr, &cb, 0, 0);
@@ -299,7 +253,7 @@ void BaseApp::update(float deltaTime)
 void
 BaseApp::render() {
 	// Set Render Target View
-	float ClearColor[4] = { 0.6f, 0.6f, 0.6f, 1.0f };
+	float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	m_renderTargetView.render(m_deviceContext, m_depthStencilView, 1, ClearColor);
 
 	// Set Viewport
@@ -311,7 +265,7 @@ BaseApp::render() {
 	// Set shader program
 	m_shaderProgram.render(m_deviceContext);
 
-	// Render the model
+	// Render the cube
 	 // Asignar buffers Vertex e Index
 	m_vertexBuffer.render(m_deviceContext, 0, 1);
 	m_indexBuffer.render(m_deviceContext, 0, 1, false, DXGI_FORMAT_R32_UINT);
@@ -322,18 +276,10 @@ BaseApp::render() {
 	m_cbChangesEveryFrame.render(m_deviceContext, 2, 1);
 	m_cbChangesEveryFrame.render(m_deviceContext, 2, 1, true);
 
-	// VINCULACIÓN DE TEXTURAS AL PIXEL SHADER
-	// Slot 0 (t0): Mapa de Difusión (Color base)
-	m_diffuseTexture.render(m_deviceContext, 0, 1);
-
-	// Slot 1 (t1): Mapa de Normales (Detalle de superficie)
-	m_normalTexture.render(m_deviceContext, 1, 1);
-
-	// El sampler se aplica al Slot 0
+	// Asignar textura y sampler
+	m_textureCube.render(m_deviceContext, 0, 1);
 	m_samplerState.render(m_deviceContext, 0, 1);
-
-	// Dibujar el modelo cargado (el número de índices es dinámico)
-	m_deviceContext.DrawIndexed(m_mesh.m_numIndex, 0, 0);
+	m_deviceContext.DrawIndexed(TRex[0].m_numIndex, 0, 0);
 
 	// Present our back buffer to our front buffer
 	m_swapChain.present();
@@ -352,11 +298,6 @@ BaseApp::destroy() {
 	m_vertexBuffer.destroy();
 	m_indexBuffer.destroy();
 	m_shaderProgram.destroy();
-
-	// LIBERACIÓN DE RECURSOS DE TEXTURA
-	m_diffuseTexture.destroy();
-	m_normalTexture.destroy();
-
 	m_depthStencil.destroy();
 	m_depthStencilView.destroy();
 	m_renderTargetView.destroy();
