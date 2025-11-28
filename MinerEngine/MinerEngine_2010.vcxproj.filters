@@ -21,6 +21,9 @@
     <Filter Include="Include\Patterns">
       <UniqueIdentifier>{5a2c8bf5-80dd-490f-9916-4413af346920}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\ECS">
+      <UniqueIdentifier>{32a0259e-4143-417a-97e5-d8d89b7ae7a0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
@@ -68,6 +71,7 @@
     <ClCompile Include="Source\Model3D.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Actor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -138,6 +142,10 @@
     <ClInclude Include="Include\ResourceManager.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="Include\ECS\Actor.h" />
+    <ClInclude Include="Include\ECS\Component.h" />
+    <ClInclude Include="Include\ECS\Entity.h" />
+    <ClInclude Include="Include\ECS\Transform.h" />
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
