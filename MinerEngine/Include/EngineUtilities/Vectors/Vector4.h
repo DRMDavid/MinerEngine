@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2025 Roberto Charreton
+ * Copyright (c) 2024 Roberto Charreton
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
 */
 #pragma once
 
-#include "Utilities/EngineMath.h"
+#include "EngineUtilities\Utilities\EngineMath.h"
 namespace EU {
   /**
  * @brief A 4D vector class.
@@ -99,7 +99,7 @@ namespace EU {
      * @return The magnitude of the vector.
      */
     float magnitude() const {
-      return EngineUtilities::sqrt(x * x + y * y + z * z + w * w);
+      return EU::sqrt(x * x + y * y + z * z + w * w);
     }
 
     /**
