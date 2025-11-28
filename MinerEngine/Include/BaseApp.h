@@ -57,7 +57,7 @@ private:
 	Buffer															m_cbNeverChanges;
 	Buffer															m_cbChangeOnResize;
 	//Buffer															m_cbChangesEveryFrame;
-	Texture 														m_cyberGunAlbedo;
+	Texture 														m_PrintstreamAlbedo;
 	//SamplerState												m_samplerState;
 
 	//XMMATRIX                            m_World;
@@ -66,7 +66,7 @@ private:
 	//XMFLOAT4                            m_vMeshColor;// (0.7f, 0.7f, 0.7f, 1.0f);
 
 	std::vector<EU::TSharedPointer<Actor>> m_actors;
-	EU::TSharedPointer<Actor> m_cyberGun;
+	EU::TSharedPointer<Actor> m_Printstream;
 
 
 	Model3D* m_model;

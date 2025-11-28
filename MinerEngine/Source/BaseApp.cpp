@@ -92,36 +92,36 @@ BaseApp::init() {
 
 	// Load Resources -> Modelos, Texturas e Interfaz de usuario
 
-	// Set CyberGun Actor
-	m_cyberGun = EU::MakeShared<Actor>(m_device);
+	// Set Printstream Actor
+	m_Printstream = EU::MakeShared<Actor>(m_device);
 
-	if (!m_cyberGun.isNull()) {
+	if (!m_Printstream.isNull()) {
 		// Crear vertex buffer y index buffer para el pistol
-		std::vector<MeshComponent> cyberGunMeshes;
+		std::vector<MeshComponent> PrintstreamMeshes;
 		m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
-		cyberGunMeshes = m_model->GetMeshes();
+		PrintstreamMeshes = m_model->GetMeshes();
 
-		std::vector<Texture> cyberGunTextures;
-		hr = m_cyberGunAlbedo.init(m_device, "Assets/Textura", ExtensionType::PNG);
+		std::vector<Texture> PrintstreamTextures;
+		hr = m_PrintstreamAlbedo.init(m_device, "Assets/Textura", ExtensionType::PNG);
 		// Load the Texture
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
-				("Failed to initialize cyberGunAlbedo. HRESULT: " + std::to_string(hr)).c_str());
+				("Failed to initialize PrintstreamAlbedo. HRESULT: " + std::to_string(hr)).c_str());
 			return hr;
 		}
-		cyberGunTextures.push_back(m_cyberGunAlbedo);
+		PrintstreamTextures.push_back(m_PrintstreamAlbedo);
 
-		m_cyberGun->setMesh(m_device, cyberGunMeshes);
-		m_cyberGun->setTextures(cyberGunTextures);
-		m_cyberGun->setName("CyberGun");
-		m_actors.push_back(m_cyberGun);
+		m_Printstream->setMesh(m_device, PrintstreamMeshes);
+		m_Printstream->setTextures(PrintstreamTextures);
+		m_Printstream->setName("Printstream");
+		m_actors.push_back(m_Printstream);
 
-		m_cyberGun->getComponent<Transform>()->setTransform(EU::Vector3(2.0f, -4.90f, 11.60f),
-			EU::Vector3(-0.60f, 3.0f, -0.20f),
-			EU::Vector3(1.0f, 1.0f, 1.0f));
+		m_Printstream->getComponent<Transform>()->setTransform(EU::Vector3(0.0f, 2.5f, -4.5f),
+			                                                     EU::Vector3(0.0f, 1.57f, 0.0f),
+			                                                     EU::Vector3(0.05f, 0.05f, 0.05f));
 	}
 	else {
-		ERROR("Main", "InitDevice", "Failed to create cyber Gun Actor.");
+		ERROR("Main", "InitDevice", "Failed to create Printstream Actor.");
 		return E_FAIL;
 	}
 
@@ -174,7 +174,7 @@ BaseApp::init() {
 	//}
 
 	//auto& resourceMan = ResourceManager::getInstance();
-	//std::shared_ptr<Model3D> model = resourceMan.GetOrLoad<Model3D>("CubeModel", "CyberGun.fbx", ModelType::FBX);
+	//std::shared_ptr<Model3D> model = resourceMan.GetOrLoad<Model3D>("CubeModel", "Printstream.fbx", ModelType::FBX);
 
 
 	// Create the constant buffers
