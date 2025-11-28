@@ -33,6 +33,9 @@
     <Filter Include="Include\Utilities\Vector">
       <UniqueIdentifier>{eedd37bb-cedc-43eb-a1b0-b7d3fcdffe88}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\ECS">
+      <UniqueIdentifier>{36a1a061-3d1a-4309-8ef5-713ec38b33d3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
@@ -80,7 +83,9 @@
     <ClCompile Include="Source\Model3D.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Actor.cpp" />
+    <ClCompile Include="Source\ECS\Actor.cpp">
+      <Filter>Source\ECS</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">

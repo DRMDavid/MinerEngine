@@ -90,8 +90,40 @@ BaseApp::init() {
 		return hr;
 	}
 
-	// Load Resources
+	// Load Resources -> Modelos, Texturas e Interfaz de usuario
 
+	// Set CyberGun Actor
+	m_cyberGun = EU::MakeShared<Actor>(m_device);
+
+	if (!m_cyberGun.isNull()) {
+		// Crear vertex buffer y index buffer para el pistol
+		std::vector<MeshComponent> cyberGunMeshes;
+		m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
+		cyberGunMeshes = m_model->GetMeshes();
+
+		std::vector<Texture> cyberGunTextures;
+		hr = m_cyberGunAlbedo.init(m_device, "Assets/Textura", ExtensionType::PNG);
+		// Load the Texture
+		if (FAILED(hr)) {
+			ERROR("Main", "InitDevice",
+				("Failed to initialize cyberGunAlbedo. HRESULT: " + std::to_string(hr)).c_str());
+			return hr;
+		}
+		cyberGunTextures.push_back(m_cyberGunAlbedo);
+
+		m_cyberGun->setMesh(m_device, cyberGunMeshes);
+		m_cyberGun->setTextures(cyberGunTextures);
+		m_cyberGun->setName("CyberGun");
+		m_actors.push_back(m_cyberGun);
+
+		m_cyberGun->getComponent<Transform>()->setTransform(EU::Vector3(2.0f, -4.90f, 11.60f),
+			EU::Vector3(-0.60f, 3.0f, -0.20f),
+			EU::Vector3(1.0f, 1.0f, 1.0f));
+	}
+	else {
+		ERROR("Main", "InitDevice", "Failed to create cyber Gun Actor.");
+		return E_FAIL;
+	}
 
 	// Define the input layout
 	std::vector<D3D11_INPUT_ELEMENT_DESC> Layout;
@@ -123,34 +155,27 @@ BaseApp::init() {
 		return hr;
 	}
 
-	m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
-	TRex = m_model->GetMeshes();
+	//// Create vertex buffer
+	//hr = m_vertexBuffer.init(m_device, TRex[0], D3D11_BIND_VERTEX_BUFFER);
+	//
+	//if (FAILED(hr)) {
+	//	ERROR("Main", "InitDevice",
+	//		("Failed to initialize VertexBuffer. HRESULT: " + std::to_string(hr)).c_str());
+	//	return hr;
+	//}
+	//
+	//// Create index buffer
+	//hr = m_indexBuffer.init(m_device, TRex[0], D3D11_BIND_INDEX_BUFFER);
+	//
+	//if (FAILED(hr)) {
+	//	ERROR("Main", "InitDevice",
+	//		("Failed to initialize IndexBuffer. HRESULT: " + std::to_string(hr)).c_str());
+	//	return hr;
+	//}
 
-
-	// Create vertex buffer
-	hr = m_vertexBuffer.init(m_device, TRex[0], D3D11_BIND_VERTEX_BUFFER);
-
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize VertexBuffer. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	// Create index buffer
-	hr = m_indexBuffer.init(m_device, TRex[0], D3D11_BIND_INDEX_BUFFER);
-
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize IndexBuffer. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	auto& resourceMan = ResourceManager::getInstance();
-
+	//auto& resourceMan = ResourceManager::getInstance();
 	//std::shared_ptr<Model3D> model = resourceMan.GetOrLoad<Model3D>("CubeModel", "CyberGun.fbx", ModelType::FBX);
 
-	// Set primitive topology
-	m_deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Create the constant buffers
 	hr = m_cbNeverChanges.init(m_device, sizeof(CBNeverChanges));
@@ -167,31 +192,23 @@ BaseApp::init() {
 		return hr;
 	}
 
-	hr = m_cbChangesEveryFrame.init(m_device, sizeof(CBChangesEveryFrame));
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize ChangesEveryFrame Buffer. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	hr = m_textureCube.init(m_device, "Assets/Textura", ExtensionType::PNG);
-	// Load the Texture
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize texture Cube. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
+	//hr = m_cbChangesEveryFrame.init(m_device, sizeof(CBChangesEveryFrame));
+	//if (FAILED(hr)) {
+	//	ERROR("Main", "InitDevice",
+	//		("Failed to initialize ChangesEveryFrame Buffer. HRESULT: " + std::to_string(hr)).c_str());
+	//	return hr;
+	//}	
 
 	// Create the sample state
-	hr = m_samplerState.init(m_device);
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize SamplerState. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
+	//hr = m_samplerState.init(m_device);
+	//if (FAILED(hr)) {
+	//	ERROR("Main", "InitDevice",
+	//		("Failed to initialize SamplerState. HRESULT: " + std::to_string(hr)).c_str());
+	//	return hr;
+	//}
 
 	// Initialize the world matrices
-	m_World = XMMatrixIdentity();
+	//m_World = XMMatrixIdentity();
 
 	// Initialize the view matrix
 	XMVECTOR Eye = XMVectorSet(0.0f, 3.0f, -6.0f, 0.0f);
@@ -224,6 +241,8 @@ void BaseApp::update(float deltaTime)
 			dwTimeStart = dwTimeCur;
 		t = (dwTimeCur - dwTimeStart) / 1000.0f;
 	}
+	// Update User Interface
+
 	// Actualizar la matriz de proyección y vista
 	cbNeverChanges.mView = XMMatrixTranspose(m_View);
 	m_cbNeverChanges.update(m_deviceContext, nullptr, 0, nullptr, &cbNeverChanges, 0, 0);
@@ -231,23 +250,30 @@ void BaseApp::update(float deltaTime)
 	cbChangesOnResize.mProjection = XMMatrixTranspose(m_Projection);
 	m_cbChangeOnResize.update(m_deviceContext, nullptr, 0, nullptr, &cbChangesOnResize, 0, 0);
 
+
+	// Update Actors
+	for (auto& actor : m_actors) {
+		actor->update(deltaTime, m_deviceContext);
+	}
+
 	// Modify the color
-	m_vMeshColor.x = 1.0f;
-	m_vMeshColor.y = 1.0f;
-	m_vMeshColor.z = 1.0f;
+	//m_vMeshColor.x = 1.0f;
+	//m_vMeshColor.y = 1.0f;
+	//m_vMeshColor.z = 1.0f;
+
 	// Rotate cube around the origin
 	// Aplicar escala
-	XMMATRIX scaleMatrix = XMMatrixScaling(1.0f, 1.0f, 1.0f);
+	//XMMATRIX scaleMatrix = XMMatrixScaling(1.0f, 1.0f, 1.0f);
 	// Aplicar rotacion
-	XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(-0.60f, 3.0f, -0.20f);
+	//XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(-0.60f, 3.0f, -0.20f);
 	// Aplicar traslacion
-	XMMATRIX translationMatrix = XMMatrixTranslation(2.0f, -4.9f, 11.0f);
+	//XMMATRIX translationMatrix = XMMatrixTranslation(2.0f, -4.9f, 11.0f);
 
 	// Componer la matriz final en el orden: scale -> rotation -> translation
-	m_World = scaleMatrix * rotationMatrix * translationMatrix;
-	cb.mWorld = XMMatrixTranspose(m_World);
-	cb.vMeshColor = m_vMeshColor;
-	m_cbChangesEveryFrame.update(m_deviceContext, nullptr, 0, nullptr, &cb, 0, 0);
+	//m_World = scaleMatrix * rotationMatrix * translationMatrix;
+	//cb.mWorld = XMMatrixTranspose(m_World);
+	//cb.vMeshColor = m_vMeshColor;
+	//m_cbChangesEveryFrame.update(m_deviceContext, nullptr, 0, nullptr, &cb, 0, 0);
 }
 
 void
@@ -265,21 +291,29 @@ BaseApp::render() {
 	// Set shader program
 	m_shaderProgram.render(m_deviceContext);
 
-	// Render the cube
-	 // Asignar buffers Vertex e Index
-	m_vertexBuffer.render(m_deviceContext, 0, 1);
-	m_indexBuffer.render(m_deviceContext, 0, 1, false, DXGI_FORMAT_R32_UINT);
-
 	// Asignar buffers constantes
 	m_cbNeverChanges.render(m_deviceContext, 0, 1);
 	m_cbChangeOnResize.render(m_deviceContext, 1, 1);
-	m_cbChangesEveryFrame.render(m_deviceContext, 2, 1);
-	m_cbChangesEveryFrame.render(m_deviceContext, 2, 1, true);
 
+	// Render all actors
+	for (auto& actor : m_actors) {
+		actor->render(m_deviceContext);
+	}
+
+	// Render UI
+
+	// Render the cube
+	 // Asignar buffers Vertex e Index
+	//m_vertexBuffer.render(m_deviceContext, 0, 1);
+	//m_indexBuffer.render(m_deviceContext, 0, 1, false, DXGI_FORMAT_R32_UINT);
+	//m_cbChangesEveryFrame.render(m_deviceContext, 2, 1);
+	//m_cbChangesEveryFrame.render(m_deviceContext, 2, 1, true);
 	// Asignar textura y sampler
-	m_textureCube.render(m_deviceContext, 0, 1);
-	m_samplerState.render(m_deviceContext, 0, 1);
-	m_deviceContext.DrawIndexed(TRex[0].m_numIndex, 0, 0);
+	//m_textureCube.render(m_deviceContext, 0, 1);
+	//m_samplerState.render(m_deviceContext, 0, 1);
+	//m_deviceContext.DrawIndexed(TRex[0].m_numIndex, 0, 0);
+	// Set primitive topology
+	//m_deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Present our back buffer to our front buffer
 	m_swapChain.present();
@@ -289,14 +323,14 @@ void
 BaseApp::destroy() {
 	if (m_deviceContext.m_deviceContext) m_deviceContext.m_deviceContext->ClearState();
 
-	m_samplerState.destroy();
-	m_textureCube.destroy();
+	//m_samplerState.destroy();
+	//m_textureCube.destroy();
 
 	m_cbNeverChanges.destroy();
 	m_cbChangeOnResize.destroy();
-	m_cbChangesEveryFrame.destroy();
-	m_vertexBuffer.destroy();
-	m_indexBuffer.destroy();
+	//m_cbChangesEveryFrame.destroy();
+	//m_vertexBuffer.destroy();
+	//m_indexBuffer.destroy();
 	m_shaderProgram.destroy();
 	m_depthStencil.destroy();
 	m_depthStencilView.destroy();
