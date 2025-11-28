@@ -116,14 +116,14 @@ BaseApp::init() {
 	Layout.push_back(texcoord);
 
 	// Create the Shader Program
-	hr = m_shaderProgram.init(m_device, "WildvineEngine.fx", Layout);
+	hr = m_shaderProgram.init(m_device, "MinerEngine.fx", Layout);
 	if (FAILED(hr)) {
 		ERROR("Main", "InitDevice",
 			("Failed to initialize ShaderProgram. HRESULT: " + std::to_string(hr)).c_str());
 		return hr;
 	}
 
-	m_model = new Model3D("CyberGun.fbx", ModelType::FBX);
+	m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
 	TRex = m_model->GetMeshes();
 
 
@@ -174,7 +174,7 @@ BaseApp::init() {
 		return hr;
 	}
 
-	hr = m_textureCube.init(m_device, "base.tga", ExtensionType::PNG);
+	hr = m_textureCube.init(m_device, "Assets/Textura", ExtensionType::PNG);
 	// Load the Texture
 	if (FAILED(hr)) {
 		ERROR("Main", "InitDevice",
