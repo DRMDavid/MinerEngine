@@ -3,14 +3,14 @@
 ## ====================================================================
 # Ignorar la carpeta de archivos temporales de compilación
 intermediate/
-# Ignorar la carpeta de salida de ejecutables (para no subir .exe)
+# Ignorar la carpeta de salida de ejecutables
 bin/
 
-# --- AGREGADO: Ignorar la carpeta lib específica ---
-# Ruta relativa a la carpeta lib
-MinerEngine/lib/
-MinerEngine/MinerEngine/lib/
-**/lib/
+# IGNORAR LIBRERÍAS PESADAS (>100MB)
+# Esto evitará que se suban a GitHub, pero SE QUEDAN en tu PC.
+lib/
+*.lib
+*.dll
 
 ## ====================================================================
 ## LISTA ESTÁNDAR DE VISUAL STUDIO
@@ -389,12 +389,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
-
-## ====================================================================
-## EXCEPCIONES (WHITELIST)
-## ====================================================================
-# Se han comentado las líneas que forzaban la inclusión de LIB
-# Si quieres ignorar 'lib', NO puedes tener líneas que empiecen con '!' apuntando a ella.
-
-# !lib/
-# !lib/fbxlibs/
+MinerEngine/lib/fbxlibs/alembic-md.lib
+MinerEngine/lib/fbxlibs/alembic-md.lib
+MinerEngine/lib/fbxlibs/alembic-mt.lib
