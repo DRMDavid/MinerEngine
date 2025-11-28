@@ -279,7 +279,7 @@ void BaseApp::update(float deltaTime)
 void
 BaseApp::render() {
 	// Set Render Target View
-	float ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	float ClearColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	m_renderTargetView.render(m_deviceContext, m_depthStencilView, 1, ClearColor);
 
 	// Set Viewport
