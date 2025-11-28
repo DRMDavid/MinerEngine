@@ -142,10 +142,18 @@
     <ClInclude Include="Include\ResourceManager.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Actor.h" />
-    <ClInclude Include="Include\ECS\Component.h" />
-    <ClInclude Include="Include\ECS\Entity.h" />
-    <ClInclude Include="Include\ECS\Transform.h" />
+    <ClInclude Include="Include\ECS\Actor.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Component.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Entity.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Transform.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
