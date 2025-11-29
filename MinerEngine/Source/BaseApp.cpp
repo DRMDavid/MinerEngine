@@ -116,7 +116,7 @@ BaseApp::init() {
 	Layout.push_back(texcoord);
 
 	// Create the Shader Program
-	hr = m_shaderProgram.init(m_device, "WildvineEngine.fx", Layout);
+	hr = m_shaderProgram.init(m_device, "MinerEngine.fx", Layout);
 	if (FAILED(hr)) {
 		ERROR("Main", "InitDevice",
 			("Failed to initialize ShaderProgram. HRESULT: " + std::to_string(hr)).c_str());
@@ -224,7 +224,7 @@ void BaseApp::update(float deltaTime)
 			dwTimeStart = dwTimeCur;
 		t = (dwTimeCur - dwTimeStart) / 1000.0f;
 	}
-	// Actualizar la matriz de proyección y vista
+	// Actualizar la matriz de proyecciÃ³n y vista
 	cbNeverChanges.mView = XMMatrixTranspose(m_View);
 	m_cbNeverChanges.update(m_deviceContext, nullptr, 0, nullptr, &cbNeverChanges, 0, 0);
 	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_window.m_width / (FLOAT)m_window.m_height, 0.01f, 100.0f);
