@@ -117,8 +117,8 @@ BaseApp::init() {
 		m_actors.push_back(m_Printstream);
 
 		m_Printstream->getComponent<Transform>()->setTransform(EU::Vector3(0.0f, 2.5f, -4.5f),
-			                                                     EU::Vector3(0.0f, 1.57f, 0.0f),
-			                                                     EU::Vector3(0.05f, 0.05f, 0.05f));
+			EU::Vector3(0.0f, 1.57f, 0.0f),
+			EU::Vector3(0.05f, 0.05f, 0.05f));
 	}
 	else {
 		ERROR("Main", "InitDevice", "Failed to create Printstream Actor.");
