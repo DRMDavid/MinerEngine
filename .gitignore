@@ -389,3 +389,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+MinerEngine/lib/fbxlibs/alembic-md.lib
+MinerEngine/lib/fbxlibs/alembic-md.lib
+MinerEngine/lib/fbxlibs/alembic-mt.lib
