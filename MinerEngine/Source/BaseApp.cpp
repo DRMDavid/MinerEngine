@@ -1,5 +1,6 @@
 #include "BaseApp.h"
 #include "ResourceManager.h"
+#include <algorithm> // Para min/max
 
 // --- IMGUI INCLUDES ---
 #include "ImGui/imgui.h"
@@ -9,6 +10,11 @@
 // Handler externo
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// --- VARIABLES GLOBALES PARA INTERACCIÓN ---
+// Usamos static para no obligarte a cambiar el .h
+static int g_SelectedActorIndex = -1; // -1 significa que nada está seleccionado
+static bool g_IsDragging = false;     // Para saber si estamos arrastrando para rotar
+
 // --- ESTILO VISUAL ---
 void SetupStyle() {
   ImGuiStyle& style = ImGui::GetStyle();
@@ -16,14 +22,32 @@ void SetupStyle() {
   style.FramePadding = ImVec2(6, 4);
   style.ItemSpacing = ImVec2(8, 6);
 
-  // Tema oscuro estilo "Slate"
   ImVec4* colors = style.Colors;
-  colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
-  colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+  colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.16f, 0.20f, 1.00f);
+  colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.30f, 1.00f);
   colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
-  colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
-  colors[ImGuiCol_FrameBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
-  colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
+  colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.30f, 1.00f);
+  colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
+}
+
+// --- MATEMÁTICAS DE INTERSECCIÓN (RAY CASTING) ---
+// Comprueba si un rayo golpea una esfera (forma simplificada del actor)
+bool RaySphereIntersect(XMVECTOR rayOrigin, XMVECTOR rayDir, XMVECTOR sphereCenter, float sphereRadius, float& outDist) {
+  XMVECTOR L = XMVectorSubtract(sphereCenter, rayOrigin);
+  XMVECTOR tcaVec = XMVector3Dot(L, rayDir);
+  float tca = XMVectorGetX(tcaVec);
+
+  if (tca < 0) return false; // El objeto está detrás de la cámara
+
+  XMVECTOR d2Vec = XMVector3Dot(L, L) - (tcaVec * tcaVec);
+  float d2 = XMVectorGetX(d2Vec);
+  float radius2 = sphereRadius * sphereRadius;
+
+  if (d2 > radius2) return false; // El rayo pasa lejos de la esfera
+
+  float thc = sqrt(radius2 - d2);
+  outDist = tca - thc;
+  return true;
 }
 
 int BaseApp::run(HINSTANCE hInst, int nCmdShow) {
@@ -55,36 +79,31 @@ int BaseApp::run(HINSTANCE hInst, int nCmdShow) {
 HRESULT BaseApp::init() {
   HRESULT hr = S_OK;
 
-  // 1. Inicializar Sistemas
+  // Inicialización de DirectX
   hr = m_swapChain.init(m_device, m_deviceContext, m_backBuffer, m_window); if (FAILED(hr)) return hr;
   hr = m_renderTargetView.init(m_device, m_backBuffer, DXGI_FORMAT_R8G8B8A8_UNORM); if (FAILED(hr)) return hr;
   hr = m_depthStencil.init(m_device, m_window.m_width, m_window.m_height, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL, 4, 0); if (FAILED(hr)) return hr;
   hr = m_depthStencilView.init(m_device, m_depthStencil, DXGI_FORMAT_D24_UNORM_S8_UINT); if (FAILED(hr)) return hr;
   hr = m_viewport.init(m_window); if (FAILED(hr)) return hr;
 
-  // 2. Cargar Actor
+  // Cargar Actor
   m_Printstream = EU::MakeShared<Actor>(m_device);
   if (!m_Printstream.isNull()) {
     m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
     m_Printstream->setMesh(m_device, m_model->GetMeshes());
 
-    hr = m_PrintstreamAlbedo.init(m_device, "Assets/texture_16px 173", ExtensionType::PNG);
+    hr = m_PrintstreamAlbedo.init(m_device, "Assets/Textura", ExtensionType::PNG);
     std::vector<Texture> textures; textures.push_back(m_PrintstreamAlbedo);
     m_Printstream->setTextures(textures);
 
     m_Printstream->setName("Printstream");
     m_actors.push_back(m_Printstream);
 
-    // --- VALORES INICIALES EXACTOS ---
+    // VALORES INICIALES (Como pediste)
     auto transform = m_Printstream->getComponent<Transform>();
     if (transform) {
-      // Posición: -3.200, -4.000, 5.500
       transform->setPosition(EU::Vector3(-3.200f, -4.000f, 5.500f));
-
-      // Rotación: -0.040, -4.660, 0.000
       transform->setRotation(EU::Vector3(-0.040f, -4.660f, 0.000f));
-
-      // Escala: 1, 1, 1
       transform->setScale(EU::Vector3(1.0f, 1.0f, 1.0f));
     }
   }
@@ -107,7 +126,7 @@ HRESULT BaseApp::init() {
   m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_window.m_width / (FLOAT)m_window.m_height, 0.01f, 100.0f);
   cbChangesOnResize.mProjection = XMMatrixTranspose(m_Projection);
 
-  // 3. Inicializar ImGui
+  // Inicializar ImGui
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -119,6 +138,7 @@ HRESULT BaseApp::init() {
 }
 
 void BaseApp::update(float deltaTime) {
+  // 1. Actualizar Matrices de Cámara
   cbNeverChanges.mView = XMMatrixTranspose(m_View);
   m_cbNeverChanges.update(m_deviceContext, nullptr, 0, nullptr, &cbNeverChanges, 0, 0);
 
@@ -126,77 +146,119 @@ void BaseApp::update(float deltaTime) {
   cbChangesOnResize.mProjection = XMMatrixTranspose(m_Projection);
   m_cbChangeOnResize.update(m_deviceContext, nullptr, 0, nullptr, &cbChangesOnResize, 0, 0);
 
+  // -----------------------------------------------------------
+  // LÓGICA DE SELECCIÓN Y ROTACIÓN (INPUT MOUSE)
+  // -----------------------------------------------------------
+  ImGuiIO& io = ImGui::GetIO();
+
+  // Solo interactuamos si el mouse NO está sobre una ventana de ImGui (para no romper la UI)
+  if (!io.WantCaptureMouse) {
+
+    // --- DETECTAR CLIC IZQUIERDO (SELECCIÓN) ---
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      // 1. Obtener posición del mouse
+      POINT mousePos; GetCursorPos(&mousePos); ScreenToClient(m_window.m_hWnd, &mousePos);
+      float mouseX = (float)mousePos.x;
+      float mouseY = (float)mousePos.y;
+
+      // 2. Crear Rayo (Unproject)
+      XMVECTOR mouseNear = XMVectorSet(mouseX, mouseY, 0.0f, 0.0f);
+      XMVECTOR mouseFar = XMVectorSet(mouseX, mouseY, 1.0f, 0.0f);
+
+      XMVECTOR rayOrigin = XMVector3Unproject(mouseNear, 0, 0, m_window.m_width, m_window.m_height, 0.0f, 1.0f, m_Projection, m_View, XMMatrixIdentity());
+      XMVECTOR rayEnd = XMVector3Unproject(mouseFar, 0, 0, m_window.m_width, m_window.m_height, 0.0f, 1.0f, m_Projection, m_View, XMMatrixIdentity());
+      XMVECTOR rayDir = XMVector3Normalize(rayEnd - rayOrigin);
+
+      // 3. Comprobar colisión con todos los actores
+      int hitIndex = -1;
+      float closestDist = FLT_MAX;
+
+      for (size_t i = 0; i < m_actors.size(); ++i) {
+        auto transform = m_actors[i]->getComponent<Transform>();
+        if (transform) {
+          EU::Vector3 pos = transform->getPosition();
+          XMVECTOR center = XMVectorSet(pos.x, pos.y, pos.z, 1.0f);
+
+          // Radio aproximado de la esfera de colisión (ajusta si el objeto es muy grande/pequeño)
+          // Usamos la escala promedio para ajustar el radio
+          float avgScale = (transform->getScale().x + transform->getScale().y + transform->getScale().z) / 3.0f;
+          float radius = 15.0f * avgScale; // Radio base 15 unidades * escala
+
+          float dist = 0.0f;
+          if (RaySphereIntersect(rayOrigin, rayDir, center, radius, dist)) {
+            if (dist < closestDist) {
+              closestDist = dist;
+              hitIndex = (int)i;
+            }
+          }
+        }
+      }
+
+      // 4. Actualizar selección
+      g_SelectedActorIndex = hitIndex;
+      if (hitIndex != -1) g_IsDragging = true; // Empezar a arrastrar si tocamos algo
+    }
+
+    // --- DETECTAR ARRASTRE (ROTACIÓN) ---
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+      g_IsDragging = false;
+    }
+
+    if (g_IsDragging && g_SelectedActorIndex != -1 && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+      // Obtener cuánto se movió el mouse
+      float deltaX = io.MouseDelta.x;
+      float deltaY = io.MouseDelta.y;
+
+      // Aplicar rotación al actor seleccionado
+      if (g_SelectedActorIndex < m_actors.size()) {
+        auto transform = m_actors[g_SelectedActorIndex]->getComponent<Transform>();
+        if (transform) {
+          EU::Vector3 currentRot = transform->getRotation();
+          // Sensibilidad de rotación
+          float sensitivity = 0.01f;
+
+          // Mover mouse en X rota en Y (Yaw), Mover en Y rota en X (Pitch)
+          currentRot.y -= deltaX * sensitivity;
+          currentRot.x -= deltaY * sensitivity;
+
+          transform->setRotation(currentRot);
+        }
+      }
+    }
+  }
+
+  // 2. Actualizar Actores
   for (auto& actor : m_actors) {
     actor->update(deltaTime, m_deviceContext);
   }
 }
 
-// --- CONTROL PERSONALIZADO CORREGIDO (Sin funciones internas) ---
+// Helper para UI
 void DrawVec3Control(const std::string& label, float* values, float resetValue = 0.0f, float columnWidth = 100.0f) {
   ImGui::PushID(label.c_str());
+  ImGui::Columns(2); ImGui::SetColumnWidth(0, columnWidth); ImGui::Text(label.c_str()); ImGui::NextColumn();
 
-  ImGui::Columns(2);
-  ImGui::SetColumnWidth(0, columnWidth);
-  ImGui::Text(label.c_str());
-  ImGui::NextColumn();
-
-  // Calculo manual del ancho disponible
   float availWidth = ImGui::GetContentRegionAvail().x;
-  float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
+  float fullItemWidth = (availWidth - 16.0f) / 3.0f;
+  float buttonSize = ImGui::GetFrameHeight();
+  float dragWidth = fullItemWidth - buttonSize; if (dragWidth < 1.0f) dragWidth = 1.0f;
 
-  // Dividimos el espacio entre 3 (X, Y, Z)
-  float fullItemWidth = (availWidth - 2 * itemSpacing) / 3.0f;
+  // X (Rojo)
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+  if (ImGui::Button("X", ImVec2(buttonSize, buttonSize))) values[0] = resetValue;
+  ImGui::PopStyleColor(); ImGui::SameLine(0, 0); ImGui::SetNextItemWidth(dragWidth); ImGui::DragFloat("##X", &values[0], 0.1f, 0.0f, 0.0f, "%.3f"); ImGui::SameLine();
 
-  // Definimos el tamaño del botón y del slider
-  float buttonWidth = ImGui::GetFrameHeight(); // Botón cuadrado
-  float dragWidth = fullItemWidth - buttonWidth - itemSpacing;
-  if (dragWidth < 1.0f) dragWidth = 1.0f;
-
-  // --- EJE X (Rojo) ---
-  ImGui::PushID("X");
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
-  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
-  if (ImGui::Button("X", ImVec2(buttonWidth, buttonWidth))) values[0] = resetValue;
-  ImGui::PopStyleColor(3);
-
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(dragWidth);
-  ImGui::DragFloat("##v", &values[0], 0.1f, 0.0f, 0.0f, "%.3f");
-  ImGui::PopID();
-
-  ImGui::SameLine();
-
-  // --- EJE Y (Verde) ---
-  ImGui::PushID("Y");
+  // Y (Verde)
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
-  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
-  if (ImGui::Button("Y", ImVec2(buttonWidth, buttonWidth))) values[1] = resetValue;
-  ImGui::PopStyleColor(3);
+  if (ImGui::Button("Y", ImVec2(buttonSize, buttonSize))) values[1] = resetValue;
+  ImGui::PopStyleColor(); ImGui::SameLine(0, 0); ImGui::SetNextItemWidth(dragWidth); ImGui::DragFloat("##Y", &values[1], 0.1f, 0.0f, 0.0f, "%.3f"); ImGui::SameLine();
 
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(dragWidth);
-  ImGui::DragFloat("##v", &values[1], 0.1f, 0.0f, 0.0f, "%.3f");
-  ImGui::PopID();
+  // Z (Azul)
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
+  if (ImGui::Button("Z", ImVec2(buttonSize, buttonSize))) values[2] = resetValue;
+  ImGui::PopStyleColor(); ImGui::SameLine(0, 0); ImGui::SetNextItemWidth(dragWidth); ImGui::DragFloat("##Z", &values[2], 0.1f, 0.0f, 0.0f, "%.3f");
 
-  ImGui::SameLine();
-
-  // --- EJE Z (Azul) ---
-  ImGui::PushID("Z");
-  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.35f, 0.9f, 1.0f));
-  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
-  if (ImGui::Button("Z", ImVec2(buttonWidth, buttonWidth))) values[2] = resetValue;
-  ImGui::PopStyleColor(3);
-
-  ImGui::SameLine();
-  ImGui::SetNextItemWidth(dragWidth);
-  ImGui::DragFloat("##v", &values[2], 0.1f, 0.0f, 0.0f, "%.3f");
-  ImGui::PopID();
-
-  ImGui::Columns(1);
-  ImGui::PopID();
+  ImGui::Columns(1); ImGui::PopID();
 }
 
 void BaseApp::render() {
@@ -224,15 +286,33 @@ void BaseApp::render() {
 
   ImGui::Begin("Inspector - MinerEngine");
 
-  ImGui::TextColored(ImVec4(0.26f, 0.59f, 0.98f, 1.0f), "TRANSFORMACION");
+  // Indicador de selección
+  if (g_SelectedActorIndex != -1) {
+    ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), ">> ACTOR SELECCIONADO <<");
+    ImGui::Text("Haz clic y arrastra en la pantalla para rotarlo.");
+  }
+  else {
+    ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Haz clic en un objeto para seleccionarlo.");
+  }
   ImGui::Separator();
 
   if (ImGui::CollapsingHeader("Propiedades del Actor", ImGuiTreeNodeFlags_DefaultOpen)) {
     for (size_t i = 0; i < m_actors.size(); ++i) {
       ImGui::PushID((int)i);
-      std::string name = m_actors[i]->getName();
 
-      if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+      // Si este actor está seleccionado (vía clic), lo resaltamos en la lista
+      int flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
+      if ((int)i == g_SelectedActorIndex) flags |= ImGuiTreeNodeFlags_Selected;
+
+      std::string name = m_actors[i]->getName();
+      bool nodeOpen = ImGui::TreeNodeEx(name.c_str(), flags);
+
+      // Si hacen clic en el nombre en la lista, también lo seleccionamos
+      if (ImGui::IsItemClicked()) {
+        g_SelectedActorIndex = (int)i;
+      }
+
+      if (nodeOpen) {
         auto transform = m_actors[i]->getComponent<Transform>();
         if (transform) {
           ImGui::Spacing();
@@ -245,7 +325,6 @@ void BaseApp::render() {
           float r[3] = { rot.x, rot.y, rot.z };
           float s[3] = { scale.x, scale.y, scale.z };
 
-          // Dibujar controles con colores
           DrawVec3Control("Posicion", p, 0.0f);
           DrawVec3Control("Rotacion", r, 0.0f);
           DrawVec3Control("Escala", s, 1.0f);
