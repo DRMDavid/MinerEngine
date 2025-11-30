@@ -92,7 +92,7 @@ HRESULT BaseApp::init() {
     m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
     m_Printstream->setMesh(m_device, m_model->GetMeshes());
 
-    hr = m_PrintstreamAlbedo.init(m_device, "Assets/Textura", ExtensionType::PNG);
+    hr = m_PrintstreamAlbedo.init(m_device, "Assets/texture_16px 197", ExtensionType::PNG);
     std::vector<Texture> textures; textures.push_back(m_PrintstreamAlbedo);
     m_Printstream->setTextures(textures);
 
