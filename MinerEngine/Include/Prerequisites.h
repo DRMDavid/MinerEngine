@@ -54,6 +54,7 @@ struct SimpleVertex
 {
   XMFLOAT3 Pos;
   XMFLOAT2 Tex;
+
 };
 
 struct CBNeverChanges

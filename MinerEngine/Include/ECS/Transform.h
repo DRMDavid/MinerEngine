@@ -1,96 +1,52 @@
 #pragma once
 #include "Prerequisites.h"
-#include "EngineUtilities/Vectors/Vector3.h"
-#include "Component.h"
+#include "ECS/Component.h"
 
-class 
-Transform : public Component {
+class Transform : public Component {
 public:
-  // Constructor que inicializa posición, rotación y escala por defecto
-  Transform() : position(), 
-                rotation(), 
-                scale(), 
-                matrix(), 
-                Component(ComponentType::TRANSFORM) {}
-
-  // Métodos para inicialización, actualización, renderizado y destrucción
-  // Inicializa el objeto Transform
-  void 
-  init() {
-    scale.one();
+  // Constructor
+  Transform() : position(0, 0, 0), rotation(0, 0, 0), scale(1, 1, 1), Component(ComponentType::TRANSFORM) {
     matrix = XMMatrixIdentity();
   }
 
-  // Actualiza el estado del objeto Transform basado en el tiempo transcurrido
-  // @param deltaTime: Tiempo transcurrido desde la última actualización
-  void 
-  update(float deltaTime) override {
-    // Aplicar escala
-    XMMATRIX scaleMatrix = XMMatrixScaling(scale.x, scale.y, scale.z);
-    // Aplicar rotacion
-    XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
-    // Aplicar traslacion
-    XMMATRIX translationMatrix = XMMatrixTranslation(position.x, position.y, position.z);
-
-    // Componer la matriz final en el orden: scale -> rotation -> translation
-    matrix = scaleMatrix * rotationMatrix * translationMatrix;
+  // Inicialización
+  void init() override {
+    matrix = XMMatrixIdentity();
   }
 
-  // Renderiza el objeto Transform
-  // @param deviceContext: Contexto del dispositivo de renderizado
-  void 
-  render(DeviceContext& deviceContext) override {}
+  // Actualización: Calcula la matriz matemática
+  void update(float deltaTime) override {
+    // 1. Matriz de Escala
+    XMMATRIX mScale = XMMatrixScaling(scale.x, scale.y, scale.z);
+    // 2. Matriz de Rotación
+    XMMATRIX mRot = XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z);
+    // 3. Matriz de Traslación
+    XMMATRIX mTrans = XMMatrixTranslation(position.x, position.y, position.z);
 
-  // Destruye el objeto Transform y libera recursos
-  void 
-  destroy() {}
-
-  // Métodos de acceso a los datos de posición
-  // Retorna la posición actual
-  const EU::Vector3&
-  getPosition() const { return position; }
-
-  // Establece una nueva posición
-  void 
-  setPosition(const EU::Vector3& newPos) { position = newPos; }
-
-  // Métodos de acceso a los datos de rotación
-  // Retorna la rotación actual
-  const EU::Vector3&
-  getRotation() const { return rotation; }
-
-  // Establece una nueva rotación
-  void 
-  setRotation(const EU::Vector3& newRot) { rotation = newRot; }
-
-  // Métodos de acceso a los datos de escala
-  // Retorna la escala actual
-  const EU::Vector3&
-  getScale() const { return scale; }
-
-  // Establece una nueva escala
-  void 
-  setScale(const EU::Vector3& newScale) { scale = newScale; }
-
-  void
-  setTransform(const EU::Vector3& newPos, 
-               const EU::Vector3& newRot,
-               const EU::Vector3& newSca) {
-    position = newPos;
-    rotation = newRot;
-    scale = newSca;
+    // Orden: Escala -> Rotación -> Traslación
+    matrix = mScale * mRot * mTrans;
   }
 
-  // Método para trasladar la posición del objeto
-  // @param translation: Vector que representa la cantidad de traslado en cada eje
-  void 
-  translate(const EU::Vector3& translation);
+  // Render (No dibuja nada por sí mismo)
+  void render(DeviceContext& deviceContext) override {}
+  void destroy() override {}
 
-private:
-  EU::Vector3 position;  // Posición del objeto
-  EU::Vector3 rotation;  // Rotación del objeto
-  EU::Vector3 scale;     // Escala del objeto
+  // --- Getters y Setters para ImGui ---
+  const EU::Vector3& getPosition() const { return position; }
+  void setPosition(const EU::Vector3& p) { position = p; }
+
+  const EU::Vector3& getRotation() const { return rotation; }
+  void setRotation(const EU::Vector3& r) { rotation = r; }
+
+  const EU::Vector3& getScale() const { return scale; }
+  void setScale(const EU::Vector3& s) { scale = s; }
 
 public:
-  XMMATRIX matrix;    // Matriz de transformación
+  // Variable pública para que Actor.cpp la lea
+  XMMATRIX matrix;
+
+private:
+  EU::Vector3 position;
+  EU::Vector3 rotation;
+  EU::Vector3 scale;
 };

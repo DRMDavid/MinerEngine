@@ -1,368 +1,299 @@
 #include "BaseApp.h"
 #include "ResourceManager.h"
-int
-BaseApp::run(HINSTANCE hInst, int nCmdShow) {
-	if (FAILED(m_window.init(hInst, nCmdShow, WndProc))) {
-		return 0;
-	}
-	if (FAILED(init()))
-		return 0;
-	// Main message loop
-	MSG msg = {};
-	LARGE_INTEGER freq, prev;
-	QueryPerformanceFrequency(&freq);
-	QueryPerformanceCounter(&prev);
-	while (WM_QUIT != msg.message)
-	{
-		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		else
-		{
-			LARGE_INTEGER curr;
-			QueryPerformanceCounter(&curr);
-			float deltaTime = static_cast<float>(curr.QuadPart - prev.QuadPart) / freq.QuadPart;
-			prev = curr;
-			update(deltaTime);
-			render();
-		}
-	}
-	return (int)msg.wParam;
+
+// --- IMGUI INCLUDES ---
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_win32.h"
+#include "ImGui/imgui_impl_dx11.h"
+
+// Handler externo
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+// --- ESTILO VISUAL ---
+void SetupStyle() {
+  ImGuiStyle& style = ImGui::GetStyle();
+  style.WindowRounding = 5.0f;
+  style.FramePadding = ImVec2(6, 4);
+  style.ItemSpacing = ImVec2(8, 6);
+
+  // Tema oscuro estilo "Slate"
+  ImVec4* colors = style.Colors;
+  colors[ImGuiCol_WindowBg] = ImVec4(0.15f, 0.15f, 0.15f, 1.00f);
+  colors[ImGuiCol_Header] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+  colors[ImGuiCol_HeaderActive] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
+  colors[ImGuiCol_Button] = ImVec4(0.20f, 0.25f, 0.29f, 1.00f);
+  colors[ImGuiCol_FrameBg] = ImVec4(0.10f, 0.10f, 0.10f, 1.00f);
+  colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 }
 
-HRESULT
-BaseApp::init() {
-	HRESULT hr = S_OK;
+int BaseApp::run(HINSTANCE hInst, int nCmdShow) {
+  if (FAILED(m_window.init(hInst, nCmdShow, WndProc))) return 0;
+  if (FAILED(init())) return 0;
 
-	// Crear swapchain
-	hr = m_swapChain.init(m_device, m_deviceContext, m_backBuffer, m_window);
+  MSG msg = {};
+  LARGE_INTEGER freq, prev;
+  QueryPerformanceFrequency(&freq);
+  QueryPerformanceCounter(&prev);
 
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize SwpaChian. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	// Crear render target view
-	hr = m_renderTargetView.init(m_device, m_backBuffer, DXGI_FORMAT_R8G8B8A8_UNORM);
-
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize RenderTargetView. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	// Crear textura de depth stencil
-	hr = m_depthStencil.init(m_device,
-		m_window.m_width,
-		m_window.m_height,
-		DXGI_FORMAT_D24_UNORM_S8_UINT,
-		D3D11_BIND_DEPTH_STENCIL,
-		4,
-		0);
-
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize DepthStencil. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	// Crear el depth stencil view
-	hr = m_depthStencilView.init(m_device,
-		m_depthStencil,
-		DXGI_FORMAT_D24_UNORM_S8_UINT);
-
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize DepthStencilView. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-
-	// Crear el m_viewport
-	hr = m_viewport.init(m_window);
-
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize Viewport. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	// Load Resources -> Modelos, Texturas e Interfaz de usuario
-
-	// Set Printstream Actor
-	m_Printstream = EU::MakeShared<Actor>(m_device);
-
-	if (!m_Printstream.isNull()) {
-		// Crear vertex buffer y index buffer para el pistol
-		std::vector<MeshComponent> PrintstreamMeshes;
-		m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
-		PrintstreamMeshes = m_model->GetMeshes();
-
-		std::vector<Texture> PrintstreamTextures;
-		hr = m_PrintstreamAlbedo.init(m_device, "Assets/Textura", ExtensionType::PNG);
-		// Load the Texture
-		if (FAILED(hr)) {
-			ERROR("Main", "InitDevice",
-				("Failed to initialize PrintstreamAlbedo. HRESULT: " + std::to_string(hr)).c_str());
-			return hr;
-		}
-		PrintstreamTextures.push_back(m_PrintstreamAlbedo);
-
-		m_Printstream->setMesh(m_device, PrintstreamMeshes);
-		m_Printstream->setTextures(PrintstreamTextures);
-		m_Printstream->setName("Printstream");
-		m_actors.push_back(m_Printstream);
-
-		m_Printstream->getComponent<Transform>()->setTransform(EU::Vector3(0.0f, 2.5f, -4.5f),
-			EU::Vector3(0.0f, 1.57f, 0.0f),
-			EU::Vector3(0.05f, 0.05f, 0.05f));
-	}
-	else {
-		ERROR("Main", "InitDevice", "Failed to create Printstream Actor.");
-		return E_FAIL;
-	}
-
-	// Define the input layout
-	std::vector<D3D11_INPUT_ELEMENT_DESC> Layout;
-	D3D11_INPUT_ELEMENT_DESC position;
-	position.SemanticName = "POSITION";
-	position.SemanticIndex = 0;
-	position.Format = DXGI_FORMAT_R32G32B32_FLOAT;
-	position.InputSlot = 0;
-	position.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT /*0*/;
-	position.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	position.InstanceDataStepRate = 0;
-	Layout.push_back(position);
-
-	D3D11_INPUT_ELEMENT_DESC texcoord;
-	texcoord.SemanticName = "TEXCOORD";
-	texcoord.SemanticIndex = 0;
-	texcoord.Format = DXGI_FORMAT_R32G32_FLOAT;
-	texcoord.InputSlot = 0;
-	texcoord.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT /*0*/;
-	texcoord.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-	texcoord.InstanceDataStepRate = 0;
-	Layout.push_back(texcoord);
-
-	// Create the Shader Program
-	hr = m_shaderProgram.init(m_device, "MinerEngine.fx", Layout);
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize ShaderProgram. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	//// Create vertex buffer
-	//hr = m_vertexBuffer.init(m_device, TRex[0], D3D11_BIND_VERTEX_BUFFER);
-	//
-	//if (FAILED(hr)) {
-	//	ERROR("Main", "InitDevice",
-	//		("Failed to initialize VertexBuffer. HRESULT: " + std::to_string(hr)).c_str());
-	//	return hr;
-	//}
-	//
-	//// Create index buffer
-	//hr = m_indexBuffer.init(m_device, TRex[0], D3D11_BIND_INDEX_BUFFER);
-	//
-	//if (FAILED(hr)) {
-	//	ERROR("Main", "InitDevice",
-	//		("Failed to initialize IndexBuffer. HRESULT: " + std::to_string(hr)).c_str());
-	//	return hr;
-	//}
-
-	//auto& resourceMan = ResourceManager::getInstance();
-	//std::shared_ptr<Model3D> model = resourceMan.GetOrLoad<Model3D>("CubeModel", "Printstream.fbx", ModelType::FBX);
-
-
-	// Create the constant buffers
-	hr = m_cbNeverChanges.init(m_device, sizeof(CBNeverChanges));
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize NeverChanges Buffer. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	hr = m_cbChangeOnResize.init(m_device, sizeof(CBChangeOnResize));
-	if (FAILED(hr)) {
-		ERROR("Main", "InitDevice",
-			("Failed to initialize ChangeOnResize Buffer. HRESULT: " + std::to_string(hr)).c_str());
-		return hr;
-	}
-
-	//hr = m_cbChangesEveryFrame.init(m_device, sizeof(CBChangesEveryFrame));
-	//if (FAILED(hr)) {
-	//	ERROR("Main", "InitDevice",
-	//		("Failed to initialize ChangesEveryFrame Buffer. HRESULT: " + std::to_string(hr)).c_str());
-	//	return hr;
-	//}	
-
-	// Create the sample state
-	//hr = m_samplerState.init(m_device);
-	//if (FAILED(hr)) {
-	//	ERROR("Main", "InitDevice",
-	//		("Failed to initialize SamplerState. HRESULT: " + std::to_string(hr)).c_str());
-	//	return hr;
-	//}
-
-	// Initialize the world matrices
-	//m_World = XMMatrixIdentity();
-
-	// Initialize the view matrix
-	XMVECTOR Eye = XMVectorSet(0.0f, 3.0f, -6.0f, 0.0f);
-	XMVECTOR At = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-	m_View = XMMatrixLookAtLH(Eye, At, Up);
-
-
-	// Initialize the projection matrix
-	cbNeverChanges.mView = XMMatrixTranspose(m_View);
-	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_window.m_width / (FLOAT)m_window.m_height, 0.01f, 100.0f);
-	cbChangesOnResize.mProjection = XMMatrixTranspose(m_Projection);
-
-	return S_OK;
+  while (WM_QUIT != msg.message) {
+    if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    }
+    else {
+      LARGE_INTEGER curr;
+      QueryPerformanceCounter(&curr);
+      float deltaTime = static_cast<float>(curr.QuadPart - prev.QuadPart) / freq.QuadPart;
+      prev = curr;
+      update(deltaTime);
+      render();
+    }
+  }
+  return (int)msg.wParam;
 }
 
-void BaseApp::update(float deltaTime)
-{
-	// Update our time
-	static float t = 0.0f;
-	if (m_swapChain.m_driverType == D3D_DRIVER_TYPE_REFERENCE)
-	{
-		t += (float)XM_PI * 0.0125f;
-	}
-	else
-	{
-		static DWORD dwTimeStart = 0;
-		DWORD dwTimeCur = GetTickCount();
-		if (dwTimeStart == 0)
-			dwTimeStart = dwTimeCur;
-		t = (dwTimeCur - dwTimeStart) / 1000.0f;
-	}
-	// Update User Interface
+HRESULT BaseApp::init() {
+  HRESULT hr = S_OK;
 
-	// Actualizar la matriz de proyección y vista
-	cbNeverChanges.mView = XMMatrixTranspose(m_View);
-	m_cbNeverChanges.update(m_deviceContext, nullptr, 0, nullptr, &cbNeverChanges, 0, 0);
-	m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_window.m_width / (FLOAT)m_window.m_height, 0.01f, 100.0f);
-	cbChangesOnResize.mProjection = XMMatrixTranspose(m_Projection);
-	m_cbChangeOnResize.update(m_deviceContext, nullptr, 0, nullptr, &cbChangesOnResize, 0, 0);
+  // 1. Inicializar Sistemas
+  hr = m_swapChain.init(m_device, m_deviceContext, m_backBuffer, m_window); if (FAILED(hr)) return hr;
+  hr = m_renderTargetView.init(m_device, m_backBuffer, DXGI_FORMAT_R8G8B8A8_UNORM); if (FAILED(hr)) return hr;
+  hr = m_depthStencil.init(m_device, m_window.m_width, m_window.m_height, DXGI_FORMAT_D24_UNORM_S8_UINT, D3D11_BIND_DEPTH_STENCIL, 4, 0); if (FAILED(hr)) return hr;
+  hr = m_depthStencilView.init(m_device, m_depthStencil, DXGI_FORMAT_D24_UNORM_S8_UINT); if (FAILED(hr)) return hr;
+  hr = m_viewport.init(m_window); if (FAILED(hr)) return hr;
 
+  // 2. Cargar Actor
+  m_Printstream = EU::MakeShared<Actor>(m_device);
+  if (!m_Printstream.isNull()) {
+    m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
+    m_Printstream->setMesh(m_device, m_model->GetMeshes());
 
-	// Update Actors
-	for (auto& actor : m_actors) {
-		actor->update(deltaTime, m_deviceContext);
-	}
+    hr = m_PrintstreamAlbedo.init(m_device, "Assets/texture_16px 173", ExtensionType::PNG);
+    std::vector<Texture> textures; textures.push_back(m_PrintstreamAlbedo);
+    m_Printstream->setTextures(textures);
 
-	// Modify the color
-	//m_vMeshColor.x = 1.0f;
-	//m_vMeshColor.y = 1.0f;
-	//m_vMeshColor.z = 1.0f;
+    m_Printstream->setName("Printstream");
+    m_actors.push_back(m_Printstream);
 
-	// Rotate cube around the origin
-	// Aplicar escala
-	//XMMATRIX scaleMatrix = XMMatrixScaling(1.0f, 1.0f, 1.0f);
-	// Aplicar rotacion
-	//XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(-0.60f, 3.0f, -0.20f);
-	// Aplicar traslacion
-	//XMMATRIX translationMatrix = XMMatrixTranslation(2.0f, -4.9f, 11.0f);
+    // --- VALORES INICIALES EXACTOS ---
+    auto transform = m_Printstream->getComponent<Transform>();
+    if (transform) {
+      // Posición: -3.200, -4.000, 5.500
+      transform->setPosition(EU::Vector3(-3.200f, -4.000f, 5.500f));
 
-	// Componer la matriz final en el orden: scale -> rotation -> translation
-	//m_World = scaleMatrix * rotationMatrix * translationMatrix;
-	//cb.mWorld = XMMatrixTranspose(m_World);
-	//cb.vMeshColor = m_vMeshColor;
-	//m_cbChangesEveryFrame.update(m_deviceContext, nullptr, 0, nullptr, &cb, 0, 0);
+      // Rotación: -0.040, -4.660, 0.000
+      transform->setRotation(EU::Vector3(-0.040f, -4.660f, 0.000f));
+
+      // Escala: 1, 1, 1
+      transform->setScale(EU::Vector3(1.0f, 1.0f, 1.0f));
+    }
+  }
+
+  std::vector<D3D11_INPUT_ELEMENT_DESC> Layout;
+  Layout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+  Layout.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 });
+
+  hr = m_shaderProgram.init(m_device, "MinerEngine.fx", Layout); if (FAILED(hr)) return hr;
+
+  m_cbNeverChanges.init(m_device, sizeof(CBNeverChanges));
+  m_cbChangeOnResize.init(m_device, sizeof(CBChangeOnResize));
+
+  XMVECTOR Eye = XMVectorSet(0.0f, 5.0f, -10.0f, 0.0f);
+  XMVECTOR At = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+  XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+  m_View = XMMatrixLookAtLH(Eye, At, Up);
+
+  cbNeverChanges.mView = XMMatrixTranspose(m_View);
+  m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_window.m_width / (FLOAT)m_window.m_height, 0.01f, 100.0f);
+  cbChangesOnResize.mProjection = XMMatrixTranspose(m_Projection);
+
+  // 3. Inicializar ImGui
+  IMGUI_CHECKVERSION();
+  ImGui::CreateContext();
+  ImGuiIO& io = ImGui::GetIO(); (void)io;
+  SetupStyle();
+  ImGui_ImplWin32_Init(m_window.m_hWnd);
+  ImGui_ImplDX11_Init(m_device.m_device, m_deviceContext.m_deviceContext);
+
+  return S_OK;
 }
 
-void
-BaseApp::render() {
-	// Set Render Target View
-	float ClearColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	m_renderTargetView.render(m_deviceContext, m_depthStencilView, 1, ClearColor);
+void BaseApp::update(float deltaTime) {
+  cbNeverChanges.mView = XMMatrixTranspose(m_View);
+  m_cbNeverChanges.update(m_deviceContext, nullptr, 0, nullptr, &cbNeverChanges, 0, 0);
 
-	// Set Viewport
-	m_viewport.render(m_deviceContext);
+  m_Projection = XMMatrixPerspectiveFovLH(XM_PIDIV4, m_window.m_width / (FLOAT)m_window.m_height, 0.01f, 100.0f);
+  cbChangesOnResize.mProjection = XMMatrixTranspose(m_Projection);
+  m_cbChangeOnResize.update(m_deviceContext, nullptr, 0, nullptr, &cbChangesOnResize, 0, 0);
 
-	// Set depth stencil view
-	m_depthStencilView.render(m_deviceContext);
-
-	// Set shader program
-	m_shaderProgram.render(m_deviceContext);
-
-	// Asignar buffers constantes
-	m_cbNeverChanges.render(m_deviceContext, 0, 1);
-	m_cbChangeOnResize.render(m_deviceContext, 1, 1);
-
-	// Render all actors
-	for (auto& actor : m_actors) {
-		actor->render(m_deviceContext);
-	}
-
-	// Render UI
-
-	// Render the cube
-	 // Asignar buffers Vertex e Index
-	//m_vertexBuffer.render(m_deviceContext, 0, 1);
-	//m_indexBuffer.render(m_deviceContext, 0, 1, false, DXGI_FORMAT_R32_UINT);
-	//m_cbChangesEveryFrame.render(m_deviceContext, 2, 1);
-	//m_cbChangesEveryFrame.render(m_deviceContext, 2, 1, true);
-	// Asignar textura y sampler
-	//m_textureCube.render(m_deviceContext, 0, 1);
-	//m_samplerState.render(m_deviceContext, 0, 1);
-	//m_deviceContext.DrawIndexed(TRex[0].m_numIndex, 0, 0);
-	// Set primitive topology
-	//m_deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	// Present our back buffer to our front buffer
-	m_swapChain.present();
+  for (auto& actor : m_actors) {
+    actor->update(deltaTime, m_deviceContext);
+  }
 }
 
-void
-BaseApp::destroy() {
-	if (m_deviceContext.m_deviceContext) m_deviceContext.m_deviceContext->ClearState();
+// --- CONTROL PERSONALIZADO CORREGIDO (Sin funciones internas) ---
+void DrawVec3Control(const std::string& label, float* values, float resetValue = 0.0f, float columnWidth = 100.0f) {
+  ImGui::PushID(label.c_str());
 
-	//m_samplerState.destroy();
-	//m_textureCube.destroy();
+  ImGui::Columns(2);
+  ImGui::SetColumnWidth(0, columnWidth);
+  ImGui::Text(label.c_str());
+  ImGui::NextColumn();
 
-	m_cbNeverChanges.destroy();
-	m_cbChangeOnResize.destroy();
-	//m_cbChangesEveryFrame.destroy();
-	//m_vertexBuffer.destroy();
-	//m_indexBuffer.destroy();
-	m_shaderProgram.destroy();
-	m_depthStencil.destroy();
-	m_depthStencilView.destroy();
-	m_renderTargetView.destroy();
-	m_swapChain.destroy();
-	m_backBuffer.destroy();
-	m_deviceContext.destroy();
-	m_device.destroy();
+  // Calculo manual del ancho disponible
+  float availWidth = ImGui::GetContentRegionAvail().x;
+  float itemSpacing = ImGui::GetStyle().ItemSpacing.x;
+
+  // Dividimos el espacio entre 3 (X, Y, Z)
+  float fullItemWidth = (availWidth - 2 * itemSpacing) / 3.0f;
+
+  // Definimos el tamaño del botón y del slider
+  float buttonWidth = ImGui::GetFrameHeight(); // Botón cuadrado
+  float dragWidth = fullItemWidth - buttonWidth - itemSpacing;
+  if (dragWidth < 1.0f) dragWidth = 1.0f;
+
+  // --- EJE X (Rojo) ---
+  ImGui::PushID("X");
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+  if (ImGui::Button("X", ImVec2(buttonWidth, buttonWidth))) values[0] = resetValue;
+  ImGui::PopStyleColor(3);
+
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(dragWidth);
+  ImGui::DragFloat("##v", &values[0], 0.1f, 0.0f, 0.0f, "%.3f");
+  ImGui::PopID();
+
+  ImGui::SameLine();
+
+  // --- EJE Y (Verde) ---
+  ImGui::PushID("Y");
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.8f, 0.3f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.2f, 0.7f, 0.2f, 1.0f));
+  if (ImGui::Button("Y", ImVec2(buttonWidth, buttonWidth))) values[1] = resetValue;
+  ImGui::PopStyleColor(3);
+
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(dragWidth);
+  ImGui::DragFloat("##v", &values[1], 0.1f, 0.0f, 0.0f, "%.3f");
+  ImGui::PopID();
+
+  ImGui::SameLine();
+
+  // --- EJE Z (Azul) ---
+  ImGui::PushID("Z");
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.2f, 0.35f, 0.9f, 1.0f));
+  ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.25f, 0.8f, 1.0f));
+  if (ImGui::Button("Z", ImVec2(buttonWidth, buttonWidth))) values[2] = resetValue;
+  ImGui::PopStyleColor(3);
+
+  ImGui::SameLine();
+  ImGui::SetNextItemWidth(dragWidth);
+  ImGui::DragFloat("##v", &values[2], 0.1f, 0.0f, 0.0f, "%.3f");
+  ImGui::PopID();
+
+  ImGui::Columns(1);
+  ImGui::PopID();
 }
 
-LRESULT
-BaseApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	//if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
-	//  return true;
-	switch (message)
-	{
-	case WM_CREATE:
-	{
-		CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pCreate->lpCreateParams);
-	}
-	return 0;
-	case WM_PAINT:
-	{
-		PAINTSTRUCT ps;
-		BeginPaint(hWnd, &ps);
-		EndPaint(hWnd, &ps);
-	}
-	return 0;
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		return 0;
-	}
-	return DefWindowProc(hWnd, message, wParam, lParam);
+void BaseApp::render() {
+  float ClearColor[4] = { 0.11f, 0.12f, 0.17f, 1.0f };
+  m_renderTargetView.render(m_deviceContext, m_depthStencilView, 1, ClearColor);
+
+  m_viewport.render(m_deviceContext);
+  m_depthStencilView.render(m_deviceContext);
+  m_shaderProgram.render(m_deviceContext);
+
+  m_cbNeverChanges.render(m_deviceContext, 0, 1);
+  m_cbChangeOnResize.render(m_deviceContext, 1, 1);
+
+  for (auto& actor : m_actors) {
+    actor->render(m_deviceContext);
+  }
+
+  // --- RENDER IMGUI ---
+  ImGui_ImplDX11_NewFrame();
+  ImGui_ImplWin32_NewFrame();
+  ImGui::NewFrame();
+
+  ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
+  ImGui::SetNextWindowSize(ImVec2(400, 500), ImGuiCond_FirstUseEver);
+
+  ImGui::Begin("Inspector - MinerEngine");
+
+  ImGui::TextColored(ImVec4(0.26f, 0.59f, 0.98f, 1.0f), "TRANSFORMACION");
+  ImGui::Separator();
+
+  if (ImGui::CollapsingHeader("Propiedades del Actor", ImGuiTreeNodeFlags_DefaultOpen)) {
+    for (size_t i = 0; i < m_actors.size(); ++i) {
+      ImGui::PushID((int)i);
+      std::string name = m_actors[i]->getName();
+
+      if (ImGui::TreeNodeEx(name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed)) {
+        auto transform = m_actors[i]->getComponent<Transform>();
+        if (transform) {
+          ImGui::Spacing();
+
+          EU::Vector3 pos = transform->getPosition();
+          EU::Vector3 rot = transform->getRotation();
+          EU::Vector3 scale = transform->getScale();
+
+          float p[3] = { pos.x, pos.y, pos.z };
+          float r[3] = { rot.x, rot.y, rot.z };
+          float s[3] = { scale.x, scale.y, scale.z };
+
+          // Dibujar controles con colores
+          DrawVec3Control("Posicion", p, 0.0f);
+          DrawVec3Control("Rotacion", r, 0.0f);
+          DrawVec3Control("Escala", s, 1.0f);
+
+          ImGui::Spacing();
+
+          transform->setPosition(EU::Vector3(p[0], p[1], p[2]));
+          transform->setRotation(EU::Vector3(r[0], r[1], r[2]));
+          transform->setScale(EU::Vector3(s[0], s[1], s[2]));
+        }
+        ImGui::TreePop();
+      }
+      ImGui::PopID();
+    }
+  }
+  ImGui::End();
+
+  ImGui::Render();
+  ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+  m_swapChain.present();
+}
+
+void BaseApp::destroy() {
+  ImGui_ImplDX11_Shutdown();
+  ImGui_ImplWin32_Shutdown();
+  ImGui::DestroyContext();
+
+  if (m_deviceContext.m_deviceContext) m_deviceContext.m_deviceContext->ClearState();
+
+  m_cbNeverChanges.destroy();
+  m_cbChangeOnResize.destroy();
+  m_shaderProgram.destroy();
+  m_depthStencil.destroy();
+  m_depthStencilView.destroy();
+  m_renderTargetView.destroy();
+  m_swapChain.destroy();
+  m_backBuffer.destroy();
+  m_deviceContext.destroy();
+  m_device.destroy();
+}
+
+LRESULT BaseApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+  if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+    return true;
+
+  switch (message) {
+  case WM_DESTROY: PostQuitMessage(0); return 0;
+  default: return DefWindowProc(hWnd, message, wParam, lParam);
+  }
 }
