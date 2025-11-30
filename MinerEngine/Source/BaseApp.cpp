@@ -218,8 +218,8 @@ void BaseApp::update(float deltaTime) {
           float sensitivity = 0.01f;
 
           // Mover mouse en X rota en Y (Yaw), Mover en Y rota en X (Pitch)
-          currentRot.y -= deltaX * sensitivity;
-          currentRot.x -= deltaY * sensitivity;
+          currentRot.y += deltaX * sensitivity;
+          currentRot.x += deltaY * sensitivity;
 
           transform->setRotation(currentRot);
         }
