@@ -1,5 +1,14 @@
 #pragma once
-// Librerias STD
+/**
+ * @file Prerequisites.h
+ * @brief Configuración central y definiciones globales del motor.
+ *
+ * Este archivo agrupa las dependencias externas, macros de utilidad para depuración
+ * y gestión de memoria, así como las estructuras de datos fundamentales compartidas
+ * entre la CPU y la GPU (Shaders).
+ */
+
+ // Librerias STD
 #include <string>
 #include <sstream>
 #include <vector>
@@ -26,8 +35,24 @@
 #include "EngineUtilities\Memory\TUniquePtr.h"
 
 // MACROS
+
+/**
+ * @def SAFE_RELEASE
+ * @brief Mecanismo de seguridad para interfaces COM.
+ *
+ * Verifica si el puntero es válido antes de invocar el método Release(),
+ * evitando violaciones de acceso y asegurando que el puntero se anule
+ * tras la liberación para prevenir punteros colgantes.
+ */
 #define SAFE_RELEASE(x) if(x != nullptr) x->Release(); x = nullptr;
 
+ /**
+  * @def MESSAGE
+  * @brief Sistema de trazas de depuración informativo.
+  *
+  * Construye y emite una cadena de texto formateada hacia la ventana de salida
+  * del depurador (Output Window), útil para rastrear el flujo de creación de recursos.
+  */
 #define MESSAGE( classObj, method, state )   \
 {                                            \
    std::wostringstream os_;                  \
@@ -35,6 +60,14 @@
    OutputDebugStringW( os_.str().c_str() );  \
 }
 
+  /**
+   * @def ERROR
+   * @brief Sistema de reporte de fallos críticos.
+   *
+   * Captura y formatea mensajes de error dentro de un bloque try-catch seguro,
+   * garantizando que la excepción se registre en la consola de depuración
+   * incluso si el formateo falla.
+   */
 #define ERROR(classObj, method, errorMSG)                     \
 {                                                             \
     try {                                                     \
@@ -47,51 +80,91 @@
     }                                                         \
 }
 
-//--------------------------------------------------------------------------------------
-// Structures
-//--------------------------------------------------------------------------------------
+   //--------------------------------------------------------------------------------------
+   // Structures
+   //--------------------------------------------------------------------------------------
+
+   /**
+    * @struct SimpleVertex
+    * @brief Estructura de entrada para el Input Assembler.
+    *
+    * Define el layout de memoria de un vértice individual tal como lo espera
+    * el Vertex Shader.
+    */
 struct SimpleVertex
 {
-  XMFLOAT3 Pos;
-  XMFLOAT2 Tex;
+  XMFLOAT3 Pos; ///< Coordenadas espaciales (x, y, z).
+  XMFLOAT2 Tex; ///< Coordenadas de mapeo de textura (u, v).
 
 };
 
+/**
+ * @struct CBNeverChanges
+ * @brief Buffer constante de frecuencia de actualización baja.
+ *
+ * Almacena datos que raramente cambian durante la ejecución de la escena,
+ * como la matriz de Vista (Cámara), optimizando el ancho de banda del bus.
+ */
 struct CBNeverChanges
 {
   XMMATRIX mView;
 };
 
+/**
+ * @struct CBChangeOnResize
+ * @brief Buffer constante dependiente de la ventana.
+ *
+ * Contiene matrices que solo requieren recalculo cuando cambian las dimensiones
+ * del render target, típicamente la matriz de Proyección.
+ */
 struct CBChangeOnResize
 {
   XMMATRIX mProjection;
 };
 
+/**
+ * @struct CBChangesEveryFrame
+ * @brief Buffer constante de alta frecuencia.
+ *
+ * Almacena datos que se actualizan en cada llamada de dibujo (DrawCall),
+ * específicamente la matriz de Mundo del objeto y propiedades de material básicas.
+ */
 struct CBChangesEveryFrame
 {
   XMMATRIX mWorld;
   XMFLOAT4 vMeshColor;
 };
 
+/**
+ * @enum ExtensionType
+ * @brief Formatos de imagen soportados por el cargador de texturas.
+ */
 enum ExtensionType {
-  DDS = 0,
-  PNG = 1,
-  JPG = 2
+  DDS = 0, ///< DirectDraw Surface (Formato nativo optimizado para GPU).
+  PNG = 1, ///< Portable Network Graphics (Compresión sin pérdida).
+  JPG = 2  ///< Joint Photographic Experts Group (Compresión con pérdida).
 };
 
+/**
+ * @enum ShaderType
+ * @brief Etapas programables del pipeline gráfico.
+ */
 enum ShaderType {
-  VERTEX_SHADER = 0,
-  PIXEL_SHADER = 1
+  VERTEX_SHADER = 0, ///< Etapa de procesamiento de geometría.
+  PIXEL_SHADER = 1   ///< Etapa de rasterización y coloreado.
 };
 
 /**
  * @enum ComponentType
- * @brief Tipos de componentes disponibles en el juego.
+ * @brief Identificadores de RTTI para la arquitectura ECS.
+ *
+ * Etiquetas utilizadas para realizar casting seguro y búsquedas rápidas
+ * dentro de los contenedores de componentes de las entidades.
  */
 enum
   ComponentType {
-  NONE = 0,     ///< Tipo de componente no especificado.
-  TRANSFORM = 1,///< Componente de transformación.
-  MESH = 2,     ///< Componente de malla.
-  MATERIAL = 3  ///< Componente de material.
+  NONE = 0,      ///< Valor centinela o componente no inicializado.
+  TRANSFORM = 1, ///< Datos de posición, rotación y escala.
+  MESH = 2,      ///< Datos de topología geométrica.
+  MATERIAL = 3   ///< Definición de shaders y texturas.
 };

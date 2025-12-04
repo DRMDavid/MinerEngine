@@ -2,99 +2,96 @@
 #include "Prerequisites.h"
 #include "ECS\Component.h"
 class DeviceContext;
+
 /**
  * @class MeshComponent
- * @brief Componente ECS que almacena la información de geometría (malla) de un actor.
+ * @brief Contenedor de topología geométrica para el pipeline de renderizado.
  *
- * Un @c MeshComponent contiene los vértices e índices que describen la geometría de un objeto.
- * Forma parte del sistema ECS y se asocia a entidades como @c Actor.
- *
- * La malla incluye:
- * - Lista de vértices (posición, normal, UV, etc.).
- * - Lista de índices que definen las primitivas (triángulos, líneas).
- * - Contadores de vértices e índices.
+ * Esta clase actúa como el almacenamiento principal de los datos crudos (raw data)
+ * que definen la forma tridimensional de una entidad. Almacena los buffers de
+ * atributos de vértices y la información de conectividad (índices) necesaria
+ * para que la GPU ensamble las primitivas.
  */
 class
   MeshComponent : public Component {
 public:
   /**
-   * @brief Constructor por defecto.
+   * @brief Instanciación de contenedor vacío.
    *
-   * Inicializa el componente de malla con cero vértices e índices
-   * y lo registra como tipo @c MESH en el sistema ECS.
+   * Configura el componente con contadores a cero y establece su identidad
+   * dentro del sistema ECS bajo la categoría de Malla (MESH).
    */
   MeshComponent() : m_numVertex(0), m_numIndex(0), Component(ComponentType::MESH) {}
 
   /**
-   * @brief Destructor virtual por defecto.
+   * @brief Destructor virtual.
    */
   virtual
     ~MeshComponent() = default;
 
   /**
-   * @brief Inicializa el componente de malla.
-   *
-   * Método heredado de @c Component.
-   * Puede usarse para reservar memoria o cargar datos en mallas derivadas.
+   * @brief Rutina de inicialización diferida.
+   * * @note Implementación vacía. Reservado para la carga asíncrona de recursos
+   * o generación procedimental post-construcción.
    */
   void
     init() override {};
 
   /**
-   * @brief Actualiza la malla.
-   *
-   * Método heredado de @c Component.
-   * Útil para actualizar animaciones de vértices, morphing u otros procesos relacionados.
-   *
-   * @param deltaTime Tiempo transcurrido desde la última actualización.
+   * @brief Hook de actualización por fotograma.
+   * * @note Implementación vacía. Puede utilizarse para animaciones de malla por CPU,
+   * morph targets o deformaciones dinámicas antes del envío a GPU.
+   * @param deltaTime Tiempo delta para interpolaciones.
    */
   void
     update(float deltaTime) override {};
 
   /**
-   * @brief Renderiza la malla.
-   *
-   * Método heredado de @c Component.
-   * Normalmente se usaría junto con @c DeviceContext para dibujar buffers
-   * asociados a la malla.
-   *
-   * @param deviceContext Contexto del dispositivo para operaciones gráficas.
+   * @brief Hook de envío al pipeline.
+   * * @note Implementación vacía. Generalmente, el sistema de renderizado (Renderer System)
+   * accede a los datos públicos de esta clase en lugar de que el componente se dibuje a sí mismo.
+   * @param deviceContext Interfaz de comandos gráficos.
    */
   void
     render(DeviceContext& deviceContext) override {};
 
   /**
-   * @brief Libera los recursos asociados al componente de malla.
-   *
-   * Método heredado de @c Component.
-   * En implementaciones más complejas, puede liberar buffers de GPU.
+   * @brief Liberación de memoria.
+   * * @note Implementación vacía. La memoria de los vectores STL se gestiona automáticamente,
+   * a menos que se integre gestión manual de VRAM.
    */
   void
     destroy() override {};
 
 public:
   /**
-   * @brief Nombre de la malla.
+   * @brief Identificador de recurso o etiqueta de depuración.
    */
   std::string m_name;
 
   /**
-   * @brief Lista de vértices de la malla.
+   * @brief Buffer de atributos de vértices (VBO Data).
+   * * Contiene la información por punto (Posición, Normal, UV, etc.) requerida
+   * por el Vertex Shader.
    */
   std::vector<SimpleVertex> m_vertex;
 
   /**
-   * @brief Lista de índices que definen las primitivas de la malla.
+   * @brief Buffer de ordenamiento de índices (IBO Data).
+   * * Define la secuencia en la que los vértices se conectan para formar
+   * triángulos o líneas, permitiendo la reutilización de vértices.
    */
   std::vector<unsigned int> m_index;
 
   /**
-   * @brief Número total de vértices en la malla.
+   * @brief Cantidad de elementos en el buffer de vértices.
+   * * Utilizado para llamadas de dibujo (DrawCalls).
    */
   int m_numVertex;
 
   /**
-   * @brief Número total de índices en la malla.
+   * @brief Cantidad de elementos en el buffer de índices.
+   * * Determina el conteo para llamadas de dibujo indexadas (DrawIndexed).
    */
   int m_numIndex;
 };

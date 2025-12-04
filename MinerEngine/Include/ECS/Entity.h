@@ -4,50 +4,66 @@
 
 class DeviceContext;
 
+/**
+ * @class Entity
+ * @brief Arquitectura base para cualquier objeto interactivo en el motor.
+ *
+ * Actúa como un contenedor centralizado que agrupa lógica y datos a través de
+ * la composición de componentes. Gestiona el ciclo de vida y la propagación
+ * de eventos (actualización/renderizado) a sus módulos adjuntos.
+ */
 class
   Entity {
 public:
+  /**
+   * @brief Constructor predeterminado.
+   */
   Entity() = default;
 
   /**
-   * @brief Destructor virtual.
+   * @brief Destructor virtual para polimorfismo seguro.
    */
   virtual
     ~Entity() = default;
 
   /**
-   * @brief Initialize the entity with a device context.
-   * @param deviceContext The device context to initialize with.
-   * @return True if initialization is successful, false otherwise.
+   * @brief Rutina de arranque.
+   * * Método abstracto obligatorio para configurar el estado inicial de la entidad
+   * antes de su inserción en el bucle principal.
    */
   virtual void
     init() = 0;
 
   /**
-   * @brief Método virtual puro para actualizar el componente.
-   * @param deltaTime El tiempo transcurrido desde la última actualización.
+   * @brief Ciclo de simulación lógica.
+   * * Define el comportamiento de la entidad en cada tick del reloj.
+   * @param deltaTime Diferencia de tiempo (en segundos) respecto al frame anterior.
+   * @param deviceContext Acceso al contexto gráfico si se requiere manipulación de recursos.
    */
   virtual void
     update(float deltaTime, DeviceContext& deviceContext) = 0;
 
   /**
-   * @brief Método virtual puro para renderizar el componente.
-   * @param deviceContext Contexto del dispositivo para operaciones gráficas.
+   * @brief Ciclo de presentación visual.
+   * * Encargado de enviar las instrucciones de dibujo al pipeline gráfico.
+   * @param deviceContext Interfaz para la emisión de comandos de renderizado.
    */
   virtual void
     render(DeviceContext& deviceContext) = 0;
 
   /**
-   * @brief Método virtual puro para destruir el componente.
-   * Libera los recursos asociados al componente.
+   * @brief Protocolo de finalización.
+   * * Fuerza la limpieza de memoria y desconexión de recursos antes de la eliminación del objeto.
    */
   virtual void
     destroy() = 0;
 
   /**
-   * @brief Agrega un componente a la entidad.
-   * @tparam T Tipo del componente, debe derivar de Component.
-   * @param component Puntero compartido al componente que se va a agregar.
+   * @brief Vincula un nuevo módulo funcional a la entidad.
+   * * Realiza una verificación en tiempo de compilación para asegurar que el tipo T
+   * deriva de la clase base Component.
+   * * @tparam T Clase concreta del componente a adjuntar.
+   * @param component Puntero inteligente compartido al componente instanciado.
    */
   template <typename T> void
     addComponent(EU::TSharedPointer<T> component) {
@@ -56,9 +72,11 @@ public:
   }
 
   /**
-   * @brief Obtiene un componente de la entidad por su tipo.
-   * @tparam T Tipo del componente a obtener.
-   * @return Puntero compartido al componente si se encuentra, nullptr en caso contrario.
+   * @brief Recupera una referencia a un módulo específico.
+   * * Busca dentro de la lista de componentes adjuntos y realiza un cast dinámico
+   * para devolver el tipo solicitado.
+   * * @tparam T Tipo de dato del componente buscado.
+   * @return Puntero compartido al componente si existe; puntero nulo en caso contrario.
    */
   template<typename T>
   EU::TSharedPointer<T>
@@ -73,7 +91,7 @@ public:
   }
 private:
 protected:
-  bool m_isActive;
-  int m_id;
+  bool m_isActive;                                       
+  int m_id;                                               
   std::vector<EU::TSharedPointer<Component>> m_components;
 };
