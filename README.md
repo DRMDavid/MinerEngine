@@ -1,140 +1,111 @@
-<!-- Banner / Título -->
 <p align="center">
   <img src="https://img.shields.io/badge/Direct3D-11-1155BA?style=for-the-badge&logo=windows&logoColor=white" alt="D3D11"/>
   <img src="https://img.shields.io/badge/C++-17-00599C?style=for-the-badge&logo=cplusplus&logoColor=white" alt="C++17"/>
   <img src="https://img.shields.io/badge/Win32-API-1f6feb?style=for-the-badge" alt="Win32 API"/>
+  <img src="https://img.shields.io/badge/ECS-Architecture-orange?style=for-the-badge" alt="ECS"/>
 </p>
 
-<h1 align="center">⛏️MinerEngine – Motor Gráfico Direct3D 11 (C++)</h1>
+<h1 align="center">⛏️MinerEngine – Motor Gráfico & ECS (C++)</h1>
 
-<p align="center">
-  <i>Proyecto académico – Primer Parcial | Materia: Gráficas 3D</i>
-</p>
+
 
 ---
 
 ## 📘 Resumen
 
-**⛏️MinerEngine** implementa el pipeline base de render en **Direct3D 11** (C++), gestionando:
-ventana (**Win32**), dispositivo y contexto (**ID3D11Device/Context**), **swap chain**, **RTV/DSV**, buffers, shaders y texturas.  
-Se renderiza un **cubo 3D texturizado** con rotación y actualización de constantes por frame.
+**⛏️MinerEngine** es un motor gráfico y de videojuegos desarrollado en C++ y **Direct3D 11**. 
+Esta versión implementa una arquitectura **Entity-Component-System (ECS)**, permitiendo la gestión modular de entidades (`Actors`). Cuenta con su propia biblioteca de utilidades (Math & Memory), integración de **ImGui** para herramientas de depuración, un **ResourceManager** robusto y carga de modelos 3D complejos vía **FBX SDK**.
 
 ---
 
 ## 🧭 Índice
 
 - [📘 Resumen](#-resumen)
-- [🎯 Objetivos del Proyecto](#-objetivos-del-proyecto)
-- [🏗️ Arquitectura General](#️-arquitectura-general)
-  - [Componentes Principales](#componentes-principales)
-  - [Relaciones Operativas](#relaciones-operativas)
-- [🖥️ Pipeline Gráfico Implementado](#️-pipeline-gráfico-implementado)
-- [🚀 Flujo de Inicialización](#-flujo-de-inicialización)
-- [🔁 Flujo de Render (por frame)](#-flujo-de-render-por-frame)
-- [🧩 API Clave por Clase](#-api-clave-por-clase)
+- [✨ Nuevas Características (ECS)](#-nuevas-características-ecs)
+- [🏗️ Arquitectura del Motor](#️-arquitectura-del-motor)
+  - [Core & Utilities](#core--utilities)
+  - [Sistema ECS](#sistema-ecs)
+  - [Gráficos & Recursos](#gráficos--recursos)
+- [🖥️ Tecnologías Integradas](#️-tecnologías-integradas)
+- [🚀 Flujo de Ejecución](#-flujo-de-ejecución)
 - [🧪 Requisitos / Ejecución](#-requisitos--ejecución)
 
-
 ---
 
-## 🎯 Objetivos del Proyecto
+## ✨ Nuevas Características (ECS)
 
-| Objetivo | Descripción |
+El motor ha evolucionado de un renderizador básico a una arquitectura de componentes completa:
+
+| Característica | Descripción |
 |---|---|
-| Arquitectura base D3D11 | Separación de responsabilidades (ventana, dispositivo, contexto, recursos, presentación). |
-| Comprensión del pipeline | Recorrer creación de recursos, configuración del pipeline y ciclo de render. |
-| Gestión de recursos | Uso de RTV/DSV, buffers, SRV y texturas; limpieza y presentación cada frame. |
-| Render mínimo | Dibujar un **cubo texturizado** con rotación y constantes por frame. |
-| Base para extensiones | Puntos de extensión (`update()`/`render()`) y TODOs (carga de texturas desde archivo). |
+| **Arquitectura ECS** | Implementación de `Entity`, `Component` y `Actor` para desacoplar lógica y datos. |
+| **Custom Memory** | Gestión de memoria propia con `TSharedPointer`, `TWeakPointer`, `TUniquePtr` y `TStaticPtr`. |
+| **Custom Containers** | Estructuras de datos optimizadas propias: `TArray`, `TMap`, `TSet`, `TPair`. |
+| **Math Library** | Librería matemática: `Vector2/3/4`, `Matrix3x3/4x4`, `Quaternion`. |
+| **Model Loader** | Carga de modelos 3D complejos (mallas, texturas) utilizando **FBX SDK**. |
+| **Resource Manager** | Sistema centralizado para gestionar la vida útil de recursos (Texturas, Shaders, Modelos). |
+| **ImGui Integration** | Interfaz gráfica inmediata para depuración y visualización de datos en tiempo real. |
 
 ---
 
-## 🏗️ Arquitectura General
+## 🏗️ Arquitectura del Motor
 
-> **Nota rápida:** Diseño modular que favorece mantenibilidad, escalabilidad y reutilización.
+### Core & Utilities
+El núcleo del motor evita el uso excesivo de la STL estándar en favor de implementaciones personalizadas para mayor control de memoria y rendimiento.
 
-### Componentes Principales
+* **Memory:** Punteros inteligentes (`TSharedPointer`, etc.) para el manejo automático de referencias.
+* **Structures:** Contenedores dinámicos como `TArray` y diccionarios como `TMap`.
+* **Math:** `EngineMath.h` y clases de álgebra lineal para transformaciones 3D.
 
-| Componente | Responsabilidad | API/Recursos Clave | Archivos |
-|---|---|---|---|
-| Window | Crear/administrar ventana Win32 (HWND, dimensiones), registrar clase y WndProc | `init(hInstance,nCmdShow,WndProc)`, `m_hWnd`, `m_width`, `m_height` | `Window.h/.cpp` |
-| SwapChain | Crear `ID3D11Device`, `ID3D11DeviceContext` y `IDXGISwapChain`; configurar MSAA; `present` | `init(device,context,backBuffer,window)`, `present()` | `SwapChain.h/.cpp` |
-| Device | Fábrica de recursos D3D11 | `Create{RenderTargetView,DepthStencilView,Texture2D,Buffer,Sampler,VertexShader,PixelShader,InputLayout}` | `Device.h/.cpp` |
-| DeviceContext | Comandos de render y estado del pipeline | `RSSetViewports`, `OMSetRenderTargets`, `DrawIndexed`, `Clear*`, `VS/PSSet*`, `IASet*`, `UpdateSubresource` | `DeviceContext.h/.cpp` |
-| Texture | Crear texturas (en memoria o desde otra), SRV | `init(...)` (sobrecargas), `m_texture`, `m_textureFromImg` | `Texture.h/.cpp` |
-| RenderTargetView | RTV desde back buffer o textura; limpieza y bind | `init(...)`, `render(...)` | `RenderTargetView.h/.cpp` |
-| DepthStencilView | DSV desde textura depth; limpieza y bind | `init(...)`, `render(context)` | `DepthStencilView.h/.cpp` |
-| App / Main | Orquestación (inicialización, shaders, buffers, loop) | `InitDevice()`, `Render()`, `CleanupDevice()` | `MinerEngine.cpp` |
+### Sistema ECS
+La lógica del juego se estructura mediante composición:
 
-### Relaciones Operativas
-
-| Origen → | Acción | → Destino | Resultado |
-|---|---|---|---|
-| App | `Window::init()` | Window | Crea ventana y obtiene `HWND`, `width`, `height`. |
-| App | `SwapChain::init(device,context,backBuffer,window)` | DXGI/D3D11 | Crea Device + Context + SwapChain; obtiene back buffer. |
-| Device | `CreateRenderTargetView(backBuffer)` | RTV | RTV válido para OM (Output Merger). |
-| Device | `CreateTexture2D(D24S8)` | Depth Texture | Textura depth para DSV. |
-| Device | `CreateDepthStencilView(depth)` | DSV | DSV válido para OM. |
-| DeviceContext | `OMSetRenderTargets(RTV, DSV)` | Pipeline | Vistas activas para dibujar. |
-| DeviceContext | `RSSetViewports`, `IASet*`, `VS/PSSet*`, `DrawIndexed` | Pipeline | Configuración y draw call. |
-| SwapChain | `present()` | DXGI | Intercambia buffers y muestra el frame. |
-
----
-
-## 🖥️ Pipeline Gráfico Implementado
-
-| Etapa | Descripción | APIs / Acciones |
+| Clase | Responsabilidad | Archivo |
 |---|---|---|
-| 1. Inicialización del SO/Win | Registro de clase, creación de ventana, show/update | Win32 API |
-| 2. Dispositivo/Contexto/SwapChain | Crea `ID3D11Device`, `ID3D11DeviceContext`, `IDXGISwapChain`; configura MSAA | `D3D11CreateDevice`, `IDXGIFactory::CreateSwapChain` |
-| 3. BackBuffer RTV | Crear RTV desde back buffer | `CreateRenderTargetView` |
-| 4. Depth/Stencil | Crear textura depth y DSV | `CreateTexture2D`, `CreateDepthStencilView` |
-| 5. Viewport y Shaders | Definir viewport; compilar VS/PS; crear input layout | `RSSetViewports`, *CompileFromFile*, `Create{Vertex,Pixel}Shader`, `CreateInputLayout` |
-| 6. Buffers y Recursos | Crear vertex/index/constant buffers; SRV y sampler | `CreateBuffer`, `PSSetShaderResources`, `CreateSamplerState` |
-| 7. Render Loop | Clear RTV/DSV, actualizar constantes, draw indexed, present | `Clear*`, `UpdateSubresource`, `DrawIndexed`, `present()` |
+| **Actor** | Entidad base que existe en el mundo. Contiene una lista de componentes. | `Actor.h` |
+| **Component** | Clase base para comportamientos. Se adjunta a los actores. | `Component.h` |
+| **Transform** | Componente vital que define posición, rotación y escala (`Vector3`, `Quaternion`). | `Transform.h` |
+| **MeshComponent** | Componente encargado de enlazar la geometría (Model3D) con el Actor para ser renderizada. | `MeshComponent.h` |
+
+### Gráficos & Recursos
+
+| Sistema | Descripción |
+|---|---|
+| **ResourceManager** | Singleton que carga y cachea recursos (`IResource`) para evitar duplicidad en memoria. |
+| **ModelLoader** | Parsea archivos `.fbx` y extrae vértices, índices y coordenadas UV. |
+| **Model3D** | Representación en memoria de un objeto 3D listo para ser dibujado. |
+| **Renderer** | Pipeline D3D11 gestionando `SwapChain`, `RenderTargetView` y `DepthStencilView`. |
 
 ---
 
-## 🚀 Flujo de Inicialización
+## 🖥️ Tecnologías Integradas
 
-| # | Llamada | Entrada | Salida / Estado |
-|---:|---|---|---|
-| 1 | `Window::init(...)` | `hInstance`, `nCmdShow`, `WndProc` | `m_hWnd` válido; `m_width`, `m_height` establecidos |
-| 2 | `SwapChain::init(device,context,backBuffer,window)` | `window.m_hWnd` | Device + Context + SwapChain creados; MSAA configurado |
-| 3 | `RenderTargetView::init(device, backBuffer, format)` | `backBuffer.m_texture` | RTV válido y listo para OM |
-| 4 | `Texture::init(device, w, h, D24S8, BIND_DEPTH_STENCIL, msaa)` | dimensiones/flags | Textura depth creada (`m_texture`) |
-| 5 | `DepthStencilView::init(device, depthTex, D24S8)` | `m_texture` depth | DSV válido y listo para OM |
-| 6 | Viewport + Shaders + Layout | Dimensiones + `.fx` | Viewport en RS; VS/PS compilados; input layout creado |
-| 7 | Buffers de geometría y constantes | Datos de cubo + CBs | VB/IB/CB listos; SRV y Sampler creados |
+| Tech / Lib | Uso |
+|---|---|
+| **Direct3D 11** | API Gráfica principal. |
+| **Win32 API** | Creación de ventana y manejo de inputs (WndProc). |
+| **FBX SDK** | Carga de assets 3D formato industrial (.fbx). |
+| **ImGui** | GUI para herramientas de desarrollo (Docking, Inspection). |
+| **STB Image** | Carga de texturas (integrado en el loader). |
 
 ---
 
-## 🔁 Flujo de Render (por frame)
+## 🚀 Flujo de Ejecución
 
-| Orden | Acción | API/Clase | Efecto |
-|---:|---|---|---|
-| 1 | Limpiar RTV | `DeviceContext::ClearRenderTargetView` | Fondo uniforme; RT listo |
-| 2 | Limpiar DSV | `DeviceContext::ClearDepthStencilView` | Z y stencil reiniciados |
-| 3 | Set RTV/DSV | `OMSetRenderTargets(RTV, DSV)` | OM preparado para dibujar |
-| 4 | Actualizar constantes | `UpdateSubresource(CBs)` | `World/View/Proj` y color por frame |
-| 5 | Bind shaders/recursos | `VSSetShader`, `PSSetShader`, `PSSetShaderResources`, `PSSetSamplers` | VS/PS, SRV y Sampler activos |
-| 6 | Dibujar | `IASet*`, `DrawIndexed(36,...)` | Render del cubo texturizado |
-| 7 | Presentar | `SwapChain::present()` | Intercambio de buffers; imagen en pantalla |
-
----
-
-## 🧩 API Clave por Clase
-
-| Clase | Métodos/Funciones Clave | Resumen |
-|---|---|---|
-| `Window` | `init()`, `destroy()` | Crea y administra la ventana (`HWND`, ancho/alto). |
-| `SwapChain` | `init()`, `present()`, `destroy()` | Crea Device/Context/SwapChain; MSAA; `Present`. |
-| `Device` | `Create{RenderTargetView,DepthStencilView,Texture2D,Buffer,Sampler,VertexShader,PixelShader,InputLayout}`, `destroy()` | Fábrica de recursos sobre `ID3D11Device`. |
-| `DeviceContext` | `RSSetViewports`, `OMSetRenderTargets`, `Clear*`, `VS/PSSet*`, `IASet*`, `DrawIndexed`, `UpdateSubresource`, `destroy()` | Comandos a GPU y estados del pipeline. |
-| `Texture` | `init(device,w,h,format,bindFlags,...)`, `init(device,textureRef,format)`, `render(context,slot,views)`, `destroy()` | Texturas y SRV; **TODO** cargar desde archivo. |
-| `RenderTargetView` | `init(...)`, `render(context, dsv, numViews, clearColor)`, `destroy()` | RTV (back buffer o textura); clean + bind. |
-| `DepthStencilView` | `init(...)`, `render(context)`, `destroy()` | DSV (depth/stencil); limpieza por frame. |
-| `App/Main` | `InitDevice()`, `Render()`, `CleanupDevice()` | Orquesta inicialización, ciclo y liberación. |
+1.  **Inicialización (`MinerEngine.cpp`):**
+    * Se crea la `Window` y el `Device` (D3D11).
+    * Se inicializa **ImGui** (Contextos Win32 y DX11).
+    * El **ResourceManager** carga shaders y modelos iniciales.
+2.  **Bucle de Juego (Game Loop):**
+    * **Input:** Se procesan mensajes de Windows.
+    * **Update:** Se recorren los `Actors` y se actualizan sus `Components` (lógica, transformaciones).
+    * **Render:**
+        * Limpieza de buffers (RTV/DSV).
+        * Renderizado de geometría (MeshComponents) usando el pipeline configurado.
+        * Renderizado de la interfaz **ImGui** (sobreimpreso).
+        * `SwapChain::Present()`.
+3.  **Shutdown:**
+    * Limpieza de memoria mediante los punteros inteligentes propios y liberación de COM Objects.
 
 ---
 
@@ -142,20 +113,15 @@ Se renderiza un **cubo 3D texturizado** con rotación y actualización de consta
 
 | Ítem | Detalle |
 |---|---|
-| SO | Windows 10/11 |
-| IDE | Visual Studio 2019 o superior |
-| SDK | DirectX (D3D11) vía Windows SDK (útil: utilidades D3DX del ejemplo) |
-| GPU | Compatible con Direct3D 11 |
+| IDE | Visual Studio 2019/2022 |
+| SDKs Requeridos | **DirectX SDK**, **FBX SDK** (debe estar linkeado en el proyecto) |
+| Configuración | Debug / Release (x64 recomendado) |
 
-| Pasos | Comando / Acción |
-|---|---|
-| Clonar | `git clone https://github.com/tu-usuario/MinerEngine.git` |
-| Abrir | Cargar solución `.sln` en Visual Studio |
-| Configurar | **Debug** o **Release** |
-| Ejecutar | `Ctrl + F5` |
-
+**Pasos de compilación:**
+1. Clonar el repositorio.
+2. Asegurarse de que las rutas a los `Include` y `Lib` del **FBX SDK** estén configuradas en las propiedades del proyecto (`MinerEngine_2010.vcxproj` o el `.sln` actualizado).
+3. Compilar y ejecutar.
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Estado-Estudiante-6f42c1?style=for-the-badge" alt="Estado Estudiante"/>
-  <img src="https://img.shields.io/badge/Objetivo-Aprendizaje-success?style=for-the-badge" alt="Objetivo Aprendizaje"/>
+
 </p>
