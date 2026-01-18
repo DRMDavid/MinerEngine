@@ -25,12 +25,9 @@ public:
 	BaseApp() = default;
 	~BaseApp() { destroy(); }
 
-<<<<<<< Updated upstream
-=======
 	HRESULT
 		awake();
 
->>>>>>> Stashed changes
 	int
 		run(HINSTANCE hInst, int nCmdShow);
 
@@ -67,11 +64,7 @@ private:
 	Buffer															m_cbNeverChanges;
 	Buffer															m_cbChangeOnResize;
 	//Buffer															m_cbChangesEveryFrame;
-<<<<<<< Updated upstream
-	Texture 														m_PrintstreamAlbedo;
-=======
 	Texture 														m_cyberGunAlbedo;
->>>>>>> Stashed changes
 	//SamplerState												m_samplerState;
 
 	//XMMATRIX                            m_World;
@@ -80,24 +73,13 @@ private:
 	//XMFLOAT4                            m_vMeshColor;// (0.7f, 0.7f, 0.7f, 1.0f);
 
 	std::vector<EU::TSharedPointer<Actor>> m_actors;
-<<<<<<< Updated upstream
-	EU::TSharedPointer<Actor> m_Printstream;
-=======
 	EU::TSharedPointer<Actor> m_cyberGun;
->>>>>>> Stashed changes
 
 
 	Model3D* m_model;
 
-<<<<<<< Updated upstream
-
-	CBChangeOnResize										cbChangesOnResize;
-	CBNeverChanges											cbNeverChanges;
-	//CBChangesEveryFrame									cb;
-=======
 	CBChangeOnResize										cbChangesOnResize;
 	CBNeverChanges											cbNeverChanges;
 	//CBChangesEveryFrame									cb;
 	GUI																m_gui;
->>>>>>> Stashed changes
 };
