@@ -26,6 +26,7 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+
   <PropertyGroup Label="Globals">
     <ProjectName>MinerEngine</ProjectName>
     <ProjectGuid>{D29C6982-A589-4081-89B1-91E78D7C41E2}</ProjectGuid>
@@ -33,7 +34,9 @@
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
   <!-- Configurations -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -41,12 +44,14 @@
     <PlatformToolset>v143</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|X64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
     <PlatformToolset>v145</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -54,6 +59,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|X64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -61,6 +67,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -68,6 +75,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|X64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -75,8 +83,10 @@
     <PlatformToolset>v143</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
+
   <!-- Property Sheets -->
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -96,8 +106,11 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+
   <PropertyGroup Label="UserMacros" />
+
   <!-- (Se mantiene todo tu contenido intermedio sin cambios) -->
+
   <ItemGroup>
     <ClCompile Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_win32.cpp" />
@@ -125,10 +138,14 @@
     <ClCompile Include="Source\Viewport.cpp" />
     <ClCompile Include="Source\Window.cpp" />
   </ItemGroup>
+
   <ItemGroup>
     <None Include="MinerEngine.fx" />
   </ItemGroup>
+
   <ItemGroup>
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_win32.h" />
     <ClInclude Include="Imgui\imgui-docking-znly-docking\imconfig.h" />
     <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui.h" />
     <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui_internal.h" />
@@ -145,18 +162,11 @@
     <ClInclude Include="Include\ECS\Component.h" />
     <ClInclude Include="Include\ECS\Entity.h" />
     <ClInclude Include="Include\ECS\Transform.h" />
-    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix2x2.h" />
-    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix3x3.h" />
-    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix4x4.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TSharedPointer.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TStaticPtr.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TUniquePtr.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TWeakPointer.h" />
-    <ClInclude Include="Include\EngineUtilities\Structures\TArray.h" />
-    <ClInclude Include="Include\EngineUtilities\Structures\TMap.h" />
-    <ClInclude Include="Include\EngineUtilities\Structures\TPair.h" />
-    <ClInclude Include="Include\EngineUtilities\Structures\TSet.h" />
-    <ClInclude Include="Include\EngineUtilities\Vectors\Quaternion.h" />
+    <ClInclude Include="Include\EngineUtilities\Utilities\EngineMath.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector2.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector3.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector4.h" />
@@ -165,10 +175,8 @@
     <ClInclude Include="Include\IResource.h" />
     <ClInclude Include="Include\MeshComponent.h" />
     <ClInclude Include="Include\Model3D.h" />
-    <ClInclude Include="Include\ModelLoader.h" />
     <ClInclude Include="Include\Prerequisites.h" />
     <ClInclude Include="Include\RenderTargetView.h" />
-    <ClInclude Include="Include\Resource.h" />
     <ClInclude Include="Include\ResourceManager.h" />
     <ClInclude Include="Include\SamplerState.h" />
     <ClInclude Include="Include\ShaderProgram.h" />
@@ -180,6 +188,7 @@
     <ClInclude Include="resource.h" />
     <ResourceCompile Include="MinerEngine.rc" />
   </ItemGroup>
+
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
