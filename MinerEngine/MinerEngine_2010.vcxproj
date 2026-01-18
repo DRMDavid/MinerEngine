@@ -43,7 +43,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|X64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <UseDebugLibraries>true</UseDebugLibraries>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -205,7 +205,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FloatingPointModel>Fast</FloatingPointModel>
       <ExceptionHandling>Sync</ExceptionHandling>
-      <AdditionalIncludeDirectories>./include/;DXUT\Core;DXUT\Optional;./include/fbx/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./include/;DXUT\Core;DXUT\Optional;./include/fbx/;./Imgui/imgui-docking-znly-docking/backends/;./Imgui/imgui-docking-znly-docking/;./Imgui/ImGuizmo/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions> %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>WIN32;FBXSDK_SHARED;_DEBUG;DEBUG;PROFILE;_WINDOWS;D3DXFX_LARGEADDRESS_HANDLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -423,6 +423,14 @@
   </ItemDefinitionGroup>
   <ItemGroup />
   <ItemGroup>
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui.cpp" />
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_demo.cpp" />
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_draw.cpp" />
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_tables.cpp" />
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_widgets.cpp" />
+    <ClCompile Include="Imgui\ImGuizmo\ImGuizmo.cpp" />
     <ClCompile Include="Include\SamplerState.cpp" />
     <ClCompile Include="MinerEngine.cpp" />
     <ClCompile Include="Source\BaseApp.cpp" />
@@ -431,6 +439,10 @@
     <ClCompile Include="Source\Device.cpp" />
     <ClCompile Include="Source\DeviceContext.cpp" />
     <ClCompile Include="Source\ECS\Actor.cpp" />
+<<<<<<< Updated upstream
+=======
+    <ClCompile Include="Source\GUI\GUI.cpp" />
+>>>>>>> Stashed changes
     <ClCompile Include="Source\InputLayout.cpp" />
     <ClCompile Include="Source\Model3D.cpp" />
     <ClCompile Include="Source\RenderTargetView.cpp" />
@@ -444,6 +456,15 @@
     <None Include="MinerEngine.fx" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_win32.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imconfig.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui_internal.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_rectpack.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_textedit.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_truetype.h" />
+    <ClInclude Include="Imgui\ImGuizmo\ImGuizmo.h" />
     <ClInclude Include="Include\BaseApp.h" />
     <ClInclude Include="Include\Buffer.h" />
     <ClInclude Include="Include\DepthStencilView.h" />
@@ -461,6 +482,10 @@
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector2.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector3.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector4.h" />
+<<<<<<< Updated upstream
+=======
+    <ClInclude Include="Include\GUI\GUI.h" />
+>>>>>>> Stashed changes
     <ClInclude Include="Include\InputLayout.h" />
     <ClInclude Include="Include\IResource.h" />
     <ClInclude Include="Include\MeshComponent.h" />
