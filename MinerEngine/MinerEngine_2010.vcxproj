@@ -432,15 +432,12 @@
     <ClCompile Include="Source\DeviceContext.cpp" />
     <ClCompile Include="Source\ECS\Actor.cpp" />
 <<<<<<< HEAD
-<<<<<<< HEAD
 =======
 <<<<<<< Updated upstream
 =======
     <ClCompile Include="Source\GUI\GUI.cpp" />
 >>>>>>> Stashed changes
 >>>>>>> parent of fc4a38e (Update MinerEngine_2010.vcxproj)
-=======
->>>>>>> parent of a8807c7 (Add ImGuizmo and ImGui docking integration)
     <ClCompile Include="Source\InputLayout.cpp" />
     <ClCompile Include="Source\Model3D.cpp" />
     <ClCompile Include="Source\RenderTargetView.cpp" />
