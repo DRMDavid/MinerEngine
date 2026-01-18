@@ -482,9 +482,10 @@
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector2.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector3.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector4.h" />
-
+<<<<<<< Updated upstream
+=======
     <ClInclude Include="Include\GUI\GUI.h" />
-
+>>>>>>> Stashed changes
     <ClInclude Include="Include\InputLayout.h" />
     <ClInclude Include="Include\IResource.h" />
     <ClInclude Include="Include\MeshComponent.h" />
