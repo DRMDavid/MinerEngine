@@ -34,6 +34,10 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+<<<<<<< HEAD
+=======
+  <!-- Configurations -->
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>NotSet</CharacterSet>
@@ -76,6 +80,10 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
+<<<<<<< HEAD
+=======
+  <!-- Property Sheets -->
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -95,6 +103,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+<<<<<<< HEAD
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
@@ -422,6 +431,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup />
+=======
+  <!-- (Se mantiene todo tu contenido intermedio sin cambios) -->
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
   <ItemGroup>
     <ClCompile Include="Include\SamplerState.cpp" />
     <ClCompile Include="MinerEngine.cpp" />
@@ -454,6 +466,16 @@
     <None Include="MinerEngine.fx" />
   </ItemGroup>
   <ItemGroup>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imconfig.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui_internal.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_rectpack.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_textedit.h" />
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_truetype.h" />
+    <ClInclude Include="Imgui\ImGuizmo\ImGuizmo.h" />
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
     <ClInclude Include="Include\BaseApp.h" />
     <ClInclude Include="Include\Buffer.h" />
     <ClInclude Include="Include\DepthStencilView.h" />
@@ -463,11 +485,18 @@
     <ClInclude Include="Include\ECS\Component.h" />
     <ClInclude Include="Include\ECS\Entity.h" />
     <ClInclude Include="Include\ECS\Transform.h" />
+    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix2x2.h" />
+    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix3x3.h" />
+    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix4x4.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TSharedPointer.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TStaticPtr.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TUniquePtr.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TWeakPointer.h" />
-    <ClInclude Include="Include\EngineUtilities\Utilities\EngineMath.h" />
+    <ClInclude Include="Include\EngineUtilities\Structures\TArray.h" />
+    <ClInclude Include="Include\EngineUtilities\Structures\TMap.h" />
+    <ClInclude Include="Include\EngineUtilities\Structures\TPair.h" />
+    <ClInclude Include="Include\EngineUtilities\Structures\TSet.h" />
+    <ClInclude Include="Include\EngineUtilities\Vectors\Quaternion.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector2.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector3.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector4.h" />
@@ -475,8 +504,10 @@
     <ClInclude Include="Include\IResource.h" />
     <ClInclude Include="Include\MeshComponent.h" />
     <ClInclude Include="Include\Model3D.h" />
+    <ClInclude Include="Include\ModelLoader.h" />
     <ClInclude Include="Include\Prerequisites.h" />
     <ClInclude Include="Include\RenderTargetView.h" />
+    <ClInclude Include="Include\Resource.h" />
     <ClInclude Include="Include\ResourceManager.h" />
     <ClInclude Include="Include\SamplerState.h" />
     <ClInclude Include="Include\ShaderProgram.h" />
@@ -488,10 +519,13 @@
     <CLInclude Include="resource.h" />
     <ResourceCompile Include="MinerEngine.rc" />
   </ItemGroup>
+<<<<<<< HEAD
   <ItemGroup>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
+=======
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

@@ -36,6 +36,33 @@
     <Filter Include="Source\ECS">
       <UniqueIdentifier>{36a1a061-3d1a-4309-8ef5-713ec38b33d3}</UniqueIdentifier>
     </Filter>
+<<<<<<< HEAD
+=======
+    <Filter Include="Include\ImGui">
+      <UniqueIdentifier>{570a07f8-4bae-42b5-97eb-9b6b5b4df2f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ImGui">
+      <UniqueIdentifier>{be7d002e-98ad-4893-986e-ae0cc0963afb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\GUI">
+      <UniqueIdentifier>{08f0adbb-45e0-404b-be96-407b0d3227e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\GUI">
+      <UniqueIdentifier>{bcb363c2-195f-4bea-b28b-ee3e180002ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\ImGui\include">
+      <UniqueIdentifier>{a813b180-d057-4724-b3b8-2ab02c662ba7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\ImGui\source">
+      <UniqueIdentifier>{6a11a6cb-4ecc-4e95-995a-7791c52c0fb6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Utilities\Matrix">
+      <UniqueIdentifier>{bc84545f-8dd1-46c9-8e1e-cb941d244be3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include\Utilities\Structures">
+      <UniqueIdentifier>{f00d7568-b793-4631-bef5-9506fe2cdc6d}</UniqueIdentifier>
+    </Filter>
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
@@ -86,6 +113,36 @@
     <ClCompile Include="Source\ECS\Actor.cpp">
       <Filter>Source\ECS</Filter>
     </ClCompile>
+<<<<<<< HEAD
+=======
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_demo.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_draw.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_tables.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui_widgets.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_dx11.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_win32.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\ImGuizmo\ImGuizmo.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\GUI\GUI.cpp">
+      <Filter>Source\GUI</Filter>
+    </ClCompile>
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -93,6 +150,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+<<<<<<< HEAD
     <CLInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </CLInclude>
@@ -100,6 +158,24 @@
       <Filter>Resource Files</Filter>
     </ResourceCompile>
     <ClInclude Include="Include\Window.h">
+=======
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ResourceCompile Include="MinerEngine.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+    <ClInclude Include="Include\GUI\GUI.h">
+      <Filter>Include\GUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\BaseApp.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Buffer.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\DepthStencilView.h">
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Device.h">
@@ -108,12 +184,52 @@
     <ClInclude Include="Include\DeviceContext.h">
       <Filter>Include</Filter>
     </ClInclude>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="Include\InputLayout.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\IResource.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\MeshComponent.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Model3D.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ModelLoader.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Prerequisites.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\RenderTargetView.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Resource.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ResourceManager.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SamplerState.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ShaderProgram.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\stb_image.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
     <ClInclude Include="Include\SwapChain.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\Texture.h">
       <Filter>Include</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="Include\RenderTargetView.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -141,6 +257,14 @@
     <ClInclude Include="Include\IResource.h">
       <Filter>Include\Patterns</Filter>
     </ClInclude>
+=======
+    <ClInclude Include="Include\Viewport.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Window.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
     <ClInclude Include="Include\ECS\Actor.h">
       <Filter>Include\ECS</Filter>
     </ClInclude>
@@ -153,6 +277,7 @@
     <ClInclude Include="Include\ECS\Transform.h">
       <Filter>Include\ECS</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="Include\MeshComponent.h">
       <Filter>Include\Utilities</Filter>
     </ClInclude>
@@ -167,6 +292,28 @@
     </ClInclude>
     <ClInclude Include="Include\Model3D.h">
       <Filter>Include\Utilities</Filter>
+=======
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imconfig.h">
+      <Filter>Include\ImGui\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui.h">
+      <Filter>Include\ImGui\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imgui_internal.h">
+      <Filter>Include\ImGui\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\ImGuizmo\ImGuizmo.h">
+      <Filter>Include\ImGui\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_truetype.h">
+      <Filter>Include\ImGui\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_textedit.h">
+      <Filter>Include\ImGui\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_rectpack.h">
+      <Filter>Include\ImGui\include</Filter>
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
     </ClInclude>
     <ClInclude Include="Include\EngineUtilities\Memory\TSharedPointer.h">
       <Filter>Include\Utilities\Memory</Filter>
@@ -180,6 +327,12 @@
     <ClInclude Include="Include\EngineUtilities\Memory\TWeakPointer.h">
       <Filter>Include\Utilities\Memory</Filter>
     </ClInclude>
+<<<<<<< HEAD
+=======
+    <ClInclude Include="Include\EngineUtilities\Vectors\Quaternion.h">
+      <Filter>Include\Utilities\Vector</Filter>
+    </ClInclude>
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector2.h">
       <Filter>Include\Utilities\Vector</Filter>
     </ClInclude>
@@ -189,10 +342,35 @@
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector4.h">
       <Filter>Include\Utilities\Vector</Filter>
     </ClInclude>
+<<<<<<< HEAD
     <ClInclude Include="Include\EngineUtilities\Utilities\EngineMath.h">
       <Filter>Include\Utilities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
+=======
+    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix2x2.h">
+      <Filter>Include\Utilities\Matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix3x3.h">
+      <Filter>Include\Utilities\Matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Matrix\Matrix4x4.h">
+      <Filter>Include\Utilities\Matrix</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Structures\TArray.h">
+      <Filter>Include\Utilities\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Structures\TMap.h">
+      <Filter>Include\Utilities\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Structures\TPair.h">
+      <Filter>Include\Utilities\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Structures\TSet.h">
+      <Filter>Include\Utilities\Structures</Filter>
+    </ClInclude>
+  </ItemGroup>
+>>>>>>> parent of b155f75 (Revert "Add new engine utility headers and update filters")
 </Project>
