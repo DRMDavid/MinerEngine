@@ -431,13 +431,6 @@
     <ClCompile Include="Source\Device.cpp" />
     <ClCompile Include="Source\DeviceContext.cpp" />
     <ClCompile Include="Source\ECS\Actor.cpp" />
-<<<<<<< HEAD
-=======
-<<<<<<< Updated upstream
-=======
-    <ClCompile Include="Source\GUI\GUI.cpp" />
->>>>>>> Stashed changes
->>>>>>> parent of fc4a38e (Update MinerEngine_2010.vcxproj)
     <ClCompile Include="Source\InputLayout.cpp" />
     <ClCompile Include="Source\Model3D.cpp" />
     <ClCompile Include="Source\RenderTargetView.cpp" />
