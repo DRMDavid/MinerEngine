@@ -68,6 +68,13 @@ namespace
 			return TSharedPointer<T>();
 		}
 
+		// Reset
+		void
+			reset() {
+			ptr = nullptr;
+			refCount = nullptr;
+		}
+
 		// Hacer que TSharedPointer sea un amigo para acceder a los miembros privados.
 		template<typename U>
 		friend class TSharedPointer;
@@ -95,14 +102,14 @@ int main()
 {
 		{
 				// Crear un TSharedPointer que gestiona un objeto MyClass
-				EngineUtilities::TSharedPointer<MyClass> sp1 = EngineUtilities::MakeShared<MyClass>(10);
+				EU::TSharedPointer<MyClass> sp1 = EU::MakeShared<MyClass>(10);
 				sp1->display();
 
 				// Crear un TWeakPointer a partir del TSharedPointer
-				EngineUtilities::TWeakPointer<MyClass> wp1(sp1);
+				EU::TWeakPointer<MyClass> wp1(sp1);
 
 				// Intentar obtener un TSharedPointer a partir del TWeakPointer
-				EngineUtilities::TSharedPointer<MyClass> sp2 = wp1.lock();
+				EU::TSharedPointer<MyClass> sp2 = wp1.lock();
 				if (!sp2.isNull())
 				{
 						sp2->display(); // Debería mostrar el valor 10
@@ -113,11 +120,11 @@ int main()
 				}
 
 				// Crear un nuevo TSharedPointer y mover el puntero compartido
-				EngineUtilities::TSharedPointer<MyClass> sp3 = EngineUtilities::MakeShared<MyClass>(20);
+				EU::TSharedPointer<MyClass> sp3 = EU::MakeShared<MyClass>(20);
 				sp3 = std::move(sp1); // Mueve la propiedad de sp1 a sp3
 
 				// El puntero compartido original (sp1) ahora está vacío
-				EngineUtilities::TSharedPointer<MyClass> sp4 = wp1.lock();
+				EU::TSharedPointer<MyClass> sp4 = wp1.lock();
 				if (sp4.isNull())
 				{
 						std::cout << "sp1 has been moved and is now null." << std::endl;

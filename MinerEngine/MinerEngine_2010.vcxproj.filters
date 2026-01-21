@@ -36,7 +36,6 @@
     <Filter Include="Source\ECS">
       <UniqueIdentifier>{36a1a061-3d1a-4309-8ef5-713ec38b33d3}</UniqueIdentifier>
     </Filter>
-
     <Filter Include="Include\ImGui">
       <UniqueIdentifier>{570a07f8-4bae-42b5-97eb-9b6b5b4df2f2}</UniqueIdentifier>
     </Filter>
@@ -55,7 +54,9 @@
     <Filter Include="Include\ImGui\source">
       <UniqueIdentifier>{6a11a6cb-4ecc-4e95-995a-7791c52c0fb6}</UniqueIdentifier>
     </Filter>
-
+    <Filter Include="Include\SceneGraph">
+      <UniqueIdentifier>{9f1b372a-7455-46b2-a790-f4f96664b384}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
@@ -106,7 +107,6 @@
     <ClCompile Include="Source\ECS\Actor.cpp">
       <Filter>Source\ECS</Filter>
     </ClCompile>
-
     <ClCompile Include="Imgui\imgui-docking-znly-docking\imgui.cpp">
       <Filter>Include\ImGui\source</Filter>
     </ClCompile>
@@ -134,7 +134,6 @@
     <ClCompile Include="Source\GUI\GUI.cpp">
       <Filter>Source\GUI</Filter>
     </ClCompile>
-
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -241,7 +240,6 @@
     <ClInclude Include="Include\EngineUtilities\Utilities\EngineMath.h">
       <Filter>Include\Utilities</Filter>
     </ClInclude>
-
     <ClInclude Include="Include\GUI\GUI.h">
       <Filter>Include\GUI</Filter>
     </ClInclude>
@@ -272,7 +270,12 @@
     <ClInclude Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_win32.h">
       <Filter>Include\ImGui\source</Filter>
     </ClInclude>
-
+    <ClInclude Include="Include\SceneGraph\HierarchyComponent.h">
+      <Filter>Include\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\SceneGraph\SceneGraph.h">
+      <Filter>Include\SceneGraph</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
