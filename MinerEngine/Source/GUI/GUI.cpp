@@ -4,9 +4,12 @@
 #include "DeviceContext.h"
 #include "MeshComponent.h"
 #include "ECS\Actor.h"
-//#include "imgui_internal.h"
+// #include "imgui_internal.h" 
+
+// Variable estática para la operación actual (Global al archivo)
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
-void 
+
+void
 GUI::init(Window& window, Device& device, DeviceContext& deviceContext) {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -76,7 +79,7 @@ GUI::destroy() {
 	ImGui::DestroyContext();
 }
 
-void 
+void
 GUI::vec3Control(const std::string& label, float* values, float resetValue, float columnWidth) {
 	ImGuiIO& io = ImGui::GetIO();
 	auto boldFont = io.Fonts->Fonts[0];
@@ -138,7 +141,7 @@ GUI::vec3Control(const std::string& label, float* values, float resetValue, floa
 	ImGui::PopID();
 }
 
-void 
+void
 GUI::toolTipData() {
 }
 
@@ -240,48 +243,26 @@ void
 GUI::ToolBar() {
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New")) {
-				// Acción para "New"
-			}
-			if (ImGui::MenuItem("Open")) {
-				// Acción para "Open"
-			}
-			if (ImGui::MenuItem("Save")) {
-				// Acción para "Save"
-			}
+			if (ImGui::MenuItem("New")) {}
+			if (ImGui::MenuItem("Open")) {}
+			if (ImGui::MenuItem("Save")) {}
 			if (ImGui::MenuItem("Exit")) {
-				// Acción para "Exit"
 				show_exit_popup = true;
 				ImGui::OpenPopup("Exit?");
-				//closeApp();
 			}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Edit")) {
-			if (ImGui::MenuItem("Undo")) {
-				// Acción para "Undo"
-			}
-			if (ImGui::MenuItem("Redo")) {
-				// Acción para "Redo"
-			}
-			if (ImGui::MenuItem("Cut")) {
-				// Acción para "Cut"
-			}
-			if (ImGui::MenuItem("Copy")) {
-				// Acción para "Copy"
-			}
-			if (ImGui::MenuItem("Paste")) {
-				// Acción para "Paste"
-			}
+			if (ImGui::MenuItem("Undo")) {}
+			if (ImGui::MenuItem("Redo")) {}
+			if (ImGui::MenuItem("Cut")) {}
+			if (ImGui::MenuItem("Copy")) {}
+			if (ImGui::MenuItem("Paste")) {}
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Tools")) {
-			if (ImGui::MenuItem("Options")) {
-				// Acción para "Options"
-			}
-			if (ImGui::MenuItem("Settings")) {
-				// Acción para "Settings"
-			}
+			if (ImGui::MenuItem("Options")) {}
+			if (ImGui::MenuItem("Settings")) {}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
@@ -292,9 +273,8 @@ void
 GUI::closeApp() {
 	if (show_exit_popup) {
 		ImGui::OpenPopup("Exit?");
-		show_exit_popup = false; // Reset the flag
+		show_exit_popup = false;
 	}
-	// Centrar el popup en la pantalla
 	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
@@ -303,7 +283,7 @@ GUI::closeApp() {
 		ImGui::Separator();
 
 		if (ImGui::Button("OK", ImVec2(120, 0))) {
-			exit(0); // Salir de la aplicación
+			exit(0);
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SetItemDefaultFocus();
@@ -318,33 +298,25 @@ GUI::closeApp() {
 void
 GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor) {
 	ImGui::Begin("Inspector");
-	// Checkbox para Static
 	bool isStatic = false;
 	ImGui::Checkbox("##Static", &isStatic);
 	ImGui::SameLine();
 
-	// Input text para el nombre del objeto
 	char objectName[128] = "Cube";
 	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() * 0.6f);
 	ImGui::InputText("##ObjectName", &actor->getName()[0], IM_ARRAYSIZE(objectName));
 	ImGui::SameLine();
 
-	// Icono (este puede ser una imagen, aquí solo como ejemplo de botón)
-	if (ImGui::Button("Icon")) {
-		// Lógica del botón de icono aquí
-	}
+	if (ImGui::Button("Icon")) {}
 
-	// Separador horizontal
 	ImGui::Separator();
 
-	// Dropdown para Tag
 	const char* tags[] = { "Untagged", "Player", "Enemy", "Environment" };
 	static int currentTag = 0;
 	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() * 0.5f);
 	ImGui::Combo("Tag", &currentTag, tags, IM_ARRAYSIZE(tags));
 	ImGui::SameLine();
 
-	// Dropdown para Layer
 	const char* layers[] = { "Default", "TransparentFX", "Ignore Raycast", "Water", "UI" };
 	static int currentLayer = 0;
 	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() * 0.5f);
@@ -359,57 +331,40 @@ GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor) {
 
 void
 GUI::inspectorContainer(EU::TSharedPointer<Actor> actor) {
-	//ImGui::Begin("Transform");
-	// Draw the structure
 	vec3Control("Position", const_cast<float*>(actor->getComponent<Transform>()->getPosition().data()));
+	// NOTA: Recuerda que esto mostrará radianes en el inspector a menos que hagas conversión
 	vec3Control("Rotation", const_cast<float*>(actor->getComponent<Transform>()->getRotation().data()));
 	vec3Control("Scale", const_cast<float*>(actor->getComponent<Transform>()->getScale().data()));
-
-	//ImGui::End();
 }
 
-void 
+void
 GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 	ImGui::Begin("Hierarchy");
 
-	// Barra de búsqueda
 	static ImGuiTextFilter filter;
-	filter.Draw("Search...", 180.0f); // Barra de búsqueda con ancho ajustable
+	filter.Draw("Search...", 180.0f);
 
 	ImGui::Separator();
 
-	// Recorrer y mostrar cada actor que pase el filtro de búsqueda
 	for (int i = 0; i < actors.size(); ++i) {
 		const auto& actor = actors[i];
-
-		// Obtener el nombre del actor o asignar un nombre genérico
 		std::string actorName = actor ? actor->getName() : "Actor";
 
-		// Verificar si el actor pasa el filtro de búsqueda
 		if (!filter.PassFilter(actorName.c_str())) {
-			continue; // Saltar actores que no coincidan con el filtro
+			continue;
 		}
 
-		// Si el actor es seleccionable
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 		if (selectedActorIndex == i)
 			flags |= ImGuiTreeNodeFlags_Selected;
 
-		// Crear un nodo de árbol para cada actor
 		bool nodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)i, flags, "%s", actorName.c_str());
 
-		// Selección de actor
 		if (ImGui::IsItemClicked()) {
 			selectedActorIndex = i;
-			// Aquí puedes llamar a alguna función para mostrar los detalles del actor en otra ventana
 		}
 
-		// Mostrar nodos hijos si el nodo está abierto
 		if (nodeOpen) {
-			ImGui::Text("Position: %.2f, %.2f, %.2f", 
-				actor->getComponent<Transform>().get()->getPosition().x, 
-				actor->getComponent<Transform>().get()->getPosition().y, 
-				actor->getComponent<Transform>().get()->getPosition().z);
 			ImGui::TreePop();
 		}
 	}
@@ -423,91 +378,66 @@ GUI::editTransform(const XMMATRIX& view, const XMMATRIX& projection, EU::TShared
 	static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
 	auto transform = actor->getComponent<Transform>();
 
-	// 1) OBTENER COMPONENTES (Asegúrate de que sean float[3])
-	float* pos = const_cast<float*>(transform->getPosition().data());
-	float* rot = const_cast<float*>(transform->getRotation().data());
-	float* sca = const_cast<float*>(transform->getScale().data());
+	// 1) PREPARAR MATRICES
+	XMFLOAT4X4 modelMat;
+	XMStoreFloat4x4(&modelMat, transform->matrix);
 
-	// 2) CREAR MATRIZ PARA IMGUIZMO 
-	// Importante: No uses la matriz de DirectX aquí. 
-	// Deja que ImGuizmo cree su propia matriz temporal en su formato preferido.
-	float mArr[16];
-	ImGuizmo::RecomposeMatrixFromComponents(pos, rot, sca, mArr);
+	XMFLOAT4X4 viewMat, projMat;
+	XMStoreFloat4x4(&viewMat, view);
+	XMStoreFloat4x4(&projMat, projection);
 
-	// 3) PREPARAR MATRICES DE CÁMARA (Transponer para que ImGuizmo las entienda)
-	float vArr[16], pArr[16];
-	// Probar SIN transponer primero
-	XMStoreFloat4x4((XMFLOAT4X4*)vArr, view);
-	XMStoreFloat4x4((XMFLOAT4X4*)pArr, projection);
-
-	// 4) CONFIGURAR RECT (Asegúrate de que esto se llame)
+	// 2) CONFIGURAR IMGUIZMO
 	ImGuiIO& io = ImGui::GetIO();
 	ImGuizmo::SetRect(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-
-	// 5) DIBUJAR GIZMO
 	ImGuizmo::SetID(0);
-	ImGuizmo::SetGizmoSizeClipSpace(0.15f);
-	// Define cuánto quieres que "salte" la rotación (ejemplo: 15 grados)
-	float snapValue = 25.0f;
-	if (mCurrentGizmoOperation == ImGuizmo::ROTATE) snapValue = 5.0f;
-	if (mCurrentGizmoOperation == ImGuizmo::TRANSLATE) snapValue = 0.5f;
 
-	// Crea un array de snap
+	// --- CAMBIO DE TAMAÑO ---
+	// 0.35f es un buen tamaño visible. El default es aprox 0.15f
+	ImGuizmo::SetGizmoSizeClipSpace(0.35f);
+
+	// Configuración de Snap (manteniendo CTRL)
+	float snapValue = 0.5f;
+	if (mCurrentGizmoOperation == ImGuizmo::ROTATE) snapValue = 45.0f;
+	else if (mCurrentGizmoOperation == ImGuizmo::SCALE) snapValue = 0.1f;
+
 	float snap[3] = { snapValue, snapValue, snapValue };
+	bool useSnap = io.KeyCtrl;
 
-	// Usa la versión de Manipulate que acepta snap (es el último parámetro)
-	// Si mantienes presionada una tecla (ej. CTRL), aplicas el snap
-	bool useSnap = ImGui::GetIO().KeyCtrl;
-
+	// 3) DIBUJAR Y MANIPULAR
 	ImGuizmo::Manipulate(
-		vArr, pArr,
+		(float*)&viewMat,
+		(float*)&projMat,
 		mCurrentGizmoOperation,
 		mCurrentGizmoMode,
-		mArr,
+		(float*)&modelMat,
 		NULL,
-		useSnap ? snap : NULL // Aquí pasas el snap si se desea
+		useSnap ? snap : NULL
 	);
 
-	// mCurrentGizmoOperation debe venir de tu Toolbar (TRANSLATE, ROTATE o SCALE)
-	ImGuizmo::Manipulate(vArr, pArr, mCurrentGizmoOperation, mCurrentGizmoMode, mArr);
-
-	// 6) SI SE ESTÁ USANDO, ACTUALIZAR ACTOR
+	// 4) GUARDAR CAMBIOS
 	if (ImGuizmo::IsUsing()) {
 		float newPos[3], newRot[3], newSca[3];
 
-		// Sacamos los datos de la matriz de ImGuizmo
-		ImGuizmo::DecomposeMatrixToComponents(mArr, newPos, newRot, newSca);
+		ImGuizmo::DecomposeMatrixToComponents((float*)&modelMat, newPos, newRot, newSca);
 
-		// Aplicamos a los componentes del actor
 		transform->setPosition(EU::Vector3(newPos[0], newPos[1], newPos[2]));
-		transform->setRotation(EU::Vector3(newRot[0], newRot[1], newRot[2]));
 		transform->setScale(EU::Vector3(newSca[0], newSca[1], newSca[2]));
 
-		// Sincronizamos la matriz final de DirectX para el renderizado
-		// Nota: SR T (Scale * Rotation * Translation)
-		XMMATRIX matScale = XMMatrixScaling(newSca[0], newSca[1], newSca[2]);
-		XMMATRIX matRot = XMMatrixRotationRollPitchYaw(
+		// CONVERTIR GRADOS -> RADIANES antes de guardar
+		transform->setRotation(EU::Vector3(
 			XMConvertToRadians(newRot[0]),
 			XMConvertToRadians(newRot[1]),
 			XMConvertToRadians(newRot[2])
-		);
-		XMMATRIX matTrans = XMMatrixTranslation(newPos[0], newPos[1], newPos[2]);
-
-		// Esta es la matriz que usará tu Vertex Shader
-		transform->matrix = matScale * matRot * matTrans;
+		));
 	}
 }
 
 void GUI::drawGizmoToolbar() {
-	// 1. Configurar la posición y estilo de la mini ventana
 	ImGuiIO& io = ImGui::GetIO();
-	float windowWidth = 120.0f; // Ajusta según necesites
 
-	// Ubicarla a 10px de la esquina superior izquierda
 	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowBgAlpha(0.35f); // Semi-transparente como en motores reales
+	ImGui::SetNextWindowBgAlpha(0.35f);
 
-	// Flags para que no parezca una ventana común
 	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_AlwaysAutoResize |
@@ -516,33 +446,19 @@ void GUI::drawGizmoToolbar() {
 		ImGuiWindowFlags_NoNav;
 
 	if (ImGui::Begin("GizmoToolBar", nullptr, window_flags)) {
-
-		// Estilo de los botones (más profesional)
 		auto buttonMode = [&](const char* label, ImGuizmo::OPERATION op, const char* shortcut) {
 			bool isActive = (mCurrentGizmoOperation == op);
-			if (isActive) {
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f)); // Azul si está activo
-			}
-
-			if (ImGui::Button(label)) {
-				mCurrentGizmoOperation = op;
-			}
-
-			// Tooltip para que el usuario vea el acceso rápido
-			if (ImGui::IsItemHovered()) {
-				ImGui::SetTooltip("%s (%s)", label, shortcut);
-			}
-
+			if (isActive) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.8f, 1.0f));
+			if (ImGui::Button(label)) mCurrentGizmoOperation = op;
+			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s (%s)", label, shortcut);
 			if (isActive) ImGui::PopStyleColor();
 			ImGui::SameLine();
 			};
 
-		// Botones de la barra
 		buttonMode("T", ImGuizmo::TRANSLATE, "W");
 		buttonMode("R", ImGuizmo::ROTATE, "E");
 		buttonMode("S", ImGuizmo::SCALE, "R");
 
-		// Opcional: Selector de modo Local/Mundo
 		static ImGuizmo::MODE mCurrentGizmoMode = ImGuizmo::WORLD;
 		if (ImGui::Button(mCurrentGizmoMode == ImGuizmo::WORLD ? "Global" : "Local")) {
 			mCurrentGizmoMode = (mCurrentGizmoMode == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
@@ -550,10 +466,10 @@ void GUI::drawGizmoToolbar() {
 	}
 	ImGui::End();
 
-	// Acceso rápido por teclado
+	// Atajos de teclado corregidos para versiones viejas de ImGui (usando char literals)
 	if (!ImGui::IsAnyItemActive()) {
-		//if (ImGui::IsKeyPressed(ImGuiKey_W)) mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
-		//if (ImGui::IsKeyPressed(ImGuiKey_E)) mCurrentGizmoOperation = ImGuizmo::ROTATE;
-		//if (ImGui::IsKeyPressed(ImGuiKey_R)) mCurrentGizmoOperation = ImGuizmo::SCALE;
+		if (ImGui::IsKeyPressed('W')) mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+		if (ImGui::IsKeyPressed('E')) mCurrentGizmoOperation = ImGuizmo::ROTATE;
+		if (ImGui::IsKeyPressed('R')) mCurrentGizmoOperation = ImGuizmo::SCALE;
 	}
 }

@@ -118,30 +118,30 @@ BaseApp::init() {
 	// Load Resources -> Modelos, Texturas e Interfaz de usuario
 
 	// Set CyberGun Actor
-	m_cyberGun = EU::MakeShared<Actor>(m_device);
+	m_PrintStream = EU::MakeShared<Actor>(m_device);
 
-	if (!m_cyberGun.isNull()) {
+	if (!m_PrintStream.isNull()) {
 		// Crear vertex buffer y index buffer para el pistol
-		std::vector<MeshComponent> cyberGunMeshes;
+		std::vector<MeshComponent> PrintStreamMeshes;
 		m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
-		cyberGunMeshes = m_model->GetMeshes();
+		PrintStreamMeshes = m_model->GetMeshes();
 
-		std::vector<Texture> cyberGunTextures;
-		hr = m_cyberGunAlbedo.init(m_device, "Assets/Text", ExtensionType::PNG);
+		std::vector<Texture> PrintStreamTextures;
+		hr = m_PrintStreamAlbedo.init(m_device, "Assets/Text", ExtensionType::PNG);
 		// Load the Texture
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
-				("Failed to initialize cyberGunAlbedo. HRESULT: " + std::to_string(hr)).c_str());
+				("Failed to initialize PrintStreamAlbedo. HRESULT: " + std::to_string(hr)).c_str());
 			return hr;
 		}
-		cyberGunTextures.push_back(m_cyberGunAlbedo);
+		PrintStreamTextures.push_back(m_PrintStreamAlbedo);
 
-		m_cyberGun->setMesh(m_device, cyberGunMeshes);
-		m_cyberGun->setTextures(cyberGunTextures);
-		m_cyberGun->setName("CyberGun");
-		m_actors.push_back(m_cyberGun);
+		m_PrintStream->setMesh(m_device, PrintStreamMeshes);
+		m_PrintStream->setTextures(PrintStreamTextures);
+		m_PrintStream->setName("Desertprintstream");
+		m_actors.push_back(m_PrintStream);
 
-		m_cyberGun->getComponent<Transform>()->setTransform(EU::Vector3(2.0f, -4.90f, 11.60f),
+		m_PrintStream->getComponent<Transform>()->setTransform(EU::Vector3(2.0f, -4.90f, 11.60f),
 			EU::Vector3(-0.60f, 3.0f, -0.20f),
 			EU::Vector3(1.0f, 1.0f, 1.0f));
 	}
