@@ -61,7 +61,7 @@ private:
 	ShaderProgram												m_shaderProgram;
 	Buffer															m_cbNeverChanges;
 	Buffer															m_cbChangeOnResize;
-	Texture 														m_cyberGunAlbedo;
+	Texture 														m_PrintStreamAlbedo;
 	Texture															m_skyboxTex;
 
 	XMMATRIX                            m_View;
@@ -69,7 +69,7 @@ private:
 
 	SceneGraph													m_sceneGraph;
 	std::vector<EU::TSharedPointer<Actor>> m_actors;
-	EU::TSharedPointer<Actor> m_cyberGun;
+	EU::TSharedPointer<Actor> m_PrintStream;
 
 
 	Model3D* m_model;

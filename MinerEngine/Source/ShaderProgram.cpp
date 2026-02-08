@@ -3,10 +3,10 @@
 #include "DeviceContext.h"
 
 
-HRESULT 
-ShaderProgram::init(Device& device, 
-										const std::string& fileName, 
-										std::vector<D3D11_INPUT_ELEMENT_DESC> Layout) {
+HRESULT
+ShaderProgram::init(Device& device,
+	const std::string& fileName,
+	std::vector<D3D11_INPUT_ELEMENT_DESC> Layout) {
 	if (!device.m_device) {
 		ERROR("ShaderProgram", "init", "Device is null.");
 		return E_POINTER;
@@ -44,9 +44,9 @@ ShaderProgram::init(Device& device,
 	return hr;
 }
 
-HRESULT 
-ShaderProgram::CreateInputLayout(Device& device, 
-																 std::vector<D3D11_INPUT_ELEMENT_DESC> Layout) {
+HRESULT
+ShaderProgram::CreateInputLayout(Device& device,
+	std::vector<D3D11_INPUT_ELEMENT_DESC> Layout) {
 	if (!m_vertexShaderData) {
 		ERROR("ShaderProgram", "CreateInputLayout", "Vertex shader data is null.");
 		return E_POINTER;
@@ -59,7 +59,7 @@ ShaderProgram::CreateInputLayout(Device& device,
 		ERROR("ShaderProgram", "CreateInputLayout", "Input layout is empty.");
 		return E_INVALIDARG;
 	}
-	
+
 	HRESULT hr = m_inputLayout.init(device, Layout, m_vertexShaderData);
 	SAFE_RELEASE(m_vertexShaderData);
 
@@ -71,7 +71,7 @@ ShaderProgram::CreateInputLayout(Device& device,
 	return hr;
 }
 
-HRESULT 
+HRESULT
 ShaderProgram::CreateShader(Device& device, ShaderType type) {
 	if (!device.m_device) {
 		ERROR("ShaderProgram", "CreateShader", "Device is null.");
@@ -103,15 +103,15 @@ ShaderProgram::CreateShader(Device& device, ShaderType type) {
 	// Create the shader object
 	if (type == PIXEL_SHADER) {
 		hr = device.CreatePixelShader(shaderData->GetBufferPointer(),
-																	shaderData->GetBufferSize(),
-																	nullptr,
-																	&m_PixelShader);
+			shaderData->GetBufferSize(),
+			nullptr,
+			&m_PixelShader);
 	}
 	else {
 		hr = device.CreateVertexShader(shaderData->GetBufferPointer(),
-																	 shaderData->GetBufferSize(),
-																	 nullptr,
-																	 &m_VertexShader);
+			shaderData->GetBufferSize(),
+			nullptr,
+			&m_VertexShader);
 	}
 
 	if (FAILED(hr)) {
@@ -134,10 +134,10 @@ ShaderProgram::CreateShader(Device& device, ShaderType type) {
 	return S_OK;
 }
 
-HRESULT 
-ShaderProgram::CreateShader(Device& device, 
-														ShaderType type, 
-														const std::string& fileName) {
+HRESULT
+ShaderProgram::CreateShader(Device& device,
+	ShaderType type,
+	const std::string& fileName) {
 	if (!device.m_device) {
 		ERROR("ShaderProgram", "init", "Device is null.");
 		return E_POINTER;
@@ -159,11 +159,11 @@ ShaderProgram::CreateShader(Device& device,
 	return S_OK;
 }
 
-HRESULT 
-ShaderProgram::CompileShaderFromFile(char* szFileName, 
-																		 LPCSTR szEntryPoint, 
-																		 LPCSTR szShaderModel, 
-																		 ID3DBlob** ppBlobOut) {
+HRESULT
+ShaderProgram::CompileShaderFromFile(char* szFileName,
+	LPCSTR szEntryPoint,
+	LPCSTR szShaderModel,
+	ID3DBlob** ppBlobOut) {
 	HRESULT hr = S_OK;
 
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -176,16 +176,16 @@ ShaderProgram::CompileShaderFromFile(char* szFileName,
 #endif
 	ID3DBlob* pErrorBlob;
 	hr = D3DX11CompileFromFile(szFileName,
-														 nullptr,
-														 nullptr,
-														 szEntryPoint,
-														 szShaderModel,
-														 dwShaderFlags,
-														 0,
-														 nullptr,
-														 ppBlobOut,
-														 &pErrorBlob,
-														 nullptr);
+		nullptr,
+		nullptr,
+		szEntryPoint,
+		szShaderModel,
+		dwShaderFlags,
+		0,
+		nullptr,
+		ppBlobOut,
+		&pErrorBlob,
+		nullptr);
 
 	if (FAILED(hr)) {
 		if (pErrorBlob) {
@@ -205,7 +205,7 @@ ShaderProgram::CompileShaderFromFile(char* szFileName,
 
 	SAFE_RELEASE(pErrorBlob)
 
-	return S_OK;
+		return S_OK;
 }
 
 void
