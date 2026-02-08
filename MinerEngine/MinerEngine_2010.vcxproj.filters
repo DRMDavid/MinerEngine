@@ -57,6 +57,9 @@
     <Filter Include="Include\SceneGraph">
       <UniqueIdentifier>{9f1b372a-7455-46b2-a790-f4f96664b384}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\SceneGraph">
+      <UniqueIdentifier>{c7e676a0-ffbc-4c90-8f7a-a6f159a6c84f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
@@ -133,6 +136,9 @@
     </ClCompile>
     <ClCompile Include="Source\GUI\GUI.cpp">
       <Filter>Source\GUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\SceneGraph\SceneGraph.cpp">
+      <Filter>Source\SceneGraph</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

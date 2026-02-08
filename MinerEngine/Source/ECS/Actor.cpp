@@ -2,7 +2,6 @@
 #include "MeshComponent.h"
 #include "Device.h"
 #include "DeviceContext.h"
-#include "SceneGraph/SceneGraph.h"
 
 Actor::Actor(Device& device) {
 	// Setup Default Components

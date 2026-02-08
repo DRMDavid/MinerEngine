@@ -272,6 +272,7 @@ namespace EU {
 		}
 	};
 
+
 	/**
 	 * @brief Función de utilidad para crear un TSharedPointer.
 	 *
@@ -286,4 +287,3 @@ namespace EU {
 		return TSharedPointer<T>(new T(args...));
 	}
 }
-

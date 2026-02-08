@@ -424,42 +424,50 @@ GUI::editTransform(const XMMATRIX& view, const XMMATRIX& projection, EU::TShared
 	static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
 	auto transform = actor->getComponent<Transform>();
 
-	// 1) OBTENER COMPONENTES
+	// 1) OBTENER COMPONENTES (Asegúrate de que sean float[3])
 	float* pos = const_cast<float*>(transform->getPosition().data());
 	float* rot = const_cast<float*>(transform->getRotation().data());
 	float* sca = const_cast<float*>(transform->getScale().data());
 
 	// 2) CREAR MATRIZ PARA IMGUIZMO 
+	// Importante: No uses la matriz de DirectX aquí. 
+	// Deja que ImGuizmo cree su propia matriz temporal en su formato preferido.
 	float mArr[16];
 	ImGuizmo::RecomposeMatrixFromComponents(pos, rot, sca, mArr);
 
-	// 3) PREPARAR MATRICES DE CÁMARA
+	// 3) PREPARAR MATRICES DE CÁMARA (Transponer para que ImGuizmo las entienda)
 	float vArr[16], pArr[16];
+	// Probar SIN transponer primero
 	ToFloatArray(view, vArr);
 	ToFloatArray(projection, pArr);
 
-	// 4) CONFIGURACIÓN DE IMGUIZMO
-	ImGuizmo::SetID(0); // Asegúrate de que este ID sea único si tienes múltiples vistas
+	// 5) DIBUJAR GIZMO
+	ImGuizmo::SetID(0);
 	ImGuizmo::SetGizmoSizeClipSpace(0.15f);
 	ImGuizmo::AllowAxisFlip(false);
 
-	// Configuración de Snap
-	float snapValue = 0.5f;
-	if (mCurrentGizmoOperation == ImGuizmo::ROTATE) snapValue = 45.0f; // 45 grados es más común para snap de rotación
-	else if (mCurrentGizmoOperation == ImGuizmo::SCALE) snapValue = 0.5f;
+	// Define cuánto quieres que "salte" la rotación (ejemplo: 15 grados)
+	float snapValue = 25.0f;
+	if (mCurrentGizmoOperation == ImGuizmo::ROTATE) snapValue = 5.0f;
+	if (mCurrentGizmoOperation == ImGuizmo::TRANSLATE) snapValue = 0.5f;
 
+	// Crea un array de snap
 	float snap[3] = { snapValue, snapValue, snapValue };
+
+	// Usa la versión de Manipulate que acepta snap (es el último parámetro)
+	// Si mantienes presionada una tecla (ej. CTRL), aplicas el snap
 	bool useSnap = ImGui::GetIO().KeyCtrl;
 
-	// 5) DIBUJAR GIZMO (SOLO UNA VEZ)
-	ImGuizmo::Manipulate(
-		vArr, pArr,
-		mCurrentGizmoOperation,
-		mCurrentGizmoMode,
-		mArr,
-		NULL,
-		useSnap ? snap : NULL
-	);
+	//ImGuizmo::Manipulate(
+	//	vArr, pArr,
+	//	mCurrentGizmoOperation,
+	//	mCurrentGizmoMode,
+	//	mArr,
+	//	NULL,
+	//	useSnap ? snap : NULL // Aquí pasas el snap si se desea
+	//);
+
+	ImGuizmo::Manipulate(vArr, pArr, mCurrentGizmoOperation, mCurrentGizmoMode, mArr);
 
 	// 6) SI SE ESTÁ USANDO, ACTUALIZAR ACTOR
 	if (ImGuizmo::IsUsing()) {
@@ -473,9 +481,9 @@ GUI::editTransform(const XMMATRIX& view, const XMMATRIX& projection, EU::TShared
 		transform->setRotation(EU::Vector3(newRot[0], newRot[1], newRot[2]));
 		transform->setScale(EU::Vector3(newSca[0], newSca[1], newSca[2]));
 
-		// Actualizar la matriz de DirectX
+		// Sincronizamos la matriz final de DirectX para el renderizado
+		// Nota: SR T (Scale * Rotation * Translation)
 		XMMATRIX matScale = XMMatrixScaling(newSca[0], newSca[1], newSca[2]);
-		// Nota: Asegúrate de que el orden de rotación aquí coincida con lo que ImGuizmo espera (usualmente ZYX o XYZ)
 		XMMATRIX matRot = XMMatrixRotationRollPitchYaw(
 			XMConvertToRadians(newRot[0]),
 			XMConvertToRadians(newRot[1]),
@@ -483,6 +491,7 @@ GUI::editTransform(const XMMATRIX& view, const XMMATRIX& projection, EU::TShared
 		);
 		XMMATRIX matTrans = XMMatrixTranslation(newPos[0], newPos[1], newPos[2]);
 
+		// Esta es la matriz que usará tu Vertex Shader
 		transform->matrix = matScale * matRot * matTrans;
 	}
 }

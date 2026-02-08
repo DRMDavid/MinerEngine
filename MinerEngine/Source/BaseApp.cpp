@@ -6,6 +6,7 @@ BaseApp::awake() {
 	HRESULT hr = S_OK;
 
 	// Inicializacion de dlls y elementos externos al motor.
+	m_sceneGraph.init();
 
 	// Log Success Message
 	MESSAGE("Main", "Awake", "Application awake successfully.");
@@ -116,38 +117,53 @@ BaseApp::init() {
 	}
 
 	// Load Resources -> Modelos, Texturas e Interfaz de usuario
+	std::array<std::string, 6> faces = {
+		"Skybox/cubemap_0.png",
+		"Skybox/cubemap_1.png",
+		"Skybox/cubemap_2.png",
+		"Skybox/cubemap_3.png",
+		"Skybox/cubemap_4.png",
+		"Skybox/cubemap_5.png"
+	};
+	m_skyboxTex.CreateCubemap(m_device, m_deviceContext, faces, true);
+
 
 	// Set CyberGun Actor
-	m_PrintStream = EU::MakeShared<Actor>(m_device);
+	m_cyberGun = EU::MakeShared<Actor>(m_device);
 
-	if (!m_PrintStream.isNull()) {
+	if (!m_cyberGun.isNull()) {
 		// Crear vertex buffer y index buffer para el pistol
-		std::vector<MeshComponent> PrintStreamMeshes;
+		std::vector<MeshComponent> cyberGunMeshes;
 		m_model = new Model3D("Assets/Desert.fbx", ModelType::FBX);
-		PrintStreamMeshes = m_model->GetMeshes();
+		cyberGunMeshes = m_model->GetMeshes();
 
-		std::vector<Texture> PrintStreamTextures;
-		hr = m_PrintStreamAlbedo.init(m_device, "Assets/Text", ExtensionType::PNG);
+		std::vector<Texture> cyberGunTextures;
+		hr = m_cyberGunAlbedo.init(m_device, "Textura", ExtensionType::PNG);
 		// Load the Texture
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
-				("Failed to initialize PrintStreamAlbedo. HRESULT: " + std::to_string(hr)).c_str());
+				("Failed to initialize cyberGunAlbedo. HRESULT: " + std::to_string(hr)).c_str());
 			return hr;
 		}
-		PrintStreamTextures.push_back(m_PrintStreamAlbedo);
+		cyberGunTextures.push_back(m_cyberGunAlbedo);
 
-		m_PrintStream->setMesh(m_device, PrintStreamMeshes);
-		m_PrintStream->setTextures(PrintStreamTextures);
-		m_PrintStream->setName("Desertprintstream");
-		m_actors.push_back(m_PrintStream);
+		m_cyberGun->setMesh(m_device, cyberGunMeshes);
+		m_cyberGun->setTextures(cyberGunTextures);
+		m_cyberGun->setName("CyberGun");
+		m_actors.push_back(m_cyberGun);
 
-		m_PrintStream->getComponent<Transform>()->setTransform(EU::Vector3(2.0f, -4.90f, 11.60f),
+		m_cyberGun->getComponent<Transform>()->setTransform(EU::Vector3(2.0f, -4.90f, 11.60f),
 			EU::Vector3(-0.60f, 3.0f, -0.20f),
 			EU::Vector3(1.0f, 1.0f, 1.0f));
 	}
 	else {
 		ERROR("Main", "InitDevice", "Failed to create cyber Gun Actor.");
 		return E_FAIL;
+	}
+
+	// Store the Actors in the Scene Graph
+	for (auto& actor : m_actors) {
+		m_sceneGraph.addEntity(actor.get());
 	}
 
 	// Define the input layout
@@ -233,6 +249,31 @@ void BaseApp::update(float deltaTime)
 	m_gui.inspectorGeneral(m_actors[m_gui.selectedActorIndex]);
 	m_gui.outliner(m_actors);
 
+	// Shot cubemap on imgui image
+	static ID3D11ShaderResourceView* faceSRV[6] = { nullptr };
+
+	if (!faceSRV[0]) {
+		for (UINT i = 0; i < 6; ++i) {
+			faceSRV[i] = m_skyboxTex.CreateCubemapFaceSRV(m_device.m_device, m_skyboxTex.m_texture,
+				DXGI_FORMAT_R8G8B8A8_UNORM, i, 1);
+		}
+	}
+
+	ImGui::Text("Cubemap Faces:");
+	const float thumb = 128.0f;
+
+	for (int i = 0; i < 6; ++i) {
+		ImGui::Image((ImTextureID)faceSRV[i], ImVec2(thumb, thumb));
+		if ((i % 3) != 2) ImGui::SameLine();
+	}
+	ImGui::Begin("Cubemap");
+	ImGui::Text("Skybox Cubemap");
+	ImGui::Image((void*)m_skyboxTex.m_textureFromImg,
+		ImVec2(256, 256),
+		ImVec2(0, 0),
+		ImVec2(1, 1));
+	ImGui::End();
+
 
 	// Actualizar la matriz de proyección y vista
 	cbNeverChanges.mView = XMMatrixTranspose(m_View);
@@ -243,9 +284,11 @@ void BaseApp::update(float deltaTime)
 
 
 	// Update Actors
-	for (auto& actor : m_actors) {
-		actor->update(deltaTime, m_deviceContext);
-	}
+	m_sceneGraph.update(deltaTime, m_deviceContext);
+
+	//for (auto& actor : m_actors) {
+	//	actor->update(deltaTime, m_deviceContext);
+	//}
 	m_gui.editTransform(m_View, m_Projection, m_actors[m_gui.selectedActorIndex]);
 }
 
@@ -269,9 +312,11 @@ BaseApp::render() {
 	m_cbChangeOnResize.render(m_deviceContext, 1, 1);
 
 	// Render all actors
-	for (auto& actor : m_actors) {
-		actor->render(m_deviceContext);
-	}
+	m_sceneGraph.render(m_deviceContext);
+
+	//for (auto& actor : m_actors) {
+	//	actor->render(m_deviceContext);
+	//}
 
 	// Render UI
 	m_gui.render();
@@ -283,7 +328,7 @@ BaseApp::render() {
 void
 BaseApp::destroy() {
 	if (m_deviceContext.m_deviceContext) m_deviceContext.m_deviceContext->ClearState();
-
+	m_sceneGraph.destroy();
 	m_cbNeverChanges.destroy();
 	m_cbChangeOnResize.destroy();
 	m_shaderProgram.destroy();

@@ -9,6 +9,7 @@
 #include <memory>
 #include <unordered_map>
 #include <type_traits>
+#include <array>
 
 // Librerias DirectX
 #include <d3d11.h>
@@ -87,10 +88,12 @@ enum ShaderType {
  * @enum ComponentType
  * @brief Tipos de componentes disponibles en el juego.
  */
-enum
-  ComponentType {
+enum 
+ComponentType {
   NONE = 0,     ///< Tipo de componente no especificado.
-  TRANSFORM = 1,///< Componente de transformación.
+  TRANSFORM = 1,///< Componente de transformaciï¿½n.
   MESH = 2,     ///< Componente de malla.
-  MATERIAL = 3  ///< Componente de material.
+  MATERIAL = 3,  ///< Componente de material.
+  HIERARCHY = 4 ///< Componente de jerarquï¿½a.
 };
+
