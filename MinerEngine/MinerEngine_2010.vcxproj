@@ -435,6 +435,7 @@
     <ClCompile Include="MinerEngine.cpp" />
     <ClCompile Include="Source\BaseApp.cpp" />
     <ClCompile Include="Source\Buffer.cpp" />
+    <ClCompile Include="Source\Camera.cpp" />
     <ClCompile Include="Source\DepthStencilView.cpp" />
     <ClCompile Include="Source\Device.cpp" />
     <ClCompile Include="Source\DeviceContext.cpp" />
@@ -476,6 +477,7 @@
     <ClInclude Include="Include\EngineUtilities\Memory\TStaticPtr.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TUniquePtr.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TWeakPointer.h" />
+    <ClInclude Include="Include\EngineUtilities\Utilities\Camera.h" />
     <ClInclude Include="Include\EngineUtilities\Utilities\EngineMath.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector2.h" />
     <ClInclude Include="Include\EngineUtilities\Vectors\Vector3.h" />

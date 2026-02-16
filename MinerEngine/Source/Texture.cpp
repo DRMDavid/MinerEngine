@@ -44,6 +44,7 @@ Texture::init(Device& device,
     case PNG: {
         m_textureName = textureName + ".png";
         int width, height, channels;
+        stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(m_textureName.c_str(), &width, &height, &channels, 4); // 4 bytes por pixel (RGBA)
         if (!data) {
             ERROR("Texture", "init",

@@ -140,6 +140,9 @@
     <ClCompile Include="Source\SceneGraph\SceneGraph.cpp">
       <Filter>Source\SceneGraph</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Camera.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -281,6 +284,9 @@
     </ClInclude>
     <ClInclude Include="Include\SceneGraph\SceneGraph.h">
       <Filter>Include\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Utilities\Camera.h">
+      <Filter>Include\Utilities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
