@@ -9,51 +9,56 @@
 
 ---
 
-## 📘 Resumen Actualizado
-**MinerEngine** es un motor gráfico y de videojuegos de alto rendimiento desarrollado en C++ y **Direct3D 11**. Implementa una arquitectura **Entity-Component-System (ECS)** para una gestión modular de entidades y lógica de juego.
+## 📘 Resumen del Proyecto
+**MinerEngine** es un ecosistema de desarrollo 3D de alto rendimiento construido sobre **C++** y **DirectX 11**. El motor utiliza una arquitectura modular basada en un sistema de **Entidad-Componente (ECS)** y un **Grafo de Escena** avanzado para la gestión de jerarquías espaciales complejas.
 
-Esta versión ha evolucionado para incluir un pipeline de renderizado más avanzado, con soporte para mapeo de cubos (Skyboxes), carga de texturas multiformato y un sistema de optimización de mallas.
-
----
-
-## ✨ Características Principales
-
-| Característica | Descripción |
-|---|---|
-| **Arquitectura ECS** | Gestión de `Actors` y `Components` para desacoplar datos de comportamiento. |
-| **Skybox (Cubemaps)** | Soporte para texturas de 6 caras con generación automática de Mipmaps para reflejos y fondos. |
-| **Carga de Texturas** | Integración de **stb_image** para soportar `.png` y `.jpg`, además del soporte nativo para `.dds`. |
-| **Model Loader (OBJ/FBX)** | Carga y re-indexación de geometría para eliminar vértices duplicados y optimizar memoria de video. |
-| **Custom Memory** | Gestión de memoria mediante punteros inteligentes propios: `TSharedPointer`, `TWeakPointer`, etc. |
-| **ImGui Tooling** | Interfaz de depuración integrada para inspección de entidades y recursos en tiempo real. |
+Esta versión representa una evolución significativa, integrando herramientas de edición en tiempo real, navegación profesional y un pipeline de renderizado optimizado para entornos inmersivos.
 
 ---
 
-## 🏗️ Arquitectura del Motor
+## ✨ Características Técnicas Detalladas
 
-### Core & Utilities
-El motor prioriza el control total sobre el hardware evitando la STL estándar en áreas críticas:
-* **Memory:** Implementación de punteros inteligentes para evitar fugas de memoria.
-* **Math:** Librería de álgebra lineal (`EngineMath.h`) con soporte para Cuaterniones y Matrices 4x4.
+### 🌳 Gestión de Escena y Jerarquías (Scene Graph)
+MinerEngine implementa un árbol jerárquico que organiza el mundo virtual de forma lógica, permitiendo relaciones complejas de parentesco entre actores.
+* **Cálculo de Matrices en Cascada:** Las transformaciones se propagan de forma descendente. Cada nodo hijo calcula su posición global multiplicando su matriz local por la de su padre ($M_{world} = M_{local} \times M_{parentWorld}$), garantizando coherencia espacial.
+* **Validación de Integridad:** Implementación de algoritmos de detección de ancestros (`isAncestor`) para blindar el motor contra dependencias circulares que podrían derivar en un *Stack Overflow*.
+* **Arquitectura Orientada a Datos:** El grafo gestiona automáticamente el ciclo de vida de los componentes `Transform` y `Hierarchy`, asegurando que toda entidad registrada sea válida para el pipeline de renderizado.
 
-### Sistema de Gráficos
-* **Texture Class:** Ahora permite inicializar texturas desde archivo, memoria o crear vistas específicas para Cubemaps.
-* **ResourceManager:** Singleton encargado de cachear recursos (`IResource`) para evitar cargas redundantes.
-* **Renderer:** Pipeline basado en D3D11 que gestiona estados de renderizado, buffers constantes y sombreadores.
+### 🎥 Sistema de Navegación Profesional (Basis Vectors)
+Se ha sustituido el sistema de ángulos de Euler por uno basado en **vectores base**, eliminando por completo el riesgo de **Gimbal Lock** y permitiendo una rotación fluida en cualquier eje.
+* **Control por Vectores Ortonormales:** La cámara se orienta mediante los ejes `Right`, `Up` y `Forward`. Al movernos, desplazamos la posición escalando estos vectores, logrando un movimiento natural y preciso.
+* **Corrección de Deriva Matemática:** Debido a la pérdida de precisión inherente a los cálculos de punto flotante, el motor ejecuta una **re-ortonormalización** constante mediante productos cruz. Esto asegura que los ejes de la cámara se mantengan siempre perpendiculares entre sí, evitando deformaciones visuales tras sesiones prolongadas.
+
+### 🛠️ Editor y Herramientas de Autoría (ImGui + ImGuizmo)
+* **Manipulación Directa:** Integración de **ImGuizmo** para operar matrices de transformación mediante interacción directa en el viewport. El sistema traduce coordenadas de pantalla 2D a operaciones de álgebra lineal 3D en tiempo real.
+* **Sincronización de Coordenadas:** Implementación de lógica de conversión para unificar el uso de **grados** en la interfaz de usuario con los **radianes** requeridos por las funciones trigonométricas de DirectX 11.
+* **Inspector de Propiedades Avanzado:** Panel de edición detallado con widgets personalizados (`vec3Control`) que utilizan codificación de color estándar (X:Rojo, Y:Verde, Z:Azul) para facilitar el ajuste fino de la escena.
+
+### 🌌 Skybox y Pipeline de Iluminación Global
+* **Gestión de Cubemaps:** Soporte para recursos de textura de 6 caras (`TextureCube`). El cargador de texturas valida la resolución y formato de cada cara para asegurar una carga limpia en la VRAM.
+* **Optimización de Fondo:** El Skybox se renderiza utilizando un estado de profundidad específico, permitiendo que el entorno envuelva la escena de forma infinita sin interferir con la geometría cercana de los actores.
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+| Módulo | Implementación Técnica | Objetivo Arquitectónico |
+|---|---|---|
+| **Memoria** | Punteros inteligentes personalizados (`TSharedPointer`) | Control total del ciclo de vida de objetos sin la latencia de la STL. |
+| **Matemáticas** | Librería propia `EngineMath.h` | Operaciones de matrices y cuaterniones optimizadas para hardware x64. |
+| **Gráficos** | Pipeline de DirectX 11 | Gestión eficiente de `ConstantBuffers`, `InputLayouts` y estados de renderizado. |
+| **Recursos** | Singleton `ResourceManager` | Caché centralizado para evitar la duplicación de mallas y texturas en memoria de video. |
+
+
 
 ---
 
 ## 🖥️ Tecnologías Integradas
 
-* **Direct3D 11:** API principal de renderizado.
-* **Win32 API:** Manejo de ventanas e inputs nativos de Windows.
-* **STB Image:** Decodificación de imágenes `.png` y `.jpg` integrada en el cargador de texturas.
-* **FBX SDK:** Soporte para modelos de grado industrial.
+* **Direct3D 11:** API principal para el renderizado de gráficos de bajo nivel.
+* **Win32 API:** Gestión nativa de ventanas, mensajes de sistema e input de periféricos.
+* **stb_image:** Librería integrada para la decodificación de texturas multiformato (.png, .jpg).
+* **ImGui & ImGuizmo:** Herramientas de depuración y manipulación de matrices para el entorno de desarrollo.
 
 ---
 
-## 🧪 Requisitos / Ejecución
-
-1. **IDE:** Visual Studio 2019/2022.
-2. **SDKs:** DirectX SDK y FBX SDK configurados en el proyecto.
-3. **Compilación:** x64 recomendado en modo Debug o Release.
