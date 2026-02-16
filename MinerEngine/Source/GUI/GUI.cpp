@@ -148,7 +148,7 @@ GUI::appleLiquidStyle(float opacity, ImVec4 accent) {
 	ImGuiStyle& style = ImGui::GetStyle();
 	ImVec4* colors = style.Colors;
 
-	// Geometría suave tipo macOS
+	
 	style.WindowRounding = 14.0f;
 	style.ChildRounding = 14.0f;
 	style.PopupRounding = 14.0f;
@@ -158,84 +158,58 @@ GUI::appleLiquidStyle(float opacity, ImVec4 accent) {
 	style.TabRounding = 10.0f;
 
 	style.WindowBorderSize = 1.0f;
-	style.FrameBorderSize = 0.0f;
 	style.PopupBorderSize = 1.0f;
-	style.TabBorderSize = 0.0f;
 
-	style.WindowPadding = ImVec2(14, 12);
-	style.FramePadding = ImVec2(12, 8);
-	style.ItemSpacing = ImVec2(8, 8);
-	style.ItemInnerSpacing = ImVec2(8, 6);
+	// --- Definición de la Paleta Morada ---
+	const float o = opacity;
+	// Un morado oscuro profundo para el fondo (RGBA)
+	const ImVec4 purpleBg = ImVec4(0.12f, 0.08f, 0.22f, o);
+	// Un morado ligeramente más claro para elementos secundarios
+	const ImVec4 purplePane = ImVec4(0.18f, 0.12f, 0.32f, o);
+	// Morado oscuro para fondos de inputs
+	const ImVec4 purpleLow = ImVec4(0.08f, 0.05f, 0.15f, o * 0.9f);
+	const ImVec4 txt = ImVec4(1.00f, 1.00f, 1.00f, 0.95f);
 
-	const float o = opacity;                 // opacidad del “cristal”
-	const ImVec4 txt = ImVec4(1, 1, 1, 0.95f);     // texto claro
-	const ImVec4 pane = ImVec4(0.16f, 0.16f, 0.18f, o); // panel “vidrioso” oscuro
-	const ImVec4 paneHi = ImVec4(0.20f, 0.20f, 0.22f, o);
-	const ImVec4 paneLo = ImVec4(0.13f, 0.13f, 0.15f, o * 0.85f);
-
-	// Colores base “glass”
+	// --- Aplicación de Colores ---
 	colors[ImGuiCol_Text] = txt;
-	colors[ImGuiCol_TextDisabled] = ImVec4(1, 1, 1, 0.45f);
-	colors[ImGuiCol_WindowBg] = pane;     // importante: con alpha
-	colors[ImGuiCol_ChildBg] = paneLo;
-	colors[ImGuiCol_PopupBg] = paneHi;
-	colors[ImGuiCol_Border] = ImVec4(1, 1, 1, 0.10f);
-	colors[ImGuiCol_BorderShadow] = ImVec4(0, 0, 0, 0.0f);
+	colors[ImGuiCol_WindowBg] = purpleBg;   
+	colors[ImGuiCol_ChildBg] = purpleLow;
+	colors[ImGuiCol_PopupBg] = purpleBg;
+	colors[ImGuiCol_Border] = ImVec4(0.6f, 0.4f, 1.0f, 0.25f); // Borde con tinte lila
 
-	colors[ImGuiCol_FrameBg] = paneLo;
-	colors[ImGuiCol_FrameBgHovered] = pane;
-	colors[ImGuiCol_FrameBgActive] = paneHi;
+	colors[ImGuiCol_FrameBg] = purpleLow;
+	colors[ImGuiCol_FrameBgHovered] = purplePane;
+	colors[ImGuiCol_FrameBgActive] = purpleBg;
 
-	colors[ImGuiCol_TitleBg] = pane;
-	colors[ImGuiCol_TitleBgActive] = paneHi;
-	colors[ImGuiCol_TitleBgCollapsed] = paneLo;
+	colors[ImGuiCol_TitleBg] = purpleBg;
+	colors[ImGuiCol_TitleBgActive] = purplePane;
+	colors[ImGuiCol_TitleBgCollapsed] = purpleLow;
 
-	colors[ImGuiCol_MenuBarBg] = pane;
+	colors[ImGuiCol_MenuBarBg] = purpleLow;
 
-	colors[ImGuiCol_ScrollbarBg] = ImVec4(0, 0, 0, 0.0f);
-	colors[ImGuiCol_ScrollbarGrab] = ImVec4(1, 1, 1, 0.10f);
-	colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(1, 1, 1, 0.18f);
-	colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(1, 1, 1, 0.26f);
+	// Botones y Headers
+	colors[ImGuiCol_Button] = purplePane;
+	colors[ImGuiCol_ButtonHovered] = ImVec4(0.25f, 0.18f, 0.45f, o);
+	colors[ImGuiCol_ButtonActive] = purpleBg;
 
-	// Acento tipo macOS (azul #0A84FF por defecto)
+	colors[ImGuiCol_Header] = ImVec4(0.25f, 0.18f, 0.45f, 0.5f);
+	colors[ImGuiCol_HeaderHovered] = ImVec4(0.35f, 0.25f, 0.60f, 0.7f);
+	colors[ImGuiCol_HeaderActive] = accent; 
+
+	// Tabs
+	colors[ImGuiCol_Tab] = purpleLow;
+	colors[ImGuiCol_TabHovered] = purplePane;
+	colors[ImGuiCol_TabActive] = purpleBg;
+
+	// Acento (Checkmarks, Sliders, etc.)
 	colors[ImGuiCol_CheckMark] = accent;
 	colors[ImGuiCol_SliderGrab] = accent;
 	colors[ImGuiCol_SliderGrabActive] = ImVec4(accent.x, accent.y, accent.z, 1.0f);
 
-	colors[ImGuiCol_Button] = paneLo;
-	colors[ImGuiCol_ButtonHovered] = pane;
-	colors[ImGuiCol_ButtonActive] = paneHi;
-
-	colors[ImGuiCol_Header] = paneLo;
-	colors[ImGuiCol_HeaderHovered] = pane;
-	colors[ImGuiCol_HeaderActive] = paneHi;
-
-	colors[ImGuiCol_Separator] = ImVec4(1, 1, 1, 0.10f);
-	colors[ImGuiCol_SeparatorHovered] = ImVec4(1, 1, 1, 0.18f);
-	colors[ImGuiCol_SeparatorActive] = ImVec4(1, 1, 1, 0.30f);
-
-	colors[ImGuiCol_Tab] = paneLo;
-	colors[ImGuiCol_TabHovered] = pane;
-	colors[ImGuiCol_TabActive] = paneHi;
-	colors[ImGuiCol_TabUnfocused] = paneLo;
-	colors[ImGuiCol_TabUnfocusedActive] = pane;
-
-	colors[ImGuiCol_DockingPreview] = ImVec4(accent.x, accent.y, accent.z, 0.35f);
-	colors[ImGuiCol_DockingEmptyBg] = ImVec4(0, 0, 0, 0.0f);
-
-	colors[ImGuiCol_TableHeaderBg] = pane;
-	colors[ImGuiCol_TableBorderStrong] = ImVec4(1, 1, 1, 0.08f);
-	colors[ImGuiCol_TableBorderLight] = ImVec4(1, 1, 1, 0.04f);
-	colors[ImGuiCol_TableRowBg] = ImVec4(1, 1, 1, 0.03f);
-	colors[ImGuiCol_TableRowBgAlt] = ImVec4(1, 1, 1, 0.06f);
-
+	// Docking y Selección
+	colors[ImGuiCol_DockingPreview] = ImVec4(accent.x, accent.y, accent.z, 0.4f);
 	colors[ImGuiCol_TextSelectedBg] = ImVec4(accent.x, accent.y, accent.z, 0.35f);
-	colors[ImGuiCol_NavHighlight] = ImVec4(accent.x, accent.y, accent.z, 0.50f);
-	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1, 1, 1, 0.30f);
-	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0, 0, 0, 0.20f);
-	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0, 0, 0, 0.35f);
 }
-
 
 void
 GUI::ToolBar() {
