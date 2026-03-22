@@ -44,7 +44,6 @@ Texture::init(Device& device,
     case PNG: {
         m_textureName = textureName + ".png";
         int width, height, channels;
-        stbi_set_flip_vertically_on_load(true);
         unsigned char* data = stbi_load(m_textureName.c_str(), &width, &height, &channels, 4); // 4 bytes por pixel (RGBA)
         if (!data) {
             ERROR("Texture", "init",
@@ -245,7 +244,7 @@ Texture::destroy() {
     if (m_texture != nullptr) {
         SAFE_RELEASE(m_texture);
     }
-    else if (m_textureFromImg != nullptr) {
+    if (m_textureFromImg != nullptr) {
         SAFE_RELEASE(m_textureFromImg);
     }
 }
@@ -343,16 +342,22 @@ Texture::CreateCubemap(Device& device,
             return hr;
         }
 
-        for (unsigned int face = 0; face < 6; ++face)
+        UINT mipCount = 1 + (UINT)floor(log2(max(width, height)));
+
+        for (UINT face = 0; face < 6; ++face)
         {
-            // Mip 0, ArraySlice=face
-            unsigned int sub = D3D11CalcSubresource(0, face, 0 /*MipLevels=0*/);
-            deviceContext.UpdateSubresource(m_texture,
+            UINT sub = D3D11CalcSubresource(0, face, mipCount);
+
+            deviceContext.UpdateSubresource(
+                m_texture,
                 sub,
                 nullptr,
                 facePixels[face],
-                static_cast<unsigned int>(width * 4), 0);
+                width * 4,
+                0
+            );
         }
+        deviceContext.m_deviceContext->GenerateMips(m_textureFromImg);
     }
 
     // 3) Crear SRV dimension TEXTURECUBE

@@ -1,67 +1,90 @@
 #pragma once
-
 #include "Prerequisites.h"
 
-// Declaraciones adelantadas (Forward Declarations)
 class Device;
 class DeviceContext;
 
 /**
  * @class SamplerState
- * @brief Clase que gestiona el estado del muestreador de texturas (Sampler State).
+ * @brief Encapsula un @c ID3D11SamplerState para la etapa de muestreo de texturas en Direct3D 11.
  *
- * Responsable de la creación, vinculación y liberación del objeto ID3D11SamplerState.
+ * Un Sampler State define cómo se leen las texturas en los shaders:
+ * - Filtrado (point, linear, anisotropic).
+ * - Direccionamiento (wrap, mirror, clamp, border).
+ * - Nivel de mipmapping.
+ *
+ * Esta clase administra la creación, aplicación y destrucción de un @c SamplerState.
  */
 class
-	SamplerState {
+    SamplerState {
 public:
-	/**
-	 * @brief Constructor por defecto.
-	 */
-	SamplerState() = default;
+    /**
+     * @brief Constructor por defecto.
+     */
+    SamplerState() = default;
 
-	/**
-	 * @brief Destructor por defecto.
-	 */
-	~SamplerState() = default;
+    /**
+     * @brief Destructor por defecto.
+     * @details No libera automáticamente el recurso COM; llamar a destroy().
+     */
+    ~SamplerState() = default;
 
-	/**
-	 * @brief Inicializa el objeto SamplerState creando el recurso ID3D11SamplerState en el dispositivo.
-	 *
-	 * Configura las propiedades de muestreo (e.g., filtrado, modo de borde/direccionamiento de UVs).
-	 * @param device Referencia al objeto Device de DirectX para la creación del estado.
-	 * @return HRESULT El código de resultado de la operación (S_OK si es exitosa).
-	 */
-	HRESULT
-		init(Device& device);
+    /**
+     * @brief Inicializa el Sampler State con una configuración predeterminada.
+     *
+     * Crea un @c ID3D11SamplerState configurado según la implementación (ejemplo:
+     * filtrado lineal, wrap en UV, LOD completo).
+     *
+     * @param device Dispositivo con el que se creará el recurso.
+     * @return @c S_OK si fue exitoso; código @c HRESULT en caso de error.
+     *
+     * @post Si retorna @c S_OK, @c m_sampler != nullptr.
+     * @sa render(), destroy()
+     */
+    HRESULT
+        init(Device& device);
 
-	/**
-	 * @brief Lógica de actualización (generalmente vacía para un estado estático).
-	 *
-	 * Se podría usar si las propiedades de muestreo cambiaran dinámicamente.
-	 */
-	void
-		update();
+    /**
+     * @brief Actualiza parámetros internos del Sampler.
+     *
+     * Método de marcador para recrear o mutar dinámicamente la configuración
+     * (por ejemplo, cambiar de filtrado linear a anisotrópico).
+     *
+     * @note Actualmente no realiza ninguna operación.
+     */
+    void
+        update();
 
-	/**
-	 * @brief Vincula el SamplerState a los recursos de shader (Generalmente Pixel Shader o Compute Shader).
-	 *
-	 * @param deviceContext Referencia al contexto del dispositivo para establecer el recurso.
-	 * @param StartSlot Índice del slot inicial en el array de muestreadores donde se vinculará este muestreador.
-	 * @param NumSamplers Número de muestreadores a vincular (normalmente 1).
-	 */
-	void
-		render(DeviceContext& deviceContext,
-			unsigned int StartSlot,
-			unsigned int NumSamplers);
+    /**
+     * @brief Asigna el Sampler State a la etapa de Pixel Shader.
+     *
+     * Llama a @c ID3D11DeviceContext::PSSetSamplers para establecer el sampler.
+     *
+     * @param deviceContext Contexto donde se aplicará el sampler.
+     * @param StartSlot     Slot inicial en el que se vinculará el sampler.
+     * @param NumSamplers   Número de samplers a enlazar (normalmente 1).
+     *
+     * @pre @c m_sampler debe haberse creado con init().
+     */
+    void
+        render(DeviceContext& deviceContext,
+            unsigned int StartSlot,
+            unsigned int NumSamplers);
 
-	/**
-	 * @brief Limpia y libera el recurso ID3D11SamplerState de DirectX.
-	 */
-	void
-		destroy();
+    /**
+     * @brief Libera el recurso @c ID3D11SamplerState.
+     *
+     * Idempotente: puede llamarse múltiples veces de forma segura.
+     *
+     * @post @c m_sampler == nullptr.
+     */
+    void
+        destroy();
 
 public:
-	/// @brief Puntero al objeto nativo ID3D11SamplerState de DirectX.
-	ID3D11SamplerState* m_sampler = nullptr;
+    /**
+     * @brief Recurso COM de Direct3D 11 para el Sampler State.
+     * @details Válido tras init(); @c nullptr después de destroy().
+     */
+    ID3D11SamplerState* m_sampler = nullptr;
 };

@@ -8,7 +8,7 @@ Buffer::init(Device& device, const MeshComponent& mesh, unsigned int bindFlag) {
 		ERROR("ShaderProgram", "init", "Device is null.");
 		return E_POINTER;
 	}
-	if ((bindFlag & D3D11_BIND_VERTEX_BUFFER) && mesh.m_vertex.empty()) {
+	if ((bindFlag & D3D11_BIND_VERTEX_BUFFER) && mesh.m_vertex.empty() && mesh.m_skyVertex.empty()) {
 		ERROR("Buffer", "init", "Vertex buffer is empty");
 		return E_INVALIDARG;
 	}
@@ -23,12 +23,19 @@ Buffer::init(Device& device, const MeshComponent& mesh, unsigned int bindFlag) {
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.CPUAccessFlags = 0;
 	m_bindFlag = bindFlag;
+	desc.BindFlags = (D3D11_BIND_FLAG)bindFlag;
 
 	if (bindFlag & D3D11_BIND_VERTEX_BUFFER) {
-		m_stride = sizeof(SimpleVertex);
-		desc.ByteWidth = m_stride * static_cast<unsigned int>(mesh.m_vertex.size());
-		desc.BindFlags = (D3D11_BIND_FLAG)bindFlag;
-		data.pSysMem = mesh.m_vertex.data();
+		if (mesh.m_skyVertex.size() > 0 && mesh.m_vertex.size() == 0) {
+			m_stride = sizeof(SkyboxVertex);
+			desc.ByteWidth = m_stride * static_cast<unsigned int>(mesh.m_skyVertex.size());
+			data.pSysMem = mesh.m_skyVertex.data();
+		}
+		else {
+			m_stride = sizeof(SimpleVertex);
+			desc.ByteWidth = m_stride * static_cast<unsigned int>(mesh.m_vertex.size());
+			data.pSysMem = mesh.m_vertex.data();
+		}
 	}
 	else if (bindFlag & D3D11_BIND_INDEX_BUFFER) {
 		m_stride = sizeof(unsigned int);
@@ -36,7 +43,6 @@ Buffer::init(Device& device, const MeshComponent& mesh, unsigned int bindFlag) {
 		desc.BindFlags = (D3D11_BIND_FLAG)bindFlag;
 		data.pSysMem = mesh.m_index.data();
 	}
-
 	return createBuffer(device, desc, &data);
 }
 

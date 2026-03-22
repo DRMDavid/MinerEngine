@@ -287,3 +287,4 @@ namespace EU {
 		return TSharedPointer<T>(new T(args...));
 	}
 }
+

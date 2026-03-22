@@ -2,8 +2,8 @@
 #include "Prerequisites.h"
 #include "EngineUtilities\Vectors\Vector3.h"
 
-class
-	Camera {
+class 
+Camera {
 public:
 	Camera();
 	~Camera() = default;
@@ -18,26 +18,29 @@ public:
 		 * **Aplicación práctica**
 		 * - Llamar al inicializar ventana y al cambiar resolución.
 		 */
-	void
-		setLens(float fovYRadians, float aspectRatio, float nearPlane, float farPlane);
+	void 
+	setLens(float fovYRadians, float aspectRatio, float nearPlane, float farPlane);
 
 	/**
 	 * @brief Define posición en mundo.
 	 */
 	void
-		setPosition(float x, float y, float z);
+	setPosition(float x, float y, float z);
 
 	/**
 	 * @brief Define posición en mundo.
 	 */
 	void
-		setPosition(const EU::Vector3& pos);
+	setPosition(const EU::Vector3& pos);
 
 	/**
 	 * @brief Obtiene la posición en mundo.
 	 */
-	EU::Vector3
-		getPosition() const { return m_position; }
+	EU::Vector3 
+	getPosition() const { return m_position; }
+	
+	EU::Vector3 &
+	getPosition() { return m_position; }
 
 	/**
 	 * @brief Fuerza la cámara a mirar a un objetivo (LH).
@@ -51,21 +54,21 @@ public:
 	 * - Cinemáticas simples o cámaras orbit.
 	 */
 	void
-		lookAt(const EU::Vector3& pos,
-			const EU::Vector3& target,
-			const EU::Vector3& up = EU::Vector3(0, 1, 0));
+	lookAt(const EU::Vector3& pos,
+				 const EU::Vector3& target, 
+				 const EU::Vector3& up = EU::Vector3(0, 1, 0));
 
 	/**
 	 * @brief Movimiento relativo a la cámara (adelante/atrás).
 	 */
-	void
-		walk(float d);
+	void 
+	walk(float d);
 
 	/**
 	 * @brief Movimiento relativo a la cámara (izquierda/derecha).
 	 */
-	void
-		strafe(float d);
+	void 
+	strafe(float d);
 
 	/**
 	 * @brief Rotación sobre el eje Y global (yaw).
@@ -73,8 +76,8 @@ public:
 	 * **Aplicación práctica**
 	 * - Mouse X para FPS.
 	 */
-	void
-		yaw(float radians);
+	void 
+	yaw(float radians);
 
 	/**
 	 * @brief Rotación sobre el eje Right local (pitch).
@@ -82,8 +85,8 @@ public:
 	 * **Aplicación práctica**
 	 * - Mouse Y para FPS.
 	 */
-	void
-		pitch(float radians);
+	void 
+	pitch(float radians);
 
 	/**
 	 * @brief Recalcula la matriz View si es necesario.
@@ -95,20 +98,20 @@ public:
 	 * **Aplicación práctica**
 	 * - Llamar una vez por frame antes de render.
 	 */
-	void
-		updateViewMatrix();
+	void 
+	updateViewMatrix();
 
 	/**
 	 * @brief Matriz View (mundo->vista).
 	 */
-	XMMATRIX
-		getView() const { return XMLoadFloat4x4(&m_view); }
+	XMMATRIX 
+	getView() const { return XMLoadFloat4x4(&m_view); }
 
 	/**
 	 * @brief Matriz Projection (vista->clip).
 	 */
-	XMMATRIX
-		getProj() const { return XMLoadFloat4x4(&m_proj); }
+	XMMATRIX 
+	getProj() const { return XMLoadFloat4x4(&m_proj); }
 
 	/**
 	 * @brief View sin traslación (solo rotación). Ideal para Skybox.
@@ -116,8 +119,8 @@ public:
 	 * **Aplicación práctica**
 	 * - Skybox: ViewNoTranslation * Proj
 	 */
-	XMMATRIX
-		GetViewNoTranslation() const {
+	XMMATRIX 
+	GetViewNoTranslation() const {
 		XMMATRIX v = getView();
 		// Quitar traslación (fila 4)
 		v.r[3] = XMVectorSet(0, 0, 0, 1);
@@ -139,8 +142,8 @@ public:
 	EU::Vector3 GetUp()      const { return m_up; }
 	EU::Vector3 GetForward() const { return m_forward; }
 
-	inline EU::Vector3
-		FromXM(FXMVECTOR v) {
+	inline EU::Vector3 
+	FromXM(FXMVECTOR v)	{
 		XMFLOAT3 t;
 		XMStoreFloat3(&t, v);
 		return EU::Vector3(t.x, t.y, t.z);
@@ -152,16 +155,16 @@ private:
 	EU::Vector3 m_position; /**< The position of the camera in world space. */
 
 	// Basis Ortonormal (en mundo)
-	EU::Vector3 m_right{ 1.0f, 0.0f, 0.0f }; /**< The right vector of the camera's orthonormal basis. */
-	EU::Vector3 m_up{ 0.0f, 1.0f, 0.0f }; /**< The up vector of the camera's orthonormal basis. */
-	EU::Vector3 m_forward{ 0.0f, 0.0f, 1.0f }; /**< The forward vector of the camera's orthonormal basis. */
+	EU::Vector3 m_right		{ 1.0f, 0.0f, 0.0f }; /**< The right vector of the camera's orthonormal basis. */
+	EU::Vector3 m_up			{ 0.0f, 1.0f, 0.0f }; /**< The up vector of the camera's orthonormal basis. */
+	EU::Vector3 m_forward	{ 0.0f, 0.0f, 1.0f }; /**< The forward vector of the camera's orthonormal basis. */
 
 	// Matrices almacenadas
-	XMFLOAT4X4 m_view{};
-	XMFLOAT4X4 m_proj{};
+	XMFLOAT4X4 m_view {};
+	XMFLOAT4X4 m_proj {};
 
 	// Parametros de la proyeccion
-	float m_fovY{ XM_PIDIV4 }; /**< The field of view (FOV) angle in radians. */
+	float m_fovY { XM_PIDIV4 }; /**< The field of view (FOV) angle in radians. */
 	float m_aspectRatio = 1.0f; /**< The aspect ratio of the camera's view (width divided by height). */
 	float m_nearPlane = 0.01f; /**< The distance to the near clipping plane. */
 	float m_farPlane = 1000.0f; /**< The distance to the far clipping plane. */

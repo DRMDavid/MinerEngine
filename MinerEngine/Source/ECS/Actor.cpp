@@ -85,36 +85,39 @@ Actor::update(float deltaTime, DeviceContext& deviceContext) {
 
 void
 Actor::render(DeviceContext& deviceContext) {
-	// 1) Proyectar sombra primero (sobre el suelo)
-	//if (canCastShadow()) {
-	//	renderShadow(deviceContext);
-	//}
-	//
-	// 2) Estados de raster, blend y sampler para el modelo
-	//m_blendstate.render(deviceContext);
-	//m_rasterizer.render(deviceContext);
 	m_sampler.render(deviceContext, 0, 1);
 
+	deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	// Update buffer and render all components
+	for (unsigned int i = 0; i < m_meshes.size(); i++)
+	{
+		m_vertexBuffers[i].render(deviceContext, 0, 1);
+		m_indexBuffers[i].render(deviceContext, 0, 1, false, DXGI_FORMAT_R32_UINT);
+		m_modelBuffer.render(deviceContext, 1, 1, true);
+
+		// Limpieza por mesh (evita herencias)
+		ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+		deviceContext.m_deviceContext->PSSetShaderResources(0, 1, nullSRV);
+
+		// Bind correcto por mesh
+		if (i < m_textures.size()) {
+			for (int k = 0; k < m_textures.size(); k++) {
+				m_textures[k].render(deviceContext, k, 1);   // albedo mesh i
+			}
+		}
+		// else: se queda null
+		deviceContext.DrawIndexed(m_meshes[i].m_numIndex, 0, 0);
+	}
+}
+
+void
+Actor::renderForSkybox(DeviceContext& deviceContext) {
 	deviceContext.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	// Update buffer and render all components
 	for (unsigned int i = 0; i < m_meshes.size(); i++) {
 		m_vertexBuffers[i].render(deviceContext, 0, 1);
 		m_indexBuffers[i].render(deviceContext, 0, 1, false, DXGI_FORMAT_R32_UINT);
-		// Bind del CB “normal” (world + color)
-		m_modelBuffer.render(deviceContext, 2, 1, true);
 
-		// Render mesh texture
-		if (m_textures.size() > 0) {
-			if (i < m_textures.size()) {
-				if (m_textures.size() >= 1) {
-					m_textures[0].render(deviceContext, 0, 1); // Albedo -> t0
-					//m_textures[1].render(deviceContext, 1, 1); // Normal -> t1
-					//m_textures[2].render(deviceContext, 2, 1); // Metallic -> t2
-					//m_textures[3].render(deviceContext, 3, 1); // Roughness -> t3
-					//m_textures[4].render(deviceContext, 4, 1); // AO -> t4
-				}
-			}
-		}
 		deviceContext.DrawIndexed(m_meshes[i].m_numIndex, 0, 0);
 	}
 }
