@@ -1,4 +1,4 @@
-﻿﻿#pragma once
+﻿#pragma once
 #include "Prerequisites.h"
 #include "Buffer.h"
 #include "DepthStencilState.h"
