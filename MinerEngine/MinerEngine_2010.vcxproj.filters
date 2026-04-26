@@ -60,6 +60,12 @@
     <Filter Include="Source\SceneGraph">
       <UniqueIdentifier>{c7e676a0-ffbc-4c90-8f7a-a6f159a6c84f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Include\Rendering">
+      <UniqueIdentifier>{ba0f8381-57d8-4447-b987-64791e97ec6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Rendering">
+      <UniqueIdentifier>{0f4a6ff0-1793-4414-8911-68fa0da4b4c3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="MinerEngine.cpp">
@@ -143,9 +149,25 @@
     <ClCompile Include="Source\Camera.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\DepthStencilState.cpp" />
+    <ClCompile Include="Source\EditorViewportPass.cpp" />
+    <ClCompile Include="Source\RasterizerState.cpp" />
+    <ClCompile Include="Source\Skybox.cpp" />
+    <ClCompile Include="Source\Rendering\ForwardRenderer.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\MaterialInstance.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Rendering\RenderScene.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="bin\Skybox.hlsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
@@ -287,6 +309,29 @@
     </ClInclude>
     <ClInclude Include="Include\EngineUtilities\Utilities\Camera.h">
       <Filter>Include\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\DepthStencilState.h" />
+    <ClInclude Include="Include\EngineUtilities\Utilities\EditorViewportPass.h" />
+    <ClInclude Include="Include\EngineUtilities\Utilities\LayoutBuilder.h" />
+    <ClInclude Include="Include\EngineUtilities\Utilities\Skybox.h" />
+    <ClInclude Include="Include\RasterizerState.h" />
+    <ClInclude Include="Include\Rendering\ForwardRenderer.h">
+      <Filter>Include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Rendering\Material.h">
+      <Filter>Include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Rendering\MaterialInstance.h">
+      <Filter>Include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Rendering\Mesh.h">
+      <Filter>Include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Rendering\RenderScene.h">
+      <Filter>Include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Rendering\RenderTypes.h">
+      <Filter>Include\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
