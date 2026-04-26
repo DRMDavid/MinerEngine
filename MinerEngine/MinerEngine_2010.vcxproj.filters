@@ -156,12 +156,6 @@
     <ClCompile Include="Source\Rendering\ForwardRenderer.cpp">
       <Filter>Source\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Rendering\MaterialInstance.cpp">
-      <Filter>Source\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Rendering\RenderScene.cpp">
-      <Filter>Source\Rendering</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">

@@ -449,8 +449,6 @@
     <ClCompile Include="Source\Model3D.cpp" />
     <ClCompile Include="Source\RasterizerState.cpp" />
     <ClCompile Include="Source\Rendering\ForwardRenderer.cpp" />
-    <ClCompile Include="Source\Rendering\MaterialInstance.cpp" />
-    <ClCompile Include="Source\Rendering\RenderScene.cpp" />
     <ClCompile Include="Source\RenderTargetView.cpp" />
     <ClCompile Include="Source\SceneGraph\SceneGraph.cpp" />
     <ClCompile Include="Source\ShaderProgram.cpp" />
