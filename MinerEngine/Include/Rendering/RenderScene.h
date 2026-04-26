@@ -1,11 +1,11 @@
-?#pragma once
+﻿#pragma once
 #include "Prerequisites.h"
 #include "Rendering/RenderTypes.h"
 
 class Skybox;
 
 class
-	RenderScene {
+RenderScene {
 public:
 	void clear();
 

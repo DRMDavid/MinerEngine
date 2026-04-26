@@ -11,7 +11,7 @@
 #include "EngineUtilities/Utilities/Skybox.h"
 
 HRESULT
-ForwardRenderer::init(Device & device) {
+ForwardRenderer::init(Device& device) {
 	HRESULT hr = m_perFrameBuffer.init(device, sizeof(CBPerFrame));
 	if (FAILED(hr)) {
 		return hr;
@@ -321,3 +321,6 @@ ForwardRenderer::resolveBlendState(const Material* material) const {
 		return m_alphaBlendState ? m_alphaBlendState : m_opaqueBlendState;
 	}
 }
+
+
+

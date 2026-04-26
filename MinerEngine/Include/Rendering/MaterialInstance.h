@@ -1,4 +1,4 @@
-﻿﻿#pragma once
+﻿#pragma once
 #include "Prerequisites.h"
 #include "Rendering/RenderTypes.h"
 
@@ -7,7 +7,7 @@ class DeviceContext;
 class Texture;
 
 class
-	MaterialInstance {
+MaterialInstance {
 public:
 	void setMaterial(Material* material) { m_material = material; }
 	void setAlbedo(Texture* texture) { m_albedo = texture; }

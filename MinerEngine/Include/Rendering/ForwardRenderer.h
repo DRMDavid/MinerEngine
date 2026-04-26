@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Prerequisites.h"
 #include "Buffer.h"
 #include "DepthStencilState.h"
@@ -12,7 +12,7 @@ class EditorViewportPass;
 class Material;
 
 class
-	ForwardRenderer {
+ForwardRenderer {
 public:
 	HRESULT init(Device& device);
 	void resize(Device& device, unsigned int width, unsigned int height);

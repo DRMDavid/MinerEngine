@@ -1,18 +1,18 @@
-?#pragma once
+﻿#pragma once
 #include "Prerequisites.h"
 
 class Mesh;
 class MaterialInstance;
 
 enum class
-	MaterialDomain {
+MaterialDomain {
 	Opaque = 0,
 	Masked,
 	Transparent
 };
 
 enum class
-	BlendMode {
+BlendMode {
 	Opaque = 0,
 	Alpha,
 	Additive,
@@ -20,7 +20,7 @@ enum class
 };
 
 enum class
-	RenderPassType {
+RenderPassType {
 	Shadow = 0,
 	Opaque,
 	Skybox,
@@ -29,14 +29,14 @@ enum class
 };
 
 enum class
-	LightType {
+LightType {
 	Directional = 0,
 	Point,
 	Spot
 };
 
 struct
-	LightData {
+LightData {
 	LightType type = LightType::Directional;
 	EU::Vector3 color = EU::Vector3(1.0f, 1.0f, 1.0f);
 	float intensity = 1.0f;
@@ -49,7 +49,7 @@ struct
 };
 
 struct
-	MaterialParams {
+MaterialParams {
 	XMFLOAT4 baseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	float metallic = 1.0f;
 	float roughness = 1.0f;
@@ -60,7 +60,7 @@ struct
 };
 
 struct
-	CBPerFrame {
+CBPerFrame {
 	XMFLOAT4X4 View{};
 	XMFLOAT4X4 Projection{};
 	EU::Vector3 CameraPos{};
@@ -72,12 +72,12 @@ struct
 };
 
 struct
-	CBPerObject {
+CBPerObject {
 	XMFLOAT4X4 World{};
 };
 
 struct
-	CBPerMaterial {
+CBPerMaterial {
 	XMFLOAT4 BaseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	float Metallic = 1.0f;
 	float Roughness = 1.0f;
@@ -94,7 +94,7 @@ struct
 };
 
 struct
-	RenderObject {
+RenderObject {
 	Mesh* mesh = nullptr;
 	MaterialInstance* materialInstance = nullptr;
 	std::vector<MaterialInstance*> materialInstances;
