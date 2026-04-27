@@ -39,9 +39,6 @@
     <Filter Include="Include\ImGui">
       <UniqueIdentifier>{570a07f8-4bae-42b5-97eb-9b6b5b4df2f2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\ImGui">
-      <UniqueIdentifier>{be7d002e-98ad-4893-986e-ae0cc0963afb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Include\GUI">
       <UniqueIdentifier>{08f0adbb-45e0-404b-be96-407b0d3227e1}</UniqueIdentifier>
     </Filter>
@@ -65,6 +62,9 @@
     </Filter>
     <Filter Include="Source\Rendering">
       <UniqueIdentifier>{0f4a6ff0-1793-4414-8911-68fa0da4b4c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\GUI\ImGui">
+      <UniqueIdentifier>{be7d002e-98ad-4893-986e-ae0cc0963afb}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
