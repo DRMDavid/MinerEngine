@@ -133,35 +133,35 @@ BaseApp::init() {
 	if (!m_cyberGun.isNull()) {
 		// Crear vertex buffer y index buffer para el pistol
 		std::vector<MeshComponent> cyberGunMeshes;
-		m_model = new Model3D("Assets/Models/Pistol.fbx", ModelType::FBX);
+		m_model = new Model3D("Assets/Models/Rana.fbx", ModelType::FBX);
 		cyberGunMeshes = m_model->GetMeshes();
 
 		std::vector<Texture> cyberGunTextures;
-		hr = m_AlbedoSRV.init(m_device, "Assets/Textures/Pistol/BASECOLOR_Material", PNG);
+		hr = m_AlbedoSRV.init(m_device, "Assets/Textures/Rana/Sci-FIToad_Body_BC", PNG);
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
 				("Failed to initialize DrakePistol Texture. HRESULT: " + std::to_string(hr)).c_str());
 			return hr;
 		}
-		hr = m_MetallicSRV.init(m_device, "Assets/Textures/Pistol/METALLICMaterial", PNG);
+		hr = m_MetallicSRV.init(m_device, "Assets/Textures/Rana/Sci-FIToad_Body_M", PNG);
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
 				("Failed to initialize DrakePistol Texture. HRESULT: " + std::to_string(hr)).c_str());
 			return hr;
 		}
-		hr = m_RoughnessSRV.init(m_device, "Assets/Textures/Pistol/ROUGHNESS", PNG);
+		hr = m_RoughnessSRV.init(m_device, "Assets/Textures/Rana/Sci-FIToad_Body_R", PNG);
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
 				("Failed to initialize DrakePistol Texture. HRESULT: " + std::to_string(hr)).c_str());
 			return hr;
 		}
-		hr = m_AOSRV.init(m_device, "Assets/Textures/Pistol/AOMaterial", PNG);
+		hr = m_AOSRV.init(m_device, "Assets/Textures/Rana/Sci-FIToad_Body_AO", PNG);
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
 				("Failed to initialize DrakePistol Texture. HRESULT: " + std::to_string(hr)).c_str());
 			return hr;
 		}
-		hr = m_NormalSRV.init(m_device, "Assets/Textures/Pistol/NORMAL_Material", PNG);
+		hr = m_NormalSRV.init(m_device, "Assets/Textures/Rana/Sci-FIToad_Body_N", PNG);
 		if (FAILED(hr)) {
 			ERROR("Main", "InitDevice",
 				("Failed to initialize DrakePistol Texture. HRESULT: " + std::to_string(hr)).c_str());
