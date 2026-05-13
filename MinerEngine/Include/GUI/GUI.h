@@ -61,4 +61,6 @@ public:
     ImVec2 m_viewportSize = ImVec2(0.0f, 0.0f);
     bool m_viewportHovered = false;
     bool m_viewportFocused = false;
+
 };
+

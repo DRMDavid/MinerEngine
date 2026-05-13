@@ -525,6 +525,9 @@
     <ResourceCompile Include="MinerEngine.rc" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="bin\ShadowMap.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

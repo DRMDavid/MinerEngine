@@ -1,4 +1,9 @@
-﻿#pragma once
+﻿/**
+ * @file RenderTypes.h
+ * @brief Declara la API de RenderTypes dentro del subsistema Rendering.
+ * @ingroup rendering
+ */
+#pragma once
 #include "Prerequisites.h"
 
 class Mesh;
@@ -63,6 +68,7 @@ struct
 	CBPerFrame {
 	XMFLOAT4X4 View{};
 	XMFLOAT4X4 Projection{};
+	XMFLOAT4X4 LightViewProjection{};
 	EU::Vector3 CameraPos{};
 	float pad0 = 0.0f;
 	EU::Vector3 LightDir = EU::Vector3(0.0f, -1.0f, 0.0f);
