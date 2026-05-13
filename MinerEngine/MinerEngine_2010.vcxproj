@@ -500,6 +500,7 @@
     <ClInclude Include="Include\GUI\GUI.h" />
     <ClInclude Include="Include\InputLayout.h" />
     <ClInclude Include="Include\IResource.h" />
+    <ClInclude Include="Include\ISceneRenderer.h" />
     <ClInclude Include="Include\MeshComponent.h" />
     <ClInclude Include="Include\Model3D.h" />
     <ClInclude Include="Include\Prerequisites.h" />

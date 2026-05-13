@@ -156,6 +156,8 @@
     <ClCompile Include="Source\Rendering\ForwardRenderer.cpp">
       <Filter>Source\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Rendering\MaterialInstance.cpp" />
+    <ClCompile Include="Source\Rendering\RenderScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -327,7 +329,15 @@
     <ClInclude Include="Include\Rendering\RenderTypes.h">
       <Filter>Include\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Include\ECS\LightComponent.h" />
+    <ClInclude Include="Include\ECS\MeshRendererComponent.h" />
+    <ClInclude Include="Include\ISceneRenderer.h">
+      <Filter>Include\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="bin\ShadowMap.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
