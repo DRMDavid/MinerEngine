@@ -156,8 +156,10 @@
     <ClCompile Include="Source\Rendering\ForwardRenderer.cpp">
       <Filter>Source\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Rendering\MaterialInstance.cpp" />
     <ClCompile Include="Source\Rendering\RenderScene.cpp" />
+    <ClCompile Include="Source\Rendering\MaterialInstance.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -307,7 +309,6 @@
       <Filter>Include\Utilities</Filter>
     </ClInclude>
     <ClInclude Include="Include\DepthStencilState.h" />
-    <ClInclude Include="Include\EngineUtilities\Utilities\EditorViewportPass.h" />
     <ClInclude Include="Include\EngineUtilities\Utilities\LayoutBuilder.h" />
     <ClInclude Include="Include\EngineUtilities\Utilities\Skybox.h" />
     <ClInclude Include="Include\RasterizerState.h" />
@@ -331,7 +332,13 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\LightComponent.h" />
     <ClInclude Include="Include\ECS\MeshRendererComponent.h" />
-    <ClInclude Include="Include\ISceneRenderer.h">
+    <ClInclude Include="Include\Rendering\DeferredRenderer.h">
+      <Filter>Include\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\EngineUtilities\Utilities\EditorViewportPass.h">
+      <Filter>Include\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Rendering\ISceneRenderer.h">
       <Filter>Include\Rendering</Filter>
     </ClInclude>
   </ItemGroup>

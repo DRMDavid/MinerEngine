@@ -10,12 +10,18 @@ class SamplerState;
 class
 	Material {
 public:
-	void setShader(ShaderProgram* shader) { m_shader = shader; }
-	void setRasterizerState(RasterizerState* state) { m_rasterizerState = state; }
-	void setDepthStencilState(DepthStencilState* state) { m_depthStencilState = state; }
-	void setSamplerState(SamplerState* state) { m_samplerState = state; }
-	void setDomain(MaterialDomain domain) { m_domain = domain; }
-	void setBlendMode(BlendMode blendMode) { m_blendMode = blendMode; }
+	void 
+	setShader(ShaderProgram* shader) { m_shader = shader; }
+	void 
+	setRasterizerState(RasterizerState* state) { m_rasterizerState = state; }
+	void 
+	setDepthStencilState(DepthStencilState* state) { m_depthStencilState = state; }
+	void 
+	setSamplerState(SamplerState* state) { m_samplerState = state; }
+	void 
+	setDomain(MaterialDomain domain) { m_domain = domain; }
+	void 
+	setBlendMode(BlendMode blendMode) { m_blendMode = blendMode; }
 
 	ShaderProgram* getShader() const { return m_shader; }
 	RasterizerState* getRasterizerState() const { return m_rasterizerState; }
