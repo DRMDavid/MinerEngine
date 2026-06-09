@@ -160,6 +160,9 @@
     <ClCompile Include="Source\Rendering\MaterialInstance.cpp">
       <Filter>Source\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Rendering\DeferredRenderercpp.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">

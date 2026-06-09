@@ -448,6 +448,7 @@
     <ClCompile Include="Source\InputLayout.cpp" />
     <ClCompile Include="Source\Model3D.cpp" />
     <ClCompile Include="Source\RasterizerState.cpp" />
+    <ClCompile Include="Source\Rendering\DeferredRenderercpp.cpp" />
     <ClCompile Include="Source\Rendering\ForwardRenderer.cpp" />
     <ClCompile Include="Source\Rendering\MaterialInstance.cpp" />
     <ClCompile Include="Source\Rendering\RenderScene.cpp" />
