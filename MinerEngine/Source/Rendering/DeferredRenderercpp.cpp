@@ -1,9 +1,3 @@
-/**
- * @file DeferredRenderer.cpp
- * @brief Implementa la logica de DeferredRenderer dentro del subsistema Rendering.
- * @ingroup rendering
- */
-
 #include "Rendering/DeferredRenderer.h"
 #include <algorithm>
 #include <cmath>
@@ -33,21 +27,22 @@ namespace {
         unsigned int m_height = 1;
     };
 
-    ID3D11RenderTargetView* ResolveViewportRTV(EditorViewportPass& pass) {
-        EditorViewportPassAccess* access = reinterpret_cast<EditorViewportPassAccess*>(&pass);
-        RenderTargetViewAccess* rtvAccess = reinterpret_cast<RenderTargetViewAccess*>(&access->m_rtv);
-        return rtvAccess->m_renderTargetView;
-    }
+};
 
-    ID3D11DepthStencilView* ResolveViewportDSV(EditorViewportPass& pass) {
-        EditorViewportPassAccess* access = reinterpret_cast<EditorViewportPassAccess*>(&pass);
-        return access->m_dsv.m_depthStencilView;
-    }
+ID3D11RenderTargetView* ResolveViewportRTV(EditorViewportPass& pass) {
+    EditorViewportPassAccess* access = reinterpret_cast<EditorViewportPassAccess*>(&pass);
+    RenderTargetViewAccess* rtvAccess = reinterpret_cast<RenderTargetViewAccess*>(&access->m_rtv);
+    return rtvAccess->m_renderTargetView;
+}
 
-    ID3D11RenderTargetView* ResolveRTV(RenderTargetView& view) {
-        RenderTargetViewAccess* access = reinterpret_cast<RenderTargetViewAccess*>(&view);
-        return access->m_renderTargetView;
-    }
+ID3D11DepthStencilView* ResolveViewportDSV(EditorViewportPass& pass) {
+    EditorViewportPassAccess* access = reinterpret_cast<EditorViewportPassAccess*>(&pass);
+    return access->m_dsv.m_depthStencilView;
+}
+
+ID3D11RenderTargetView* ResolveRTV(RenderTargetView& view) {
+    RenderTargetViewAccess* access = reinterpret_cast<RenderTargetViewAccess*>(&view);
+    return access->m_renderTargetView;
 }
 
 const LightData*
@@ -82,6 +77,24 @@ DeferredRenderer::init(Device& device) {
         return hr;
     }
 
+    hr = m_perMaterialBuffer.init(device, sizeof(CBPerMaterial));
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    hr = m_lightingDebugBuffer.init(device, sizeof(DeferredLightingDebugData));
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    hr = m_transparentDepthStencil.init(device,
+        true,
+        D3D11_DEPTH_WRITE_MASK_ZERO,
+        D3D11_COMPARISON_LESS_EQUAL);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
     hr = m_disabledDepthStencil.init(device,
         false,
         D3D11_DEPTH_WRITE_MASK_ZERO,
@@ -96,23 +109,136 @@ DeferredRenderer::init(Device& device) {
         D3D11_COMPARISON_LESS);
     if (FAILED(hr)) {
         return hr;
+    }
 
-        hr = createShadowResources(device);
-        if (FAILED(hr)) {
-            return hr;
-        }
+    hr = createShadowResources(device);
+    if (FAILED(hr)) {
+        return hr;
+    }
 
-        hr = m_preShadowDebugPass.init(device, m_renderWidth, m_renderHeight);
-        if (FAILED(hr)) {
-            return hr;
-        }
+    hr = m_preShadowDebugPass.init(device, m_renderWidth, m_renderHeight);
+    if (FAILED(hr)) {
+        return hr;
+    }
 
-        hr = createGBufferResources(device, m_renderWidth, m_renderHeight);
-        if (FAILED(hr)) {
-            return hr;
-        }
+    hr = createGBufferResources(device, m_renderWidth, m_renderHeight);
+    if (FAILED(hr)) {
+        return hr;
+    }
 
-        hr = createLightingResources(device);
-        if (FAILED(hr)) {
-            return hr;
-        }
+    hr = createLightingResources(device);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    hr = createFullScreenQuad(device);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    hr = createBlendStates(device);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    return S_OK;
+}
+
+void
+DeferredRenderer::resize(Device& device, unsigned int width, unsigned int height) {
+    if (width < 64) width = 64;
+    if (height < 64) height = 64;
+
+    m_renderWidth = width;
+    m_renderHeight = height;
+    m_preShadowDebugPass.resize(device, width, height);
+    createGBufferResources(device, width, height);
+}
+
+void
+DeferredRenderer::render(DeviceContext& deviceContext,
+    const Camera& camera,
+    RenderScene& scene,
+    EditorViewportPass& viewportPass) {
+    buildQueues(scene, camera);
+    updatePerFrame(camera, scene, deviceContext);
+
+    renderSceneToTarget(deviceContext, scene, m_preShadowDebugPass, false);
+    renderShadowPass(deviceContext);
+    renderSceneToTarget(deviceContext, scene, viewportPass, true);
+}
+
+void
+DeferredRenderer::destroy() {
+    m_opaqueQueue.clear();
+    m_transparentQueue.clear();
+
+    SAFE_RELEASE(m_alphaBlendState);
+    SAFE_RELEASE(m_opaqueBlendState);
+    SAFE_RELEASE(m_additiveBlendState);
+    SAFE_RELEASE(m_premultipliedBlendState);
+
+    m_fullscreenIndexBuffer.destroy();
+    m_fullscreenVertexBuffer.destroy();
+
+    m_gBufferEmissiveAlphaRTV.destroy();
+    m_gBufferEmissiveAlphaSRV.destroy();
+    m_gBufferEmissiveAlphaTexture.destroy();
+    m_gBufferWorldAoRTV.destroy();
+    m_gBufferWorldAoSRV.destroy();
+    m_gBufferWorldAoTexture.destroy();
+    m_gBufferNormalRoughnessRTV.destroy();
+    m_gBufferNormalRoughnessSRV.destroy();
+    m_gBufferNormalRoughnessTexture.destroy();
+    m_gBufferAlbedoMetallicRTV.destroy();
+    m_gBufferAlbedoMetallicSRV.destroy();
+    m_gBufferAlbedoMetallicTexture.destroy();
+
+    m_fullscreenRasterizer.destroy();
+    m_lightingSampler.destroy();
+    m_deferredLightingShader.destroy();
+    m_gBufferShader.destroy();
+
+    m_transparentDepthStencil.destroy();
+    m_disabledDepthStencil.destroy();
+    m_shadowDepthStencil.destroy();
+    m_perMaterialBuffer.destroy();
+    m_lightingDebugBuffer.destroy();
+    m_perObjectBuffer.destroy();
+    m_perFrameBuffer.destroy();
+
+    m_shadowRasterizer.destroy();
+    m_shadowShader.destroy();
+    m_shadowDSV.destroy();
+    m_shadowDepthSRV.destroy();
+    m_shadowDepthTexture.destroy();
+    m_preShadowDebugPass.destroy();
+}
+
+void
+DeferredRenderer::buildQueues(RenderScene& scene, const Camera& camera) {
+    (void)camera;
+    m_opaqueQueue.clear();
+    m_transparentQueue.clear();
+
+    for (auto& object : scene.opaqueObjects) {
+        m_opaqueQueue.push_back(&object);
+    }
+
+    for (auto& object : scene.transparentObjects) {
+        m_transparentQueue.push_back(&object);
+    }
+
+    std::sort(m_opaqueQueue.begin(), m_opaqueQueue.end(),
+        [](const RenderObject* lhs, const RenderObject* rhs) {
+            if (lhs->materialInstance != rhs->materialInstance) {
+                return lhs->materialInstance < rhs->materialInstance;
+            }
+            return lhs->distanceToCamera < rhs->distanceToCamera;
+        });
+
+    std::sort(m_transparentQueue.begin(), m_transparentQueue.end(),
+        [](const RenderObject* lhs, const RenderObject* rhs) {
+            return lhs->distanceToCamera > rhs->distanceToCamera;
+        });
+}
