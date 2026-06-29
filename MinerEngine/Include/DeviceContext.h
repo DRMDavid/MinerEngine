@@ -254,5 +254,7 @@ public:
      * @details Válido tras init(); liberado en destroy().
      */
     ID3D11DeviceContext* m_deviceContext = nullptr;
+    unsigned int m_drawCallCount = 0;
+
 
 };

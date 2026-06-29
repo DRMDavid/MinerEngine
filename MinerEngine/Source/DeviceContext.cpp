@@ -251,4 +251,6 @@ DeviceContext::DrawIndexed(unsigned int IndexCount,
 
 	// Ejecutar el dibujo
 	m_deviceContext->DrawIndexed(IndexCount, StartIndexLocation, BaseVertexLocation);
+	++m_drawCallCount;
+
 }

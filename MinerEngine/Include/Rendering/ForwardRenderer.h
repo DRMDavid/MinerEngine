@@ -9,6 +9,7 @@
 #include "DepthStencilState.h"
 #include "DepthStencilView.h"
 #include "RasterizerState.h"
+#include "Rendering/ISceneRenderer.h"
 #include "Rendering/RenderScene.h"
 #include "Rendering/RenderTypes.h"
 #include "ShaderProgram.h"
@@ -28,17 +29,17 @@ class Material;
  * actualiza buffers por frame y compone el resultado final dentro del viewport del editor.
  */
 class
-	ForwardRenderer {
+	ForwardRenderer : public ISceneRenderer {
 public:
 	/**
 	 * @brief Inicializa buffers, shaders y estados del renderer.
 	 */
-	HRESULT init(Device& device);
+	HRESULT init(Device& device) override;
 
 	/**
 	 * @brief Reconstuye los recursos dependientes del tamano del viewport.
 	 */
-	void resize(Device& device, unsigned int width, unsigned int height);
+	void resize(Device& device, unsigned int width, unsigned int height) override;
 
 	/**
 	 * @brief Actualiza constantes globales usadas por el frame actual.
@@ -51,14 +52,15 @@ public:
 	void render(DeviceContext& deviceContext,
 		const Camera& camera,
 		RenderScene& scene,
-		EditorViewportPass& viewportPass);
+		EditorViewportPass& viewportPass) override;
 
 	/**
 	 * @brief Libera los recursos internos del renderer.
 	 */
-	void destroy();
-	ID3D11ShaderResourceView* getShadowMapSRV() const { return m_shadowDepthSRV.m_textureFromImg; }
-	ID3D11ShaderResourceView* getPreShadowSRV() const { return m_preShadowDebugPass.getSRV(); }
+	void destroy() override;
+	ID3D11ShaderResourceView* getShadowMapSRV() const override { return m_shadowDepthSRV.m_textureFromImg; }
+	ID3D11ShaderResourceView* getPreShadowSRV() const override { return m_preShadowDebugPass.getSRV(); }
+	const char* getDebugName() const override { return "ForwardRenderer"; }
 
 private:
 	void buildQueues(RenderScene& scene, const Camera& camera);
@@ -79,6 +81,7 @@ private:
 	Buffer m_perObjectBuffer;
 	Buffer m_perMaterialBuffer;
 	DepthStencilState m_transparentDepthStencil;
+	DepthStencilState m_shadowDepthStencil;
 	ID3D11BlendState* m_alphaBlendState = nullptr;
 	ID3D11BlendState* m_opaqueBlendState = nullptr;
 	ID3D11BlendState* m_additiveBlendState = nullptr;

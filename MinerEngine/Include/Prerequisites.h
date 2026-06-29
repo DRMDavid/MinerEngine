@@ -27,14 +27,18 @@
 #include "EngineUtilities\Memory\TStaticPtr.h"
 #include "EngineUtilities\Memory\TUniquePtr.h"
 
+// Logger del editor (consola)
+#include "Logger.h"
+
 // MACROS
 #define SAFE_RELEASE(x) if(x != nullptr) x->Release(); x = nullptr;
 
 #define MESSAGE( classObj, method, state )   \
 {                                            \
    std::wostringstream os_;                  \
-   os_ << classObj << "::" << method << " : " << "[CREATION OF RESOURCE " << ": " << state << "] \n"; \
+   os_ << classObj << "::" << method << " : " << "[CREATION OF RESOURCE " << ": " << state << "]"; \
    OutputDebugStringW( os_.str().c_str() );  \
+   Logger::get().addW(LogLevel::Info, os_.str()); \
 }
 
 #define ERROR(classObj, method, errorMSG)                     \
@@ -42,10 +46,11 @@
     try {                                                     \
         std::wostringstream os_;                              \
         os_ << L"ERROR : " << classObj << L"::" << method     \
-            << L" : " << errorMSG << L"\n";                   \
+            << L" : " << errorMSG << L"";                   \
         OutputDebugStringW(os_.str().c_str());                \
+        Logger::get().addW(LogLevel::Error, os_.str());       \
     } catch (...) {                                           \
-        OutputDebugStringW(L"Failed to log error message.\n");\
+        OutputDebugStringW(L"Failed to log error message.");\
     }                                                         \
 }
 
@@ -66,7 +71,6 @@ struct
     float x, y, z;
 };
 
-
 struct CBNeverChanges
 {
     XMMATRIX mView;
@@ -82,11 +86,8 @@ struct CBChangeOnResize
     XMMATRIX mProjection;
 };
 
-// Constant buffer used in the vertex and pixel shaders.  Align to
-// 16?bytes as required by Direct3D constant buffers.
 struct CBMain
 {
-    //XMFLOAT4X4 World;
     XMFLOAT4X4 View;
     XMFLOAT4X4 Projection;
     EU::Vector3 CameraPos;
@@ -120,10 +121,9 @@ enum ShaderType {
  */
 enum
     ComponentType {
-    NONE = 0,     ///< Tipo de componente no especificado.
-    TRANSFORM = 1,///< Componente de transformación.
-    MESH = 2,     ///< Componente de malla.
-    MATERIAL = 3,  ///< Componente de material.
-    HIERARCHY = 4 ///< Componente de jerarquía.
+    NONE = 0,
+    TRANSFORM = 1,
+    MESH = 2,
+    MATERIAL = 3,
+    HIERARCHY = 4
 };
-
