@@ -311,6 +311,46 @@ BaseApp::init() {
 		m_sceneGraph.addEntity(m_directionalLightActor.get());
 	}
 
+	// ---- Point Light ----
+	{
+		auto pointLightActor = EU::MakeShared<Actor>(m_device);
+
+		pointLightActor->setName("Point Light");
+
+		auto light = EU::MakeShared<LightComponent>();
+		pointLightActor->addComponent(light);
+
+		light->getLightData().type = LightType::Point;
+		light->getLightData().position = EU::Vector3(0.0f, 3.0f, 0.0f);
+		light->getLightData().color = EU::Vector3(1.0f, 0.8f, 0.5f);
+		light->getLightData().intensity = 5.0f;
+		light->getLightData().range = 8.0f;
+
+		m_actors.push_back(pointLightActor);
+		m_sceneGraph.addEntity(pointLightActor.get());
+	}
+
+	// ---- Spot Light ----
+	{
+		auto spotLightActor = EU::MakeShared<Actor>(m_device);
+
+		spotLightActor->setName("Spot Light");
+
+		auto light = EU::MakeShared<LightComponent>();
+		spotLightActor->addComponent(light);
+
+		light->getLightData().type = LightType::Spot;
+		light->getLightData().position = EU::Vector3(4.0f, 5.0f, 0.0f);
+		light->getLightData().direction = EU::Vector3(-1.0f, -1.0f, 0.0f);
+		light->getLightData().color = EU::Vector3(0.5f, 0.6f, 1.0f);
+		light->getLightData().intensity = 8.0f;
+		light->getLightData().range = 10.0f;
+		light->getLightData().spotAngle = 30.0f;
+
+		m_actors.push_back(spotLightActor);
+		m_sceneGraph.addEntity(spotLightActor.get());
+	}
+
 	hr = m_editorViewportPass.init(m_device, 1280, 720);
 	if (FAILED(hr)) { ERROR("Main", "InitDevice", "Failed EditorViewportPass."); return hr; }
 
@@ -375,7 +415,64 @@ BaseApp::update(float deltaTime) {
 	if (m_gui.consumeResetRequest()) {
 		resetSceneToDefaults();
 	}
+	//==========================================================
+// Crear luces
+//==========================================================
 
+	if (m_gui.consumeCreateDirectionalLightRequest())
+	{
+		auto actor = EU::MakeShared<Actor>(m_device);
+
+		actor->setName("Directional Light");
+
+		auto light = EU::MakeShared<LightComponent>();
+		actor->addComponent(light);
+
+		light->getLightData().type = LightType::Directional;
+		light->getLightData().direction = EU::Vector3(0, -1, 0);
+		light->getLightData().color = EU::Vector3(1, 1, 1);
+		light->setCastShadow(true);
+
+		addActorToScene(actor);
+	}
+
+	if (m_gui.consumeCreatePointLightRequest())
+	{
+		auto actor = EU::MakeShared<Actor>(m_device);
+
+		actor->setName("Point Light");
+
+		auto light = EU::MakeShared<LightComponent>();
+		actor->addComponent(light);
+
+		light->getLightData().type = LightType::Point;
+		light->getLightData().position = EU::Vector3(0, 3, 0);
+		light->getLightData().color = EU::Vector3(1, 1, 1);
+		light->getLightData().range = 8.0f;
+		light->getLightData().intensity = 5.0f;
+
+		addActorToScene(actor);
+	}
+
+	if (m_gui.consumeCreateSpotLightRequest())
+	{
+		auto actor = EU::MakeShared<Actor>(m_device);
+
+		actor->setName("Spot Light");
+
+		auto light = EU::MakeShared<LightComponent>();
+		actor->addComponent(light);
+
+		light->getLightData().type = LightType::Spot;
+		light->getLightData().position = EU::Vector3(0, 4, 0);
+		light->getLightData().direction = EU::Vector3(0, -1, 0);
+		light->getLightData().color = EU::Vector3(1, 1, 1);
+		light->getLightData().range = 10.0f;
+		light->getLightData().spotAngle = 35.0f;
+		light->getLightData().intensity = 8.0f;
+
+		addActorToScene(actor);
+	}
 	// --- Undo/Redo: registrar movimientos del gizmo ---
 	{
 		bool usingGizmo = m_gui.m_isUsingGizmo;
@@ -505,7 +602,7 @@ BaseApp::update(float deltaTime) {
 	}
 
 	// --- Outline del objeto seleccionado ---
-	if (!m_actors.empty() && m_gui.selectedActorIndex >= 0 &&
+	/*if (!m_actors.empty() && m_gui.selectedActorIndex >= 0 &&
 		m_gui.selectedActorIndex < (int)m_actors.size()) {
 		EU::TSharedPointer<Actor> sel = m_actors[m_gui.selectedActorIndex];
 		if (!sel.isNull()) {
@@ -515,7 +612,7 @@ BaseApp::update(float deltaTime) {
 				m_gui.drawSelectionOutline(m_camera, mn, mx, t->worldMatrix);
 			}
 		}
-	}
+	}*/
 
 
 	// Resize estable del viewport

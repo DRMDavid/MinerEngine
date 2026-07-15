@@ -194,50 +194,106 @@ void GUI::closeApp() {
 	}
 }
 
-void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor) {
+void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
+{
 	ImGui::Begin("Inspector");
-	if (!actor) { ImGui::TextDisabled("No actor selected"); ImGui::End(); return; }
 
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.10f, 0.17f, 1.0f));
-	ImGui::BeginChild("HeaderRegion", ImVec2(0, 95), true);
-	bool isStatic = false;
-	ImGui::Checkbox("##Static", &isStatic); ImGui::SameLine();
+	if (!actor)
+	{
+		ImGui::TextDisabled("No actor selected");
+		ImGui::End();
+		return;
+	}
+
+	//============================================================
+	// HEADER
+	//============================================================
+
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
+
+	ImGui::Text("Actor");
+	ImGui::Separator();
+
 	char objectName[128];
 	strcpy_s(objectName, sizeof(objectName), actor->getName().c_str());
-	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 40.0f);
-	if (ImGui::InputText("##ObjectName", objectName, IM_ARRAYSIZE(objectName))) actor->setName(std::string(objectName));
-	ImGui::SameLine(); ImGui::Button("Icon", ImVec2(30, 0)); ImGui::Spacing();
-	const char* tags[] = { "Untagged", "Player", "Enemy", "Environment" };
-	static int currentTag = 0;
-	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.45f);
-	ImGui::Combo("Tag", &currentTag, tags, IM_ARRAYSIZE(tags)); ImGui::SameLine();
-	const char* layers[] = { "Default", "TransparentFX", "Ignore Raycast", "Water", "UI" };
-	static int currentLayer = 0;
-	ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
-	ImGui::Combo("Layer", &currentLayer, layers, IM_ARRAYSIZE(layers));
-	ImGui::EndChild();
-	ImGui::PopStyleColor(); ImGui::Spacing();
 
-	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) inspectorContainer(actor);
+	if (ImGui::InputText("Name", objectName, IM_ARRAYSIZE(objectName)))
+		actor->setName(objectName);
+
 	ImGui::Spacing();
-	if (ImGui::CollapsingHeader("Rendering", ImGuiTreeNodeFlags_DefaultOpen)) {
-		ImGui::Indent(10.0f);
 
+	//============================================================
+	// TRANSFORM
+	//============================================================
+
+	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		inspectorContainer(actor);
+	}
+
+	//============================================================
+	// RENDERER
+	//============================================================
+
+	if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen))
+	{
 		auto mr = actor->getComponent<MeshRendererComponent>();
-		if (mr) {
-			bool vis = mr->isVisible();
-			if (ImGui::Checkbox("Visible", &vis)) mr->setVisible(vis);
+
+		if (mr)
+		{
+			bool visible = mr->isVisible();
+
+			if (ImGui::Checkbox("Visible", &visible))
+				mr->setVisible(visible);
 		}
 
 		bool castShadow = actor->canCastShadow();
-		if (ImGui::Checkbox("Cast Shadows", &castShadow)) actor->setCastShadow(castShadow);
 
-		ImGui::TextDisabled("Configuraciones de luz y material...");
-		ImGui::Unindent(10.0f);
+		if (ImGui::Checkbox("Cast Shadows", &castShadow))
+			actor->setCastShadow(castShadow);
 	}
+
+	//============================================================
+	// MATERIAL
+	//============================================================
+
+	if (ImGui::CollapsingHeader("Material"))
+	{
+		ImGui::TextDisabled("Material Editor");
+		ImGui::Separator();
+
+		ImGui::Text("Albedo");
+		ImGui::Text("Normal");
+		ImGui::Text("Metallic");
+		ImGui::Text("Roughness");
+	}
+
+	//============================================================
+	// LIGHT
+	//============================================================
+
+	if (actor->getName().find("Light") != std::string::npos)
+	{
+		if (ImGui::CollapsingHeader("Directional Light", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::TextDisabled("Light settings");
+
+			static float intensity = 1.0f;
+			ImGui::SliderFloat("Intensity", &intensity, 0.0f, 10.0f);
+
+			static bool castShadows = true;
+			ImGui::Checkbox("Cast Shadows", &castShadows);
+
+			ImGui::TextDisabled("Más opciones llegarán cuando");
+			ImGui::TextDisabled("implementemos Point y Spot Lights.");
+		}
+	}
+
+	ImGui::PopStyleVar(2);
+
 	ImGui::End();
 }
-
 
 void GUI::inspectorContainer(EU::TSharedPointer<Actor> actor) {
 	if (!actor) return;
@@ -250,6 +306,9 @@ void GUI::inspectorContainer(EU::TSharedPointer<Actor> actor) {
 
 void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 	ImGui::Begin("Hierarchy");
+
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6, 6));
 
 	if (ImGui::Button("Show All")) {
 		for (const auto& a : actors) {
@@ -288,7 +347,26 @@ void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 
 		bool hidden = (mr && !mr->isVisible());
 		if (hidden) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.50f, 0.48f, 0.56f, 1.0f));
-		bool nodeOpen = ImGui::TreeNodeEx("##node", flags, "%s", actorName.c_str());
+		std::string label;
+
+		if (actorName.find("Light") != std::string::npos)
+		{
+			label = "[L] " + actorName;
+		}
+		else if (actorName.find("Camera") != std::string::npos)
+		{
+			label = "[C] " + actorName;
+		}
+		else
+		{
+			label = "[M] " + actorName;
+		}
+
+		bool nodeOpen = ImGui::TreeNodeEx(
+			"##node",
+			flags,
+			"%s",
+			label.c_str());
 		if (hidden) ImGui::PopStyleColor();
 
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) selectedActorIndex = i;
@@ -324,6 +402,22 @@ void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 			}
 
 			ImGui::Separator();
+
+			if (ImGui::BeginMenu("Create"))
+			{
+				if (ImGui::MenuItem("Directional Light"))
+					m_createDirectionalLightRequested = true;
+
+				if (ImGui::MenuItem("Point Light"))
+					m_createPointLightRequested = true;
+
+				if (ImGui::MenuItem("Spot Light"))
+					m_createSpotLightRequested = true;
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::Separator();
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
 			if (ImGui::MenuItem("Delete", "Del")) m_deleteRequested = true;
 			ImGui::PopStyleColor();
@@ -342,7 +436,7 @@ void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 
 		ImGui::PopID();
 	}
-
+	ImGui::PopStyleVar(2);
 	ImGui::End();
 }
 
@@ -394,37 +488,11 @@ void GUI::editTransform(Camera& cam, Window& window, EU::TSharedPointer<Actor> a
 	}
 }
 
-void GUI::drawGizmoToolbar() {
-	ImGui::SetNextWindowBgAlpha(0.85f);
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-	if (ImGui::Begin("GizmoToolBar", nullptr, window_flags)) {
-		auto buttonMode = [&](const char* label, ImGuizmo::OPERATION op, const char* shortcut) {
-			bool isActive = (mCurrentGizmoOperation == op);
-			if (isActive) ImGui::PushStyleColor(ImGuiCol_Button, kAccent);
-			if (ImGui::Button(label)) mCurrentGizmoOperation = op;
-			if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s (%s)", label, shortcut);
-			if (isActive) ImGui::PopStyleColor();
-			ImGui::SameLine();
-			};
-		buttonMode("T", ImGuizmo::TRANSLATE, "W");
-		buttonMode("R", ImGuizmo::ROTATE, "E");
-		buttonMode("S", ImGuizmo::SCALE, "R");
-
-		static ImGuizmo::MODE mCurrentGizmoMode = ImGuizmo::WORLD;
-		if (ImGui::Button(mCurrentGizmoMode == ImGuizmo::WORLD ? "Global" : "Local"))
-			mCurrentGizmoMode = (mCurrentGizmoMode == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
-		ImGui::SameLine(); ImGui::TextDisabled("|"); ImGui::SameLine();
-		ImGui::Checkbox("Grid", &m_showGrid); ImGui::SameLine();
-		ImGui::Checkbox("Snap", &m_snapEnabled); ImGui::SameLine();
-		if (ImGui::Button("Focus")) m_focusRequested = true;
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Centrar camara en el objeto (tecla F)");
-		ImGui::SameLine();
-		if (ImGui::Button("Fit")) m_fitRequested = true;
-		if (ImGui::IsItemHovered()) ImGui::SetTooltip("Encuadrar toda la escena");
-	}
-	ImGui::End();
-	ImGui::PopStyleVar();
+void GUI::drawGizmoToolbar()
+{
+	// Toolbar deshabilitada temporalmente.
+	// Los atajos de teclado seguirán funcionando
+	// porque se manejan en otro lugar del editor.
 }
 
 void GUI::drawStudioTopRibbon() {
@@ -459,6 +527,19 @@ void GUI::drawStudioTopRibbon() {
 				if (ImGui::MenuItem("Load Prefab")) m_loadPrefabRequested = true;
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("Create"))
+			{
+				if (ImGui::MenuItem("Directional Light"))
+					m_createDirectionalLightRequested = true;
+
+				if (ImGui::MenuItem("Point Light"))
+					m_createPointLightRequested = true;
+
+				if (ImGui::MenuItem("Spot Light"))
+					m_createSpotLightRequested = true;
+
+				ImGui::EndMenu();
+			}
 
 			ImGui::EndMenuBar();
 		}
@@ -473,38 +554,6 @@ void GUI::drawStudioTopRibbon() {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.125f, 0.105f, 0.180f, 1.0f));
-	if (ImGui::Begin("##StudioRibbon", nullptr, ribbonFlags)) {
-		auto ribbonButton = [&](const char* id, const char* topText, const char* bottomText, ImVec2 size, bool active = false) -> bool {
-			if (active) ImGui::PushStyleColor(ImGuiCol_Button, kAccent);
-			bool pressed = ImGui::Button(id, size);
-			ImVec2 mn = ImGui::GetItemRectMin(); ImVec2 mx = ImGui::GetItemRectMax();
-			ImDrawList* dl = ImGui::GetWindowDrawList();
-			ImVec2 ts = ImGui::CalcTextSize(topText); ImVec2 bs = ImGui::CalcTextSize(bottomText);
-			float cx = (mn.x + mx.x) * 0.5f;
-			dl->AddText(ImVec2(cx - ts.x * 0.5f, mn.y + 10.0f), ImGui::GetColorU32(ImGuiCol_Text), topText);
-			dl->AddText(ImVec2(cx - bs.x * 0.5f, mn.y + 34.0f), ImGui::GetColorU32(ImGuiCol_TextDisabled), bottomText);
-			if (active) ImGui::PopStyleColor();
-			return pressed;
-			};
-		auto separatorGroup = [&]() {
-			ImGui::SameLine(); ImGui::Dummy(ImVec2(6.0f, 1.0f)); ImGui::SameLine();
-			ImVec2 p = ImGui::GetCursorScreenPos();
-			ImGui::GetWindowDrawList()->AddLine(ImVec2(p.x, p.y), ImVec2(p.x, p.y + 48.0f), IM_COL32(140, 90, 230, 110), 1.0f);
-			ImGui::Dummy(ImVec2(8.0f, 48.0f)); ImGui::SameLine();
-			};
-		const ImVec2 btnSize(72.0f, 52.0f);
-		ribbonButton("##Select", "Select", "Cursor", btnSize, false); ImGui::SameLine();
-		if (ribbonButton("##Move", "Move", "W", btnSize, mCurrentGizmoOperation == ImGuizmo::TRANSLATE)) mCurrentGizmoOperation = ImGuizmo::TRANSLATE; ImGui::SameLine();
-		if (ribbonButton("##Rotate", "Rotate", "E", btnSize, mCurrentGizmoOperation == ImGuizmo::ROTATE)) mCurrentGizmoOperation = ImGuizmo::ROTATE; ImGui::SameLine();
-		if (ribbonButton("##Scale", "Scale", "R", btnSize, mCurrentGizmoOperation == ImGuizmo::SCALE)) mCurrentGizmoOperation = ImGuizmo::SCALE;
-		separatorGroup();
-		ribbonButton("##Part", "3D Object", "Mesh", btnSize, false); ImGui::SameLine();
-		ribbonButton("##Light", "Light", "Point", btnSize, false); ImGui::SameLine();
-		ribbonButton("##Material", "Material", "Editor", btnSize, false);
-		separatorGroup();
-		ribbonButton("##Play", "Play", "Game", btnSize, false);
-	}
-	ImGui::End();
 	ImGui::PopStyleColor(1); ImGui::PopStyleVar(3);
 }
 
@@ -663,25 +712,63 @@ void GUI::drawRenderDebugPanel(ID3D11ShaderResourceView* preShadowSRV,
 	ImGui::End();
 }
 
-void GUI::drawLightingPanel(float* lightDir, float* lightColor) {
-	ImGui::Begin("Lighting");
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.72f, 0.28f, 0.40f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.85f, 0.36f, 0.48f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.60f, 0.20f, 0.32f, 1.0f));
-	if (ImGui::Button("  Reset Scene  ")) {
-		m_resetRequested = true;
-		m_deferredDebugViewMode = 0;
-		m_visualizeDeferredShadowFactor = false;
-	}
-	ImGui::PopStyleColor(3);
-	if (ImGui::IsItemHovered()) ImGui::SetTooltip("Restaura transforms, luz y camara a sus valores originales");
-	ImGui::Separator();
-	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.72f, 0.55f, 1.0f, 1.0f));
-	ImGui::TextUnformatted("Luz direccional principal");
-	ImGui::PopStyleColor();
+void GUI::drawLightingPanel(float* lightDir, float* lightColor)
+{
+	ImGui::Begin("Scene Settings");
+
 	ImGui::Spacing();
-	if (lightDir)   vec3Control("Direccion", lightDir, 0.0f, 90.0f);
-	if (lightColor) vec3Control("Color", lightColor, 1.0f, 90.0f);
+
+	if (ImGui::CollapsingHeader("Scene", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.72f, 0.28f, 0.40f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.85f, 0.36f, 0.48f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.60f, 0.20f, 0.32f, 1.0f));
+
+		if (ImGui::Button("Reset Scene"))
+		{
+			m_resetRequested = true;
+			m_deferredDebugViewMode = 0;
+			m_visualizeDeferredShadowFactor = false;
+		}
+
+		ImGui::PopStyleColor(3);
+
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Restablece la escena a su estado inicial.");
+	}
+
+	ImGui::Spacing();
+
+	if (ImGui::CollapsingHeader("Environment", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		if (lightDir)
+			vec3Control("Sun Direction", lightDir, 0.0f, 100.0f);
+
+		if (lightColor)
+			vec3Control("Sun Color", lightColor, 1.0f, 100.0f);
+	}
+
+	ImGui::Spacing();
+
+	if (ImGui::CollapsingHeader("Lighting"))
+	{
+		ImGui::TextDisabled("Point Lights: 0");
+		ImGui::TextDisabled("Spot Lights : 0");
+		ImGui::TextDisabled("Area Lights : 0");
+
+		ImGui::Separator();
+
+		if (ImGui::Button("+ Add Point Light"))
+		{
+			// Próximamente
+		}
+
+		if (ImGui::Button("+ Add Spot Light"))
+		{
+			// Próximamente
+		}
+	}
+
 	ImGui::End();
 }
 

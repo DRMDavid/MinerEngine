@@ -134,6 +134,50 @@ public:
     
     void drawSelectionOutline(Camera& cam, const EU::Vector3& localMin, const EU::Vector3& localMax, const XMMATRIX& world);
 
+    bool m_createDirectionalLightRequested = false;
+    bool m_createPointLightRequested = false;
+    bool m_createSpotLightRequested = false;
+
+    bool createDirectionalLightRequested() const
+    {
+        return m_createDirectionalLightRequested;
+    }
+
+    bool createPointLightRequested() const
+    {
+        return m_createPointLightRequested;
+    }
+
+    bool createSpotLightRequested() const
+    {
+        return m_createSpotLightRequested;
+    }
+
+    bool m_createDirectionalLightRequested = false;
+    bool m_createPointLightRequested = false;
+    bool m_createSpotLightRequested = false;
+
+    bool consumeCreateDirectionalLightRequest()
+    {
+        bool r = m_createDirectionalLightRequested;
+        m_createDirectionalLightRequested = false;
+        return r;
+    }
+
+    bool consumeCreatePointLightRequest()
+    {
+        bool r = m_createPointLightRequested;
+        m_createPointLightRequested = false;
+        return r;
+    }
+
+    bool consumeCreateSpotLightRequest()
+    {
+        bool r = m_createSpotLightRequested;
+        m_createSpotLightRequested = false;
+        return r;
+    }
+
 
 
 
