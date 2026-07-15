@@ -409,7 +409,10 @@ void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 					m_createDirectionalLightRequested = true;
 
 				if (ImGui::MenuItem("Point Light"))
+				{
 					m_createPointLightRequested = true;
+					MESSAGE("GUI", "LIGHT", "Point pressed");
+				}
 
 				if (ImGui::MenuItem("Spot Light"))
 					m_createSpotLightRequested = true;

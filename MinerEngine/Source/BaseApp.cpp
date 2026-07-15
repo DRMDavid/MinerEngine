@@ -311,45 +311,7 @@ BaseApp::init() {
 		m_sceneGraph.addEntity(m_directionalLightActor.get());
 	}
 
-	// ---- Point Light ----
-	{
-		auto pointLightActor = EU::MakeShared<Actor>(m_device);
 
-		pointLightActor->setName("Point Light");
-
-		auto light = EU::MakeShared<LightComponent>();
-		pointLightActor->addComponent(light);
-
-		light->getLightData().type = LightType::Point;
-		light->getLightData().position = EU::Vector3(0.0f, 3.0f, 0.0f);
-		light->getLightData().color = EU::Vector3(1.0f, 0.8f, 0.5f);
-		light->getLightData().intensity = 5.0f;
-		light->getLightData().range = 8.0f;
-
-		m_actors.push_back(pointLightActor);
-		m_sceneGraph.addEntity(pointLightActor.get());
-	}
-
-	// ---- Spot Light ----
-	{
-		auto spotLightActor = EU::MakeShared<Actor>(m_device);
-
-		spotLightActor->setName("Spot Light");
-
-		auto light = EU::MakeShared<LightComponent>();
-		spotLightActor->addComponent(light);
-
-		light->getLightData().type = LightType::Spot;
-		light->getLightData().position = EU::Vector3(4.0f, 5.0f, 0.0f);
-		light->getLightData().direction = EU::Vector3(-1.0f, -1.0f, 0.0f);
-		light->getLightData().color = EU::Vector3(0.5f, 0.6f, 1.0f);
-		light->getLightData().intensity = 8.0f;
-		light->getLightData().range = 10.0f;
-		light->getLightData().spotAngle = 30.0f;
-
-		m_actors.push_back(spotLightActor);
-		m_sceneGraph.addEntity(spotLightActor.get());
-	}
 
 	hr = m_editorViewportPass.init(m_device, 1280, 720);
 	if (FAILED(hr)) { ERROR("Main", "InitDevice", "Failed EditorViewportPass."); return hr; }
