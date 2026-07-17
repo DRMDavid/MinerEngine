@@ -7,6 +7,7 @@
 #include "ECS/Actor.h"
 #include "EngineUtilities/Utilities/Camera.h"
 #include "ECS/MeshRendererComponent.h"
+#include "ECS/LightComponent.h"
 #include <string>
 #include <vector>
 
@@ -275,18 +276,49 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 
 	if (actor->getName().find("Light") != std::string::npos)
 	{
-		if (ImGui::CollapsingHeader("Directional Light", ImGuiTreeNodeFlags_DefaultOpen))
+		// 1. Obtenemos el componente real de la luz
+		auto lightComp = actor->getComponent<LightComponent>();
+
+		if (lightComp)
 		{
-			ImGui::TextDisabled("Light settings");
+			if (ImGui::CollapsingHeader("Light Settings", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				// 2. Extraemos los datos reales para modificarlos en MinerEngine
+				auto& lightData = lightComp->getLightData();
 
-			static float intensity = 1.0f;
-			ImGui::SliderFloat("Intensity", &intensity, 0.0f, 10.0f);
+				ImGui::TextDisabled("Light Properties");
 
-			static bool castShadows = true;
-			ImGui::Checkbox("Cast Shadows", &castShadows);
+				// 3. Modificador de Color real (Usa ColorEdit3 para la paleta RGB)
+				ImGui::ColorEdit3("Color", &lightData.color.x);
 
-			ImGui::TextDisabled("Más opciones llegarán cuando");
-			ImGui::TextDisabled("implementemos Point y Spot Lights.");
+				// 4. Modificador de Intensidad real
+				ImGui::DragFloat("Intensity", &lightData.intensity, 0.1f, 0.0f, 100.0f, "%.2f");
+
+				// 5. Rango (Solo para Point y Spot)
+				if (lightData.type == LightType::Point || lightData.type == LightType::Spot)
+				{
+					ImGui::DragFloat("Range", &lightData.range, 0.5f, 0.1f, 500.0f, "%.1f");
+				}
+
+				// 6. Ángulo (Solo para Spot)
+				if (lightData.type == LightType::Spot)
+				{
+					ImGui::DragFloat("Spot Angle", &lightData.spotAngle, 1.0f, 1.0f, 90.0f, "%.1f");
+				}
+
+				ImGui::Spacing();
+
+				// 7. Modificador de Sombras (Leyendo del actor real)
+				bool castShadows = actor->canCastShadow();
+				if (ImGui::Checkbox("Cast Shadows", &castShadows))
+				{
+					actor->setCastShadow(castShadows);
+				}
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("No LightComponent found on this actor.");
 		}
 	}
 
@@ -408,14 +440,17 @@ void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 				if (ImGui::MenuItem("Directional Light"))
 					m_createDirectionalLightRequested = true;
 
-				if (ImGui::MenuItem("Point Light"))
+				if (ImGui::Button("+ Add Point Light"))
 				{
+					// Usamos la misma bandera que usa el MenuItem
 					m_createPointLightRequested = true;
-					MESSAGE("GUI", "LIGHT", "Point pressed");
 				}
 
-				if (ImGui::MenuItem("Spot Light"))
+				if (ImGui::Button("+ Add Spot Light"))
+				{
+					// Usamos la misma bandera que usa el MenuItem
 					m_createSpotLightRequested = true;
+				}
 
 				ImGui::EndMenu();
 			}
@@ -444,6 +479,20 @@ void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 }
 
 void GUI::editTransform(Camera& cam, Window& window, EU::TSharedPointer<Actor> actor) {
+	// =========================================================
+	// NUEVO: Atajos de teclado para cambiar herramienta (1, 2, 3)
+	// =========================================================
+	ImGuiIO& io = ImGui::GetIO();
+
+	// Solo cambiamos de herramienta si el usuario NO está escribiendo 
+	// en una caja de texto (como al cambiarle el nombre al Actor)
+	if (!io.WantTextInput) {
+		if (GetAsyncKeyState('1') & 0x8000) mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+		if (GetAsyncKeyState('2') & 0x8000) mCurrentGizmoOperation = ImGuizmo::ROTATE;
+		if (GetAsyncKeyState('3') & 0x8000) mCurrentGizmoOperation = ImGuizmo::SCALE;
+	}
+	// =========================================================
+
 	if (!actor) return;
 	static ImGuizmo::MODE mCurrentGizmoMode = ImGuizmo::WORLD;
 	auto transform = actor->getComponent<Transform>();
@@ -755,20 +804,21 @@ void GUI::drawLightingPanel(float* lightDir, float* lightColor)
 
 	if (ImGui::CollapsingHeader("Lighting"))
 	{
-		ImGui::TextDisabled("Point Lights: 0");
-		ImGui::TextDisabled("Spot Lights : 0");
+		ImGui::TextDisabled("Point Lights: -");
+		ImGui::TextDisabled("Spot Lights : -");
 		ImGui::TextDisabled("Area Lights : 0");
 
 		ImGui::Separator();
 
+		// ¡AQUÍ ESTÁ LA MAGIA DE LOS BOTONES!
 		if (ImGui::Button("+ Add Point Light"))
 		{
-			// Próximamente
+			m_createPointLightRequested = true;
 		}
 
 		if (ImGui::Button("+ Add Spot Light"))
 		{
-			// Próximamente
+			m_createSpotLightRequested = true;
 		}
 	}
 
@@ -982,3 +1032,132 @@ void GUI::drawSelectionOutline(Camera& cam, const EU::Vector3& mn, const EU::Vec
 	}
 }
 
+void GUI::drawLightGizmo(Camera& cam, EU::TSharedPointer<Actor> actor) {
+	if (!m_viewportDrawList || !actor) return;
+	auto lightComp = actor->getComponent<LightComponent>();
+	auto transform = actor->getComponent<Transform>();
+	if (!lightComp || !transform) return;
+
+	if (m_viewportSize.x < 16.0f || m_viewportSize.y < 16.0f) return;
+
+	XMMATRIX vp = cam.getView() * cam.getProj();
+	auto& lightData = lightComp->getLightData();
+	ImU32 col = IM_COL32((int)(lightData.color.x * 255), (int)(lightData.color.y * 255), (int)(lightData.color.z * 255), 255);
+
+	// Encendemos las tijeras para no rayar la UI
+	ImVec2 clipMin = m_viewportPos;
+	ImVec2 clipMax = ImVec2(m_viewportPos.x + m_viewportSize.x, m_viewportPos.y + m_viewportSize.y);
+	m_viewportDrawList->PushClipRect(clipMin, clipMax, true);
+
+	auto drawLine3D = [&](const EU::Vector3& p1, const EU::Vector3& p2) {
+		XMVECTOR v1 = XMVectorSet(p1.x, p1.y, p1.z, 1.0f);
+		XMVECTOR v2 = XMVectorSet(p2.x, p2.y, p2.z, 1.0f);
+		XMVECTOR c1 = XMVector4Transform(v1, vp);
+		XMVECTOR c2 = XMVector4Transform(v2, vp);
+		float w1 = XMVectorGetW(c1);
+		float w2 = XMVectorGetW(c2);
+
+		if (w1 <= 0.1f || w2 <= 0.1f) return;
+
+		float x1 = m_viewportPos.x + (XMVectorGetX(c1) / w1 * 0.5f + 0.5f) * m_viewportSize.x;
+		float y1 = m_viewportPos.y + (1.0f - (XMVectorGetY(c1) / w1 * 0.5f + 0.5f)) * m_viewportSize.y;
+		float x2 = m_viewportPos.x + (XMVectorGetX(c2) / w2 * 0.5f + 0.5f) * m_viewportSize.x;
+		float y2 = m_viewportPos.y + (1.0f - (XMVectorGetY(c2) / w2 * 0.5f + 0.5f)) * m_viewportSize.y;
+
+		m_viewportDrawList->AddLine(ImVec2(x1, y1), ImVec2(x2, y2), col, 2.0f);
+		};
+
+	EU::Vector3 pos = transform->getPosition();
+	EU::Vector3 rot = transform->getRotation();
+
+	// --- SOLUCIÓN: Crear la Matriz Matemáticamente en Tiempo Real ---
+	// Convertimos los grados (del Inspector) a radianes para DirectXMath
+	float pitch = rot.x * (XM_PI / 180.0f);
+	float yaw = rot.y * (XM_PI / 180.0f);
+	float roll = rot.z * (XM_PI / 180.0f);
+
+	XMMATRIX rotMat = XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
+	XMMATRIX transMat = XMMatrixTranslation(pos.x, pos.y, pos.z);
+	XMMATRIX worldMat = rotMat * transMat; // Matriz limpia y perfecta
+
+	const int segments = 32;
+
+	// 1. DIBUJAR POINT LIGHT (Esfera 3D de 3 aros)
+	if (lightData.type == LightType::Point) {
+		float r = lightData.range;
+		for (int axis = 0; axis < 3; ++axis) {
+			EU::Vector3 prevP;
+			for (int i = 0; i <= segments; ++i) {
+				float rad = (i / (float)segments) * XM_2PI;
+				float s = sinf(rad) * r;
+				float c = cosf(rad) * r;
+
+				EU::Vector3 currentP = pos;
+				if (axis == 0) { currentP.y += c; currentP.z += s; }
+				else if (axis == 1) { currentP.x += c; currentP.z += s; }
+				else if (axis == 2) { currentP.x += c; currentP.y += s; }
+
+				if (i > 0) drawLine3D(prevP, currentP);
+				prevP = currentP;
+			}
+		}
+	}
+	// 2. DIBUJAR SPOT LIGHT (Cono 3D con rotación)
+	else if (lightData.type == LightType::Spot) {
+		float r = lightData.range;
+		float radius = r * tanf((lightData.spotAngle * 0.5f) * (XM_PI / 180.0f));
+
+		EU::Vector3 prevP;
+		for (int i = 0; i <= segments; ++i) {
+			float rad = (i / (float)segments) * XM_2PI;
+			float x = cosf(rad) * radius;
+			float z = sinf(rad) * radius;
+
+			// Cono apunta hacia abajo (-Y)
+			XMVECTOR localP = XMVectorSet(x, -r, z, 1.0f);
+			XMVECTOR worldP = XMVector4Transform(localP, worldMat);
+			EU::Vector3 currentP(XMVectorGetX(worldP), XMVectorGetY(worldP), XMVectorGetZ(worldP));
+
+			if (i > 0) drawLine3D(prevP, currentP);
+			prevP = currentP;
+
+			// Dibujar 4 líneas desde la punta hasta los bordes
+			if (i % (segments / 4) == 0) {
+				drawLine3D(pos, currentP);
+			}
+		}
+	}
+	// 3. DIBUJAR DIRECTIONAL LIGHT (Cilindro con flecha central)
+	else if (lightData.type == LightType::Directional) {
+		EU::Vector3 prevP;
+		// Dibujar el aro superior
+		for (int i = 0; i <= segments; ++i) {
+			float rad = (i / (float)segments) * XM_2PI;
+			XMVECTOR localP = XMVectorSet(cosf(rad) * 1.0f, 0, sinf(rad) * 1.0f, 1.0f);
+			XMVECTOR worldP = XMVector4Transform(localP, worldMat);
+			EU::Vector3 currentP(XMVectorGetX(worldP), XMVectorGetY(worldP), XMVectorGetZ(worldP));
+			if (i > 0) drawLine3D(prevP, currentP);
+			prevP = currentP;
+		}
+
+		// Flecha central sólida apuntando dirección (-Y)
+		XMVECTOR localTip = XMVectorSet(0.0f, -3.0f, 0.0f, 1.0f);
+		XMVECTOR worldTip = XMVector4Transform(localTip, worldMat);
+		EU::Vector3 tipP(XMVectorGetX(worldTip), XMVectorGetY(worldTip), XMVectorGetZ(worldTip));
+		drawLine3D(pos, tipP);
+
+		// 4 líneas laterales para dar volumen de rayo de luz
+		for (int i = 0; i < 4; ++i) {
+			float rad = (i / 4.0f) * XM_2PI;
+			XMVECTOR locBase = XMVectorSet(cosf(rad) * 1.0f, 0, sinf(rad) * 1.0f, 1.0f);
+			XMVECTOR locTip2 = XMVectorSet(cosf(rad) * 1.0f, -3.0f, sinf(rad) * 1.0f, 1.0f);
+			XMVECTOR wBase = XMVector4Transform(locBase, worldMat);
+			XMVECTOR wTip = XMVector4Transform(locTip2, worldMat);
+			EU::Vector3 pB(XMVectorGetX(wBase), XMVectorGetY(wBase), XMVectorGetZ(wBase));
+			EU::Vector3 pT(XMVectorGetX(wTip), XMVectorGetY(wTip), XMVectorGetZ(wTip));
+			drawLine3D(pB, pT);
+		}
+	}
+
+	m_viewportDrawList->PopClipRect();
+}

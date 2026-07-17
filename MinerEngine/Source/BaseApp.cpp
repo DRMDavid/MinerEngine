@@ -341,8 +341,17 @@ BaseApp::update(float deltaTime) {
 
 	if (!m_actors.empty() && m_gui.selectedActorIndex >= 0 &&
 		m_gui.selectedActorIndex < (int)m_actors.size()) {
-		m_gui.inspectorGeneral(m_actors[m_gui.selectedActorIndex]);
-		m_gui.editTransform(m_camera, m_window, m_actors[m_gui.selectedActorIndex]);
+
+		// Guardamos el actor seleccionado en una variable más corta
+		auto selectedActor = m_actors[m_gui.selectedActorIndex];
+
+		// Dibujamos su panel de opciones y sus flechas de movimiento
+		m_gui.inspectorGeneral(selectedActor);
+		m_gui.editTransform(m_camera, m_window, selectedActor);
+
+		// --- NUEVO: Dibujar Gizmo de Luz Inteligente (3D) ---
+		m_gui.drawLightGizmo(m_camera, selectedActor);
+		// ----------------------------------------------------
 	}
 	m_gui.outliner(m_actors);
 
@@ -527,6 +536,33 @@ BaseApp::update(float deltaTime) {
 	// --- Navegacion de camara ---
 	if (!m_gui.m_isUsingGizmo) {
 		ImGuiIO& io = ImGui::GetIO();
+
+		// Solo permitir movimiento si el mouse está sobre el viewport o el viewport tiene el foco
+		if (m_gui.m_viewportHovered || m_gui.m_viewportFocused) {
+
+			// 1. Movimiento con WASD
+			float cameraSpeed = 10.0f * deltaTime; // Cambia este 10.0f si quieres que vuele más rápido o más lento
+
+			// walk() mueve hacia adelante/atrás, strafe() mueve de lado
+			if (GetAsyncKeyState('W') & 0x8000) m_camera.walk(cameraSpeed);
+			if (GetAsyncKeyState('S') & 0x8000) m_camera.walk(-cameraSpeed);
+			if (GetAsyncKeyState('D') & 0x8000) m_camera.strafe(cameraSpeed);
+			if (GetAsyncKeyState('A') & 0x8000) m_camera.strafe(-cameraSpeed);
+
+			// Movimiento vertical (E para subir, Q para bajar)
+			if (GetAsyncKeyState('E') & 0x8000) {
+				EU::Vector3 p = m_camera.getPosition();
+				p.y += cameraSpeed;
+				m_camera.setPosition(p);
+			}
+			if (GetAsyncKeyState('Q') & 0x8000) {
+				EU::Vector3 p = m_camera.getPosition();
+				p.y -= cameraSpeed;
+				m_camera.setPosition(p);
+			}
+		}
+
+		// 2. Rotación con el ratón (ya lo tenías, lo mantenemos igual)
 		if (m_gui.m_viewportHovered) {
 			if (io.MouseWheel != 0.0f) m_camera.walk(io.MouseWheel * 0.7f);
 			if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {

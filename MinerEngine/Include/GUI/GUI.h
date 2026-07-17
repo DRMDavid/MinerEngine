@@ -7,7 +7,6 @@
 #include "imgui_impl_dx11.h"
 #include "ImGuizmo.h"
 
-// Forward declarations
 class Viewport;
 class Window;
 class Device;
@@ -17,16 +16,16 @@ class Camera;
 
 /**
  * @struct AssetThumb
- * @brief Estructura que representa una vista previa (thumbnail) de un asset en la interfaz.
+ * @brief Estructura que representa la miniatura de un asset para la interfaz.
  */
 struct AssetThumb {
     std::string name;                   ///< Nombre del asset.
-    ID3D11ShaderResourceView* srv;      ///< Vista de recurso de shader para renderizar la imagen.
+    ID3D11ShaderResourceView* srv;      ///< Vista del recurso (textura) de la miniatura.
 };
 
 /**
  * @class GUI
- * @brief Clase principal encargada de gestionar y renderizar la interfaz gráfica de usuario (GUI) del motor utilizando ImGui.
+ * @brief Maneja y renderiza toda la interfaz gráfica del usuario y del editor usando ImGui.
  */
 class GUI {
 public:
@@ -34,101 +33,101 @@ public:
     ~GUI() = default;
 
     /**
-     * @brief Inicializa configuraciones previas a la creación de la ventana (si las hay).
+     * @brief Preparación inicial de la GUI antes de la creación de contextos.
      */
     void awake();
 
     /**
-     * @brief Inicializa el contexto de ImGui y los backends asociados (Win32 y DirectX 11).
-     * @param window Referencia a la ventana principal de la aplicación.
-     * @param device Referencia al dispositivo de DirectX 11.
-     * @param deviceContext Referencia al contexto del dispositivo de DirectX 11.
+     * @brief Inicializa los contextos de ImGui y los backends de Win32 y DirectX 11.
+     * @param window Referencia a la ventana de la aplicación.
+     * @param device Referencia al dispositivo DirectX.
+     * @param deviceContext Referencia al contexto del dispositivo DirectX.
      */
     void init(Window& window, Device& device, DeviceContext& deviceContext);
 
     /**
-     * @brief Actualiza la lógica de la interfaz de usuario en cada fotograma.
-     * @param viewport Referencia al viewport actual.
-     * @param window Referencia a la ventana principal.
+     * @brief Actualiza la lógica de la interfaz por cada fotograma.
+     * @param viewport Referencia al viewport principal.
+     * @param window Referencia a la ventana de la aplicación.
      */
     void update(Viewport& viewport, Window& window);
 
     /**
-     * @brief Renderiza todos los comandos de dibujado de ImGui acumulados durante el frame.
+     * @brief Emite los comandos de dibujado de ImGui.
      */
     void render();
 
     /**
-     * @brief Libera los recursos de ImGui y cierra los backends.
+     * @brief Apaga ImGui y libera sus recursos.
      */
     void destroy();
 
     /**
-     * @brief Dibuja la barra de herramientas superior (ToolBar).
+     * @brief Dibuja la barra de herramientas principal.
      */
     void ToolBar();
 
     /**
-     * @brief Dibuja el modal o lógica para cerrar la aplicación.
+     * @brief Dibuja el modal o ventana de confirmación para cerrar la aplicación.
      */
     void closeApp();
 
     /**
-     * @brief Muestra información adicional en forma de ToolTip.
+     * @brief Muestra información adicional o tooltips en la interfaz.
      */
     void toolTipData();
 
     /**
-     * @brief Aplica un estilo visual específico (Apple Liquid) a la interfaz.
-     * @param opacity Nivel de opacidad global de la interfaz.
-     * @param accent Color de acento para los elementos interactivos.
+     * @brief Aplica un tema visual personalizado (estilo Apple Liquid) a ImGui.
+     * @param opacity Opacidad general de las ventanas.
+     * @param accent Color de acento principal.
      */
     void appleLiquidStyle(float opacity, ImVec4 accent);
 
     /**
-     * @brief Dibuja un control personalizado para vectores de 3 componentes (XYZ).
+     * @brief Dibuja un control para manipular vectores de 3 dimensiones (XYZ).
      * @param label Etiqueta del control.
-     * @param values Puntero al arreglo de 3 flotantes que se modificarán.
-     * @param resetValues Valor por defecto al que se reinician las componentes.
-     * @param columnWidth Ancho de la columna para la etiqueta.
+     * @param values Puntero al arreglo de 3 flotantes a modificar.
+     * @param resetValues Valor al que se reinician las componentes al hacer clic en reset.
+     * @param columnWidth Ancho de la columna de la etiqueta.
      */
     void vec3Control(const std::string& label, float* values, float resetValues = 0.0f, float columnWidth = 100.0f);
 
     /**
-     * @brief Dibuja el panel del inspector general para un actor seleccionado.
-     * @param actor Puntero compartido al actor a inspeccionar.
+     * @brief Dibuja el inspector general para un actor específico.
+     * @param actor Puntero al actor seleccionado.
      */
     void inspectorGeneral(EU::TSharedPointer<Actor> actor);
 
     /**
-     * @brief Dibuja los componentes y propiedades específicas del actor en el inspector.
-     * @param actor Puntero compartido al actor.
+     * @brief Dibuja los componentes específicos (Mesh, Light, etc.) asociados a un actor.
+     * @param actor Puntero al actor inspeccionado.
      */
     void inspectorContainer(EU::TSharedPointer<Actor> actor);
 
     /**
-     * @brief Dibuja el panel de jerarquía (Outliner) mostrando la lista de actores en la escena.
-     * @param actors Vector con los punteros compartidos de los actores de la escena.
+     * @brief Dibuja el panel de jerarquía (Outliner) mostrando todos los actores de la escena.
+     * @param actors Vector con todos los actores actuales.
      */
     void outliner(const std::vector<EU::TSharedPointer<Actor>>& actors);
 
     /**
-     * @brief Maneja la lógica y renderizado de los gizmos de transformación (ImGuizmo) para un actor.
-     * @param cam Cámara activa que visualiza el gizmo.
+     * @brief Maneja la edición de transformaciones (traslación, rotación, escala) usando ImGuizmo.
+     * @param cam Cámara activa que ve el gizmo.
      * @param window Ventana principal.
-     * @param actor Actor que será transformado.
+     * @param actor Actor que está siendo editado.
      */
     void editTransform(Camera& cam, Window& window, EU::TSharedPointer<Actor> actor);
 
     /**
-     * @brief Dibuja la barra de herramientas para controlar los modos de transformación (Traslación, Rotación, Escala).
+     * @brief Dibuja la barra de herramientas para seleccionar la operación del Gizmo.
      */
     void drawGizmoToolbar();
 
     /**
-     * @brief Convierte una matriz XMMATRIX a un arreglo de flotantes continuo.
-     * @param mat Matriz de entrada.
-     * @param dest Puntero al arreglo destino de 16 flotantes.
+     * @brief Convierte una matriz XMMATRIX a un arreglo de flotantes continuo de 16 elementos.
+     * @param mat Matriz a convertir.
+     * @param dest Puntero al arreglo de flotantes destino.
      */
     void ToFloatArray(const XMMATRIX& mat, float* dest) {
         XMFLOAT4X4 temp;
@@ -137,43 +136,43 @@ public:
     }
 
     /**
-     * @brief Dibuja el panel superior con herramientas y menús del editor.
+     * @brief Dibuja la cinta (ribbon) superior del editor.
      */
     void drawStudioTopRibbon();
 
     /**
-     * @brief Dibuja el panel central donde se renderiza la vista principal (Viewport).
-     * @param viewportSRV Textura del viewport para renderizar en la ventana de ImGui.
+     * @brief Dibuja la ventana del Viewport donde se renderiza la escena.
+     * @param viewportSRV Textura del viewport para mostrar.
      */
     void drawViewportPanel(ID3D11ShaderResourceView* viewportSRV);
 
     /**
-     * @brief Dibuja una cuadrícula (grid) en el viewport.
-     * @param cam Cámara activa desde la cual se proyecta la cuadrícula.
+     * @brief Dibuja la cuadrícula de fondo en el viewport.
+     * @param cam Cámara del editor.
      */
     void drawViewportGrid(Camera& cam);
 
     /**
-     * @brief Configura y dibuja el sistema de ventanas acoplables (Dockspace).
+     * @brief Configura el área de acoplamiento (Dockspace) principal del editor.
      */
     void drawEditorDockspace();
 
     /**
-     * @brief Dibuja un panel de depuración para observar los pases de renderizado (sombras, etc.).
-     * @param preShadowSRV Textura de mapa de sombras previo.
-     * @param viewportSRV Textura principal del viewport.
-     * @param shadowMapSRV Textura final del mapa de sombras.
+     * @brief Dibuja un panel de depuración para inspeccionar mapas de sombras y texturas base.
+     * @param preShadowSRV Mapa previo de sombras.
+     * @param viewportSRV Textura del viewport general.
+     * @param shadowMapSRV Mapa final de sombras.
      */
     void drawRenderDebugPanel(ID3D11ShaderResourceView* preShadowSRV,
         ID3D11ShaderResourceView* viewportSRV,
         ID3D11ShaderResourceView* shadowMapSRV);
 
     /**
-     * @brief Dibuja un panel para visualizar los diferentes objetivos de renderizado (G-Buffer) del Deferred Shading.
-     * @param albedoMetallicSRV Textura que contiene Albedo y Metalizado.
-     * @param normalRoughnessSRV Textura que contiene Normales y Rugosidad.
-     * @param worldAoSRV Textura que contiene Posición en el mundo y Oclusión Ambiental.
-     * @param emissiveAlphaSRV Textura que contiene Emisión y Alfa.
+     * @brief Dibuja un panel de depuración para visualizar los buffers del Deferred Rendering (G-Buffer).
+     * @param albedoMetallicSRV Textura combinada de Albedo y Metálico.
+     * @param normalRoughnessSRV Textura combinada de Normales y Rugosidad.
+     * @param worldAoSRV Textura de Posición del Mundo y Oclusión Ambiental.
+     * @param emissiveAlphaSRV Textura de Emisión y Alfa.
      */
     void drawGBufferDebugPanel(ID3D11ShaderResourceView* albedoMetallicSRV,
         ID3D11ShaderResourceView* normalRoughnessSRV,
@@ -181,126 +180,119 @@ public:
         ID3D11ShaderResourceView* emissiveAlphaSRV);
 
     /**
-     * @brief Dibuja un panel para la configuración de iluminación global.
-     * @param lightDir Puntero a la dirección de la luz (arreglo de 3).
-     * @param lightColor Puntero al color de la luz (arreglo de 3 o 4).
+     * @brief Dibuja el panel para configurar la luz direccional principal.
+     * @param lightDir Puntero a la dirección de la luz.
+     * @param lightColor Puntero al color de la luz.
      */
     void drawLightingPanel(float* lightDir, float* lightColor);
 
-    /**
-     * @brief Dibuja un panel con estadísticas de rendimiento.
-     * @param deltaTime Tiempo transcurrido en el último fotograma.
-     * @param drawCalls Número total de llamadas de dibujado emitidas en el frame.
-     */
+    // void drawStatsPanel(float deltaTime);
+
+     /**
+      * @brief Dibuja el panel de estadísticas de rendimiento (FPS, Draw Calls).
+      * @param deltaTime Tiempo transcurrido en el último frame.
+      * @param drawCalls Llamadas de dibujado realizadas.
+      */
     void drawStatsPanel(float deltaTime, unsigned int drawCalls);
 
     /**
-     * @brief Dibuja el navegador de contenido (Content Browser) mostrando los assets disponibles.
-     * @param textureThumbs Lista de vistas previas de assets cargados.
+     * @brief Dibuja el navegador de contenido mostrando los assets disponibles.
+     * @param textureThumbs Lista de miniaturas de texturas.
      */
     void drawContentBrowser(const std::vector<AssetThumb>& textureThumbs);
 
     /**
-     * @brief Dibuja la consola de registro para mostrar mensajes de depuración.
+     * @brief Dibuja el panel de la consola para registros y errores.
      */
     void drawConsolePanel();
 
     /**
-     * @brief Dibuja una ventana de vista previa para inspeccionar una textura específica en detalle.
+     * @brief Dibuja la ventana de vista previa detallada de texturas.
      */
     void drawTexturePreview();
 
-    // ==========================================
-    // MÉTODOS DE CONSUMO DE EVENTOS (REQUESTS)
-    // ==========================================
-
-    /** @brief Consume y reinicia la petición de reseteo. @return true si se solicitó un reseteo. */
+    /** @brief Consume la petición de reseteo. @return true si se solicitó. */
     bool consumeResetRequest() { bool r = m_resetRequested; m_resetRequested = false; return r; }
 
-    /** @brief Consume y reinicia la petición de enfoque (Focus). @return true si se solicitó un enfoque. */
+    /** @brief Consume la petición de enfoque (Focus). @return true si se solicitó. */
     bool consumeFocusRequest() { bool r = m_focusRequested; m_focusRequested = false; return r; }
 
-    /** @brief Consume y reinicia la petición de ajuste en pantalla (Fit). @return true si se solicitó un ajuste. */
+    /** @brief Consume la petición de ajuste (Fit) de cámara. @return true si se solicitó. */
     bool consumeFitRequest() { bool r = m_fitRequested;   m_fitRequested = false; return r; }
 
-    /** @brief Consume y reinicia la petición de deshacer (Undo). @return true si se solicitó deshacer. */
+    /** @brief Consume la petición de deshacer (Undo). @return true si se solicitó. */
     bool consumeUndoRequest() { bool r = m_undoRequested; m_undoRequested = false; return r; }
 
-    /** @brief Consume y reinicia la petición de rehacer (Redo). @return true si se solicitó rehacer. */
+    /** @brief Consume la petición de rehacer (Redo). @return true si se solicitó. */
     bool consumeRedoRequest() { bool r = m_redoRequested; m_redoRequested = false; return r; }
 
 private:
-    bool m_show_exit_popup = false;             ///< Indica si el popup de salida está activo.
+    bool show_exit_popup = false;               ///< Bandera para mostrar el popup de salida.
     ImDrawList* m_viewportDrawList = nullptr;   ///< Lista de dibujado superpuesta al viewport.
-    bool m_viewportActive = false;              ///< Indica si la pestaña del viewport está activa.
-    bool m_dockLayoutInitialized = false;       ///< Indica si el diseño del dockspace ya se inicializó.
+    bool m_viewportActive = false;              ///< Bandera que indica si el viewport está activo.
+    bool m_dockLayoutInitialized = false;       ///< Bandera que indica si el dockspace fue inicializado.
 
 public:
-    // Variables de estado del Viewport y Gizmos
-    bool m_isUsingGizmo = false;                ///< Indica si el usuario está interactuando activamente con un Gizmo.
-    int selectedActorIndex = -1;                ///< Índice del actor seleccionado actualmente.
-    ImVec2 m_viewportPos = ImVec2(0.0f, 0.0f);  ///< Posición del viewport en pantalla.
-    ImVec2 m_viewportSize = ImVec2(0.0f, 0.0f); ///< Tamaño actual del panel del viewport.
-    bool m_viewportHovered = false;             ///< Indica si el cursor está sobre el viewport.
-    bool m_viewportFocused = false;             ///< Indica si el panel del viewport tiene el foco.
+    bool m_isUsingGizmo = false;                ///< Indica si un Gizmo está siendo manipulado activamente.
+    int selectedActorIndex = -1;                ///< Índice del actor actualmente seleccionado.
+    ImVec2 m_viewportPos = ImVec2(0.0f, 0.0f);  ///< Posición del viewport.
+    ImVec2 m_viewportSize = ImVec2(0.0f, 0.0f); ///< Tamaño del viewport.
+    bool m_viewportHovered = false;             ///< Indica si el ratón está sobre el viewport.
+    bool m_viewportFocused = false;             ///< Indica si el viewport tiene el foco.
 
-    // Variables de depuración (Deferred Rendering)
-    bool m_visualizeDeferredShadowFactor = false; ///< Activa/Desactiva la visualización de factor de sombras.
-    int  m_deferredDebugViewMode = 0;             ///< Índice del modo de depuración de vistas múltiples.
+    bool m_visualizeDeferredShadowFactor = false; ///< Activa la visualización de sombras diferidas en depuración.
+    int  m_deferredDebugViewMode = 0;             ///< Índice del modo de depuración activo.
 
-    // Variables de la Consola
-    bool m_logShowInfo = true;                  ///< Muestra mensajes de información en la consola.
-    bool m_logShowWarning = true;               ///< Muestra advertencias en la consola.
-    bool m_logShowError = true;                 ///< Muestra errores en la consola.
-    bool m_logAutoScroll = true;                ///< Activa el auto-scroll en la consola.
-    ImGuiTextFilter m_logFilter;                ///< Filtro de texto de ImGui para la consola.
+    bool m_logShowInfo = true;                  ///< Filtro: Mostrar información en consola.
+    bool m_logShowWarning = true;               ///< Filtro: Mostrar advertencias en consola.
+    bool m_logShowError = true;                 ///< Filtro: Mostrar errores en consola.
+    bool m_logAutoScroll = true;                ///< Autoscroll activado en consola.
+    ImGuiTextFilter m_logFilter;                ///< Objeto de filtrado de texto para la consola.
 
-    bool m_resetRequested = false;              ///< Bandera interna de petición de reinicio.
+    bool m_resetRequested = false;              ///< Petición de reseteo de escena.
 
-    // Variables de Vista Previa de Texturas
-    ID3D11ShaderResourceView* m_previewSRV = nullptr; ///< SRV de la textura en vista previa.
-    std::string m_previewLabel;                       ///< Etiqueta identificadora de la textura.
-    bool m_showPreview = false;                       ///< Bandera para mostrar la ventana de vista previa.
+    ID3D11ShaderResourceView* m_previewSRV = nullptr; ///< Textura a mostrar en la vista previa.
+    std::string m_previewLabel;                       ///< Etiqueta de la textura en vista previa.
+    bool m_showPreview = false;                       ///< Bandera para abrir la ventana de vista previa.
 
-    // Configuración de Cámara, Cuadrícula y Ajuste de Precisión (Snap)
-    bool  m_showGrid = true;                    ///< Activa/Desactiva el dibujo de la cuadrícula.
-    float m_gridSize = 10.0f;                   ///< Tamaño total de la cuadrícula.
-    bool  m_snapEnabled = false;                ///< Activa el ajuste (snapping) para los gizmos.
-    float m_snapTranslate = 0.5f;               ///< Incremento de ajuste para traslación.
-    float m_snapRotate = 15.0f;                 ///< Incremento de ajuste para rotación.
-    float m_snapScale = 0.1f;                   ///< Incremento de ajuste para escala.
-    bool  m_focusRequested = false;             ///< Petición de cámara para enfocar el objeto seleccionado.
-    bool  m_fitRequested = false;               ///< Petición de cámara para ajustar la vista a la escena.
+    // Camara / grid / snap
+    bool  m_showGrid = true;                    ///< Muestra u oculta la cuadrícula.
+    float m_gridSize = 10.0f;                   ///< Tamaño de la cuadrícula.
+    bool  m_snapEnabled = false;                ///< Activa el ajuste por pasos (snap) en Gizmos.
+    float m_snapTranslate = 0.5f;               ///< Incremento de ajuste de traslación.
+    float m_snapRotate = 15.0f;                 ///< Incremento de ajuste de rotación.
+    float m_snapScale = 0.1f;                   ///< Incremento de ajuste de escala.
+    bool  m_focusRequested = false;             ///< Petición para enfocar actor.
+    bool  m_fitRequested = false;               ///< Petición para encuadrar la escena.
 
-    // Peticiones de historial y edición
-    bool m_undoRequested = false;               ///< Petición para deshacer acción.
-    bool m_redoRequested = false;               ///< Petición para rehacer acción.
-    bool m_duplicateRequested = false;          ///< Petición para duplicar actor seleccionado.
-    bool m_deleteRequested = false;             ///< Petición para eliminar actor seleccionado.
-    bool m_copyRequested = false;               ///< Petición para copiar selección.
-    bool m_pasteRequested = false;              ///< Petición para pegar selección.
-    bool m_savePrefabRequested = false;         ///< Petición para guardar un Prefab.
-    bool m_loadPrefabRequested = false;         ///< Petición para cargar un Prefab.
+    bool m_undoRequested = false;               ///< Petición para deshacer.
+    bool m_redoRequested = false;               ///< Petición para rehacer.
 
-    // Creación/Generación de Assets
-    std::string m_assetSpawnPath;               ///< Ruta del asset a instanciar en escena.
-    bool m_assetSpawnRequested = false;         ///< Petición para instanciar un asset.
+    bool m_duplicateRequested = false;          ///< Petición para duplicar.
+    bool m_deleteRequested = false;             ///< Petición para eliminar.
+    bool m_copyRequested = false;               ///< Petición para copiar.
+    bool m_pasteRequested = false;              ///< Petición para pegar.
+    bool m_savePrefabRequested = false;         ///< Petición para guardar prefab.
+    bool m_loadPrefabRequested = false;         ///< Petición para cargar prefab.
+
+    std::string m_assetSpawnPath;               ///< Ruta del asset a generar (spawn).
+    bool m_assetSpawnRequested = false;         ///< Petición para generar un asset en escena.
 
     /**
-     * @brief Dibuja un contorno (outline) de selección visual para un objeto específico en el viewport.
+     * @brief Dibuja un contorno (outline) de selección sobre el objeto seleccionado.
      * @param cam Cámara activa.
-     * @param localMin Mínimo de la caja delimitadora (AABB) local.
-     * @param localMax Máximo de la caja delimitadora (AABB) local.
-     * @param world Matriz de transformación del objeto en el mundo.
+     * @param localMin AABB Mínimo local.
+     * @param localMax AABB Máximo local.
+     * @param world Matriz de mundo del objeto.
      */
     void drawSelectionOutline(Camera& cam, const EU::Vector3& localMin, const EU::Vector3& localMax, const XMMATRIX& world);
+    void drawLightGizmo(Camera& cam, EU::TSharedPointer<Actor> actor);
 
-    // Banderas de creación de Luces
-    bool m_createDirectionalLightRequested = false; ///< Petición para crear luz direccional.
-    bool m_createPointLightRequested = false;       ///< Petición para crear luz puntual.
-    bool m_createSpotLightRequested = false;        ///< Petición para crear luz focal (spot).
+    bool m_createDirectionalLightRequested = false; ///< Petición para luz direccional.
+    bool m_createPointLightRequested = false;       ///< Petición para luz puntual.
+    bool m_createSpotLightRequested = false;        ///< Petición para luz spot.
 
-    /** @brief Consume y reinicia la petición de creación de Luz Direccional. @return true si se solicitó. */
+    /** @brief Consume la petición de crear luz direccional. @return true si se solicitó. */
     bool consumeCreateDirectionalLightRequest()
     {
         bool r = m_createDirectionalLightRequested;
@@ -308,7 +300,7 @@ public:
         return r;
     }
 
-    /** @brief Consume y reinicia la petición de creación de Luz Puntual. @return true si se solicitó. */
+    /** @brief Consume la petición de crear luz puntual. @return true si se solicitó. */
     bool consumeCreatePointLightRequest()
     {
         bool r = m_createPointLightRequested;
@@ -316,11 +308,12 @@ public:
         return r;
     }
 
-    /** @brief Consume y reinicia la petición de creación de Luz Focal (Spot). @return true si se solicitó. */
+    /** @brief Consume la petición de crear luz focal (spot). @return true si se solicitó. */
     bool consumeCreateSpotLightRequest()
     {
         bool r = m_createSpotLightRequested;
         m_createSpotLightRequested = false;
         return r;
     }
+
 };
