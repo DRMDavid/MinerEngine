@@ -1,8 +1,11 @@
+#include <Audio.h>
 #include "BaseApp.h"
 #include "ResourceManager.h"
 #include "ECS/RigidbodyComponent.h"
 #include "ECS/BoxColliderComponent.h"
+#include <exception>
 #include <fstream>
+#include <memory>
 
 namespace {
 
@@ -83,6 +86,13 @@ namespace {
 
 } // namespace
 
+BaseApp::BaseApp() = default;
+
+BaseApp::~BaseApp()
+{
+	destroy();
+}
+
 HRESULT
 BaseApp::awake() {
 	HRESULT hr = S_OK;
@@ -135,6 +145,48 @@ BaseApp::run(HINSTANCE hInst, int nCmdShow) {
 HRESULT
 BaseApp::init() {
 	HRESULT hr = S_OK;
+
+	DirectX::AUDIO_ENGINE_FLAGS audioFlags =
+		DirectX::AudioEngine_Default;
+
+#ifdef _DEBUG
+	audioFlags |= DirectX::AudioEngine_Debug;
+#endif
+
+	try
+	{
+		m_audioEngine =
+			std::make_unique<DirectX::AudioEngine>(
+				audioFlags
+			);
+
+		if (m_audioEngine->IsAudioDevicePresent())
+		{
+			MESSAGE(
+				"Audio",
+				"init",
+				"AudioEngine inicializado. Dispositivo de audio detectado."
+			);
+		}
+		else
+		{
+			ERROR(
+				"Audio",
+				"init",
+				"AudioEngine inicio en modo silencioso. No se detecto dispositivo de audio."
+			);
+		}
+	}
+	catch (const std::exception& exception)
+	{
+		ERROR(
+			"BaseApp",
+			"init",
+			exception.what()
+		);
+
+		m_audioEngine.reset();
+	}
 
 	hr = m_swapChain.init(m_device, m_deviceContext, m_backBuffer, m_window);
 	if (FAILED(hr)) { ERROR("Main", "InitDevice", ("Failed SwapChain. HRESULT: " + std::to_string(hr)).c_str()); return hr; }
@@ -390,6 +442,26 @@ BaseApp::init() {
 void
 BaseApp::update(float deltaTime) {
 	handleEditorViewportResize();
+
+	if (m_audioEngine)
+	{
+		if (!m_audioEngine->Update() &&
+			m_audioEngine->IsCriticalError())
+		{
+			static bool audioErrorReported = false;
+
+			if (!audioErrorReported)
+			{
+				ERROR(
+					"Audio",
+					"update",
+					"El dispositivo de audio se desconecto o encontro un error critico."
+				);
+
+				audioErrorReported = true;
+			}
+		}
+	}
 
 	/*
 	if (!m_initialStateCaptured) {
@@ -773,6 +845,7 @@ BaseApp::render() {
 void
 BaseApp::destroy()
 {
+	m_audioEngine.reset();
 
 	//============================================================
 	// RENDER Y ESCENA
@@ -1768,3 +1841,5 @@ BaseApp::getActorAABB(
 
 	return false;
 }
+
+
