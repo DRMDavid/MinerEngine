@@ -119,11 +119,15 @@ enum ShaderType {
  * @enum ComponentType
  * @brief Tipos de componentes disponibles en el juego.
  */
-enum
-    ComponentType {
+enum ComponentType
+{
     NONE = 0,
     TRANSFORM = 1,
     MESH = 2,
     MATERIAL = 3,
-    HIERARCHY = 4
+    HIERARCHY = 4,
+    RIGIDBODY = 5,
+    COLLIDER = 6,
+    ROTATE_BEHAVIOR = 7,
+	
 };

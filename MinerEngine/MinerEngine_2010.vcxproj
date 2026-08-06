@@ -423,6 +423,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="bin\Skybox.hlsl" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Imgui\imgui-docking-znly-docking\backends\imgui_impl_dx11.cpp" />
@@ -436,6 +437,7 @@
     <ClCompile Include="Include\SamplerState.cpp" />
     <ClCompile Include="MinerEngine.cpp" />
     <ClCompile Include="Source\BaseApp.cpp" />
+    <ClCompile Include="Source\BehaviorSystem.cpp" />
     <ClCompile Include="Source\Buffer.cpp" />
     <ClCompile Include="Source\Camera.cpp" />
     <ClCompile Include="Source\DepthStencilState.cpp" />
@@ -447,6 +449,7 @@
     <ClCompile Include="Source\GUI\GUI.cpp" />
     <ClCompile Include="Source\InputLayout.cpp" />
     <ClCompile Include="Source\Model3D.cpp" />
+    <ClCompile Include="Source\PhysicsSystem.cpp" />
     <ClCompile Include="Source\RasterizerState.cpp" />
     <ClCompile Include="Source\Rendering\DeferredRenderercpp.cpp" />
     <ClCompile Include="Source\Rendering\ForwardRenderer.cpp" />
@@ -476,6 +479,7 @@
     <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_truetype.h" />
     <ClInclude Include="Imgui\ImGuizmo\ImGuizmo.h" />
     <ClInclude Include="Include\BaseApp.h" />
+    <ClInclude Include="Include\BehaviorSystem.h" />
     <ClInclude Include="Include\Buffer.h" />
     <ClInclude Include="Include\CommandManager.h" />
     <ClInclude Include="Include\DepthStencilState.h" />
@@ -483,10 +487,13 @@
     <ClInclude Include="Include\Device.h" />
     <ClInclude Include="Include\DeviceContext.h" />
     <ClInclude Include="Include\ECS\Actor.h" />
+    <ClInclude Include="Include\ECS\BoxColliderComponent.h" />
     <ClInclude Include="Include\ECS\Component.h" />
     <ClInclude Include="Include\ECS\Entity.h" />
     <ClInclude Include="Include\ECS\LightComponent.h" />
     <ClInclude Include="Include\ECS\MeshRendererComponent.h" />
+    <ClInclude Include="Include\ECS\RigidbodyComponent.h" />
+    <ClInclude Include="Include\ECS\RotateBehaviorComponent.h" />
     <ClInclude Include="Include\ECS\Transform.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TSharedPointer.h" />
     <ClInclude Include="Include\EngineUtilities\Memory\TStaticPtr.h" />
@@ -506,6 +513,7 @@
     <ClInclude Include="Include\Logger.h" />
     <ClInclude Include="Include\MeshComponent.h" />
     <ClInclude Include="Include\Model3D.h" />
+    <ClInclude Include="Include\PhysicsSystem.h" />
     <ClInclude Include="Include\Prerequisites.h" />
     <ClInclude Include="Include\RasterizerState.h" />
     <ClInclude Include="Include\Rendering\DeferredRenderer.h" />
@@ -569,5 +577,13 @@
   <ItemGroup>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets'))" />
+  </Target>
 </Project>

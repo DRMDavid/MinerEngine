@@ -1,5 +1,7 @@
 #include "BaseApp.h"
 #include "ResourceManager.h"
+#include "ECS/RigidbodyComponent.h"
+#include "ECS/BoxColliderComponent.h"
 #include <fstream>
 
 namespace {
@@ -311,6 +313,67 @@ BaseApp::init() {
 		m_sceneGraph.addEntity(m_directionalLightActor.get());
 	}
 
+	//============================================================
+// SUELO FÍSICO INVISIBLE
+//============================================================
+
+	m_groundActor = EU::MakeShared<Actor>(m_device);
+
+	if (!m_groundActor.isNull())
+	{
+		// Nombre visible en la jerarquía del editor.
+		m_groundActor->setName("Ground");
+
+		// Colocar el suelo ligeramente debajo de la cuadrícula visual.
+		EU::TSharedPointer<Transform> groundTransform =
+			m_groundActor->getComponent<Transform>();
+
+		if (groundTransform)
+		{
+			groundTransform->setTransform(
+				EU::Vector3(0.0f, -0.5f, 5.60f),
+				EU::Vector3(0.0f, 0.0f, 0.0f),
+				EU::Vector3(1.0f, 1.0f, 1.0f)
+			);
+		}
+
+		// El Rigidbody cinemático convierte al suelo en un cuerpo estático.
+		auto groundRigidbody =
+			EU::MakeShared<RigidbodyComponent>();
+
+		groundRigidbody->mass = 0.0f;
+		groundRigidbody->useGravity = false;
+		groundRigidbody->isKinematic = true;
+		groundRigidbody->velocity =
+			EU::Vector3(0.0f, 0.0f, 0.0f);
+
+		m_groundActor->addComponent(groundRigidbody);
+
+		// Collider grande y plano utilizado como superficie del suelo.
+		auto groundCollider =
+			EU::MakeShared<BoxColliderComponent>();
+
+		groundCollider->center =
+			EU::Vector3(0.0f, 0.0f, 0.0f);
+
+		groundCollider->size =
+			EU::Vector3(30.0f, 1.0f, 30.0f);
+
+		groundCollider->isTrigger = false;
+
+		m_groundActor->addComponent(groundCollider);
+
+		// Agregar el suelo a la escena y al sistema ECS.
+		m_actors.push_back(m_groundActor);
+		m_sceneGraph.addEntity(m_groundActor.get());
+
+		MESSAGE(
+			"BaseApp",
+			"init",
+			"Ground fisico creado"
+		);
+	}
+
 
 
 	hr = m_editorViewportPass.init(m_device, 1280, 720);
@@ -321,7 +384,6 @@ BaseApp::init() {
 
 	buildTextureThumbnails();
 
-
 	return S_OK;
 }
 
@@ -329,13 +391,28 @@ void
 BaseApp::update(float deltaTime) {
 	handleEditorViewportResize();
 
+	/*
 	if (!m_initialStateCaptured) {
 		captureInitialState();
 		m_initialStateCaptured = true;
 	}
-
+	*/
 	// GUI
 	m_gui.update(m_viewport, m_window);
+	if (m_gui.consumePlayRequest())
+	{
+		startPlayMode();
+	}
+
+	if (m_gui.consumePauseRequest())
+	{
+		togglePauseMode();
+	}
+
+	if (m_gui.consumeStopRequest())
+	{
+		stopPlayMode();
+	}
 	m_gui.drawViewportPanel(m_editorViewportPass.getSRV());
 	m_gui.drawViewportGrid(m_camera);
 
@@ -652,6 +729,21 @@ BaseApp::update(float deltaTime) {
 
 	m_skybox.update(m_deviceContext, m_camera);
 	m_constantBuffer.update(m_deviceContext, nullptr, 0, nullptr, &m_constantBufferStruct, 0, 0);
+	if (isPlaying())
+	{
+		// Ejecutar comportamientos configurables.
+		m_behaviorSystem.update(
+			deltaTime,
+			m_actors
+		);
+
+		// Ejecutar simulación física.
+		m_physicsSystem.update(
+			deltaTime,
+			m_actors
+		);
+	}
+
 	m_sceneGraph.update(deltaTime, m_deviceContext);
 }
 
@@ -679,81 +771,155 @@ BaseApp::render() {
 }
 
 void
-BaseApp::destroy() {
-	if (m_deviceContext.m_deviceContext) m_deviceContext.m_deviceContext->ClearState();
+BaseApp::destroy()
+{
+
+	//============================================================
+	// RENDER Y ESCENA
+	//============================================================
+
+	if (m_deviceContext.m_deviceContext)
+	{
+		m_deviceContext.m_deviceContext->ClearState();
+	}
+
 	m_sceneGraph.destroy();
 	m_renderPipeline.destroy();
 	m_editorViewportPass.destroy();
+
 	m_cyberGunRenderMesh.destroy();
 	m_drakefireRenderMesh.destroy();
+
 	m_AlbedoSRV.destroy();
 	m_MetallicSRV.destroy();
 	m_NormalSRV.destroy();
 	m_RoughnessSRV.destroy();
 	m_AOSRV.destroy();
+
 	m_defaultRasterizer.destroy();
 	m_defaultDepthStencil.destroy();
 	m_defaultSampler.destroy();
+
 	m_shaderProgram.destroy();
+
 	m_depthStencil.destroy();
 	m_depthStencilView.destroy();
 	m_renderTargetView.destroy();
 	m_swapChain.destroy();
 	m_backBuffer.destroy();
-	if (m_guiInitialized) {
+
+	//============================================================
+	// GUI
+	//============================================================
+
+	if (m_guiInitialized)
+	{
 		m_gui.destroy();
 		m_guiInitialized = false;
 	}
+
+	//============================================================
+	// MODELOS
+	//============================================================
+
 	delete m_model;
 	m_model = nullptr;
+
 	delete m_drakefireModel;
 	m_drakefireModel = nullptr;
-	for (auto& lm : m_loadedModels) {
-		if (lm) {
+
+	for (auto& lm : m_loadedModels)
+	{
+		if (lm)
+		{
 			lm->mesh.destroy();
-			lm->albedo.destroy(); lm->normal.destroy(); lm->metallic.destroy();
-			lm->roughness.destroy(); lm->ao.destroy();
+
+			lm->albedo.destroy();
+			lm->normal.destroy();
+			lm->metallic.destroy();
+			lm->roughness.destroy();
+			lm->ao.destroy();
 		}
 	}
+
 	m_loadedModels.clear();
-	for (auto& tex : m_thumbTextures) tex.destroy();
+
+	//============================================================
+	// MINIATURAS
+	//============================================================
+
+	for (auto& tex : m_thumbTextures)
+	{
+		tex.destroy();
+	}
+
 	m_thumbTextures.clear();
+
+	//============================================================
+	// DISPOSITIVO
+	//============================================================
 
 	m_deviceContext.destroy();
 	m_device.destroy();
 }
 
 LRESULT
-BaseApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam)) {
+BaseApp::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+	{
 		return true;
 	}
-	switch (message) {
-	case WM_CREATE: {
-		CREATESTRUCT* pCreate = reinterpret_cast<CREATESTRUCT*>(lParam);
-		SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pCreate->lpCreateParams);
+
+	switch (message)
+	{
+	case WM_CREATE:
+	{
+		CREATESTRUCT* pCreate =
+			reinterpret_cast<CREATESTRUCT*>(lParam);
+
+		SetWindowLongPtr(
+			hWnd,
+			GWLP_USERDATA,
+			(LONG_PTR)pCreate->lpCreateParams
+		);
 	}
-				  return 0;
-	case WM_PAINT: {
+	return 0;
+
+	case WM_PAINT:
+	{
 		PAINTSTRUCT ps;
 		BeginPaint(hWnd, &ps);
 		EndPaint(hWnd, &ps);
 	}
-				 return 0;
+	return 0;
+
 	case WM_SIZE:
 	{
-		if (wParam == SIZE_MINIMIZED) return 0;
+		if (wParam == SIZE_MINIMIZED)
+			return 0;
+
 		UINT newW = LOWORD(lParam);
 		UINT newH = HIWORD(lParam);
-		if (newW == 0 || newH == 0) return 0;
-		BaseApp* app = reinterpret_cast<BaseApp*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-		if (app) app->onResize(newW, newH);
+
+		if (newW == 0 || newH == 0)
+			return 0;
+
+		BaseApp* app = reinterpret_cast<BaseApp*>(
+			GetWindowLongPtr(hWnd, GWLP_USERDATA)
+			);
+
+		if (app)
+			app->onResize(newW, newH);
+
 		return 0;
 	}
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
 	}
+
 	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
@@ -808,6 +974,105 @@ void BaseApp::handleEditorViewportResize()
 	m_editorViewportPass.swap(newPass);
 	m_renderPipeline.resize(m_device, m_pendingViewportWidth, m_pendingViewportHeight);
 	m_editorViewportResizePending = false;
+}
+
+bool BaseApp::isPlaying() const
+{
+	return m_engineMode == EngineMode::Play;
+}
+
+bool BaseApp::isPaused() const
+{
+	return m_engineMode == EngineMode::Paused;
+}
+
+bool BaseApp::isEditing() const
+{
+	return m_engineMode == EngineMode::Edit;
+}
+
+void BaseApp::startPlayMode()
+{
+	if (m_engineMode == EngineMode::Play)
+		return;
+
+	if (m_engineMode == EngineMode::Paused)
+	{
+		m_engineMode = EngineMode::Play;
+		MESSAGE("BaseApp", "startPlayMode", "Modo Play reanudado");
+		return;
+	}
+
+	captureInitialState();
+
+	m_engineMode = EngineMode::Play;
+
+	MESSAGE("BaseApp", "startPlayMode", "Modo Play iniciado");
+}
+
+void BaseApp::stopPlayMode()
+{
+	if (m_engineMode == EngineMode::Edit)
+		return;
+
+	// Restaurar el estado original de la escena.
+	resetSceneToDefaults();
+
+	// Regresar al modo edición.
+	m_engineMode = EngineMode::Edit;
+
+	MESSAGE(
+		"BaseApp",
+		"stopPlayMode",
+		"Modo Play detenido"
+	);
+}
+void BaseApp::togglePauseMode()
+{
+	if (m_engineMode == EngineMode::Play)
+	{
+		m_engineMode = EngineMode::Paused;
+
+		MESSAGE("BaseApp", "togglePauseMode", "Modo Play pausado");
+	}
+	else if (m_engineMode == EngineMode::Paused)
+	{
+		m_engineMode = EngineMode::Play;
+
+		MESSAGE("BaseApp", "togglePauseMode", "Modo Play reanudado");
+	}
+}
+
+void BaseApp::rotateActorInPlay(int actorIndex, float deltaTime)
+{
+	// Verificar que el índice sea válido.
+	if (actorIndex < 0 || actorIndex >= static_cast<int>(m_actors.size()))
+		return;
+
+	// Obtener el actor elegido.
+	EU::TSharedPointer<Actor> actor = m_actors[actorIndex];
+
+	// Verificar que el puntero contenga un actor válido.
+	if (actor.isNull())
+		return;
+
+	// Buscar su componente Transform.
+	EU::TSharedPointer<Transform> transform =
+		actor->getComponent<Transform>();
+
+	// Si no tiene Transform, no podemos rotarlo.
+	if (!transform)
+		return;
+
+	// Leer su rotación actual.
+	EU::Vector3 rotation = transform->getRotation();
+
+	// Rotar alrededor del eje Y.
+	// 1.0f significa aproximadamente un radián por segundo.
+	rotation.y += 1.0f * deltaTime;
+
+	// Guardar la nueva rotación.
+	transform->setRotation(rotation);
 }
 
 void
@@ -1192,93 +1457,314 @@ BaseApp::loadModelTextures(LoadedModel& lm, const std::string& folder) {
 }
 
 EU::TSharedPointer<Actor>
-BaseApp::loadModelActor(const std::string& modelPath) {
+BaseApp::loadModelActor(const std::string& modelPath)
+{
 	std::string lower = toLowerCopy(modelPath);
+
 	ModelType type = FBX;
-	if (endsWith(lower, ".obj")) type = OBJ;
+
+	if (endsWith(lower, ".obj"))
+	{
+		type = OBJ;
+	}
 
 	Model3D model(modelPath, type);
-	const std::vector<MeshComponent>& meshes = model.GetMeshes();
-	if (meshes.empty()) {
-		ERROR("BaseApp", "loadModelActor", "El modelo no tiene mallas");
+
+	const std::vector<MeshComponent>& meshes =
+		model.GetMeshes();
+
+	if (meshes.empty())
+	{
+		ERROR(
+			"BaseApp",
+			"loadModelActor",
+			"El modelo no tiene mallas"
+		);
+
 		return EU::TSharedPointer<Actor>();
 	}
 
-	std::unique_ptr<LoadedModel> lm(new LoadedModel());
+	std::unique_ptr<LoadedModel> lm(
+		new LoadedModel()
+	);
 
 	HRESULT hr;
-	for (const MeshComponent& mc : meshes) {
+
+	for (const MeshComponent& mc : meshes)
+	{
 		Submesh sm{};
-		hr = sm.vertexBuffer.init(m_device, mc, D3D11_BIND_VERTEX_BUFFER);
-		if (FAILED(hr)) { ERROR("BaseApp", "loadModelActor", "Fallo vertex buffer"); return EU::TSharedPointer<Actor>(); }
-		hr = sm.indexBuffer.init(m_device, mc, D3D11_BIND_INDEX_BUFFER);
-		if (FAILED(hr)) { ERROR("BaseApp", "loadModelActor", "Fallo index buffer"); return EU::TSharedPointer<Actor>(); }
+
+		hr = sm.vertexBuffer.init(
+			m_device,
+			mc,
+			D3D11_BIND_VERTEX_BUFFER
+		);
+
+		if (FAILED(hr))
+		{
+			ERROR(
+				"BaseApp",
+				"loadModelActor",
+				"Fallo vertex buffer"
+			);
+
+			return EU::TSharedPointer<Actor>();
+		}
+
+		hr = sm.indexBuffer.init(
+			m_device,
+			mc,
+			D3D11_BIND_INDEX_BUFFER
+		);
+
+		if (FAILED(hr))
+		{
+			ERROR(
+				"BaseApp",
+				"loadModelActor",
+				"Fallo index buffer"
+			);
+
+			return EU::TSharedPointer<Actor>();
+		}
+
 		sm.indexCount = mc.m_numIndex;
 		sm.startIndex = 0;
 		sm.materialSlot = 0;
-		lm->mesh.getSubmeshes().push_back(std::move(sm));
+
+		lm->mesh
+			.getSubmeshes()
+			.push_back(std::move(sm));
 	}
-	lm->localMin = EU::Vector3(1e9f, 1e9f, 1e9f);
-	lm->localMax = EU::Vector3(-1e9f, -1e9f, -1e9f);
-	for (const MeshComponent& mc : meshes) {
-		for (const SimpleVertex& v : mc.m_vertex) {
-			lm->localMin.x = fminf(lm->localMin.x, v.Position.x);
-			lm->localMin.y = fminf(lm->localMin.y, v.Position.y);
-			lm->localMin.z = fminf(lm->localMin.z, v.Position.z);
-			lm->localMax.x = fmaxf(lm->localMax.x, v.Position.x);
-			lm->localMax.y = fmaxf(lm->localMax.y, v.Position.y);
-			lm->localMax.z = fmaxf(lm->localMax.z, v.Position.z);
+
+	lm->localMin =
+		EU::Vector3(1e9f, 1e9f, 1e9f);
+
+	lm->localMax =
+		EU::Vector3(-1e9f, -1e9f, -1e9f);
+
+	for (const MeshComponent& mc : meshes)
+	{
+		for (const SimpleVertex& v : mc.m_vertex)
+		{
+			lm->localMin.x =
+				fminf(lm->localMin.x, v.Position.x);
+
+			lm->localMin.y =
+				fminf(lm->localMin.y, v.Position.y);
+
+			lm->localMin.z =
+				fminf(lm->localMin.z, v.Position.z);
+
+			lm->localMax.x =
+				fmaxf(lm->localMax.x, v.Position.x);
+
+			lm->localMax.y =
+				fmaxf(lm->localMax.y, v.Position.y);
+
+			lm->localMax.z =
+				fmaxf(lm->localMax.z, v.Position.z);
 		}
 	}
 
+	// Configurar el material.
+	lm->material.setShader(
+		&m_shaderProgram
+	);
 
+	lm->material.setRasterizerState(
+		&m_defaultRasterizer
+	);
 
-	lm->material.setShader(&m_shaderProgram);
-	lm->material.setRasterizerState(&m_defaultRasterizer);
-	lm->material.setDepthStencilState(&m_defaultDepthStencil);
-	lm->material.setSamplerState(&m_defaultSampler);
-	lm->material.setDomain(MaterialDomain::Opaque);
-	lm->material.setBlendMode(BlendMode::Opaque);
+	lm->material.setDepthStencilState(
+		&m_defaultDepthStencil
+	);
 
-	lm->materialInstance.setMaterial(&lm->material);
-	lm->materialInstance.getParams().baseColor = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	lm->materialInstance.getParams().metallic = 1.0f;
-	lm->materialInstance.getParams().roughness = 1.0f;
-	lm->materialInstance.getParams().ao = 1.0f;
-	lm->materialInstance.getParams().normalScale = 1.0f;
-	lm->materialInstance.getParams().emissiveStrength = 1.0f;
-	lm->materialInstance.getParams().alphaCutoff = 0.5f;
+	lm->material.setSamplerState(
+		&m_defaultSampler
+	);
 
-	std::string modelName = fileBaseName(modelPath);
-	loadModelTextures(*lm, "Assets/Textures/" + modelName);
+	lm->material.setDomain(
+		MaterialDomain::Opaque
+	);
 
-	EU::TSharedPointer<Actor> a = EU::MakeShared<Actor>(m_device);
-	if (a.isNull()) return a;
-	a->setName(modelName);
-	EU::TSharedPointer<Transform> t = a->getComponent<Transform>();
-	if (t) t->setTransform(EU::Vector3(0.0f, 2.92f, 5.60f), EU::Vector3(0.0f, 0.0f, 0.0f), EU::Vector3(1.0f, 1.0f, 1.0f));
-	EU::TSharedPointer<MeshRendererComponent> mr = a->getComponent<MeshRendererComponent>();
-	if (!mr) { mr = EU::MakeShared<MeshRendererComponent>(); a->addComponent(mr); }
-	mr->setMesh(&lm->mesh);
-	mr->setMaterialInstance(&lm->materialInstance);
-	mr->setVisible(true);
-	mr->setCastShadow(true);
+	lm->material.setBlendMode(
+		BlendMode::Opaque
+	);
 
-	m_loadedModels.push_back(std::move(lm));
-	return a;
+	// Configurar la instancia del material.
+	lm->materialInstance.setMaterial(
+		&lm->material
+	);
+
+	lm->materialInstance
+		.getParams()
+		.baseColor =
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	lm->materialInstance
+		.getParams()
+		.metallic = 1.0f;
+
+	lm->materialInstance
+		.getParams()
+		.roughness = 1.0f;
+
+	lm->materialInstance
+		.getParams()
+		.ao = 1.0f;
+
+	lm->materialInstance
+		.getParams()
+		.normalScale = 1.0f;
+
+	lm->materialInstance
+		.getParams()
+		.emissiveStrength = 1.0f;
+
+	lm->materialInstance
+		.getParams()
+		.alphaCutoff = 0.5f;
+
+	std::string modelName =
+		fileBaseName(modelPath);
+
+	loadModelTextures(
+		*lm,
+		"Assets/Textures/" + modelName
+	);
+
+	// Crear el actor.
+	EU::TSharedPointer<Actor> actor =
+		EU::MakeShared<Actor>(m_device);
+
+	if (actor.isNull())
+	{
+		return actor;
+	}
+
+	actor->setName(modelName);
+
+	EU::TSharedPointer<Transform> transform =
+		actor->getComponent<Transform>();
+
+	if (transform)
+	{
+		transform->setTransform(
+			EU::Vector3(0.0f, 2.92f, 5.60f),
+			EU::Vector3(0.0f, 0.0f, 0.0f),
+			EU::Vector3(1.0f, 1.0f, 1.0f)
+		);
+	}
+
+	EU::TSharedPointer<MeshRendererComponent> meshRenderer =
+		actor->getComponent<MeshRendererComponent>();
+
+	if (!meshRenderer)
+	{
+		meshRenderer =
+			EU::MakeShared<MeshRendererComponent>();
+
+		actor->addComponent(meshRenderer);
+	}
+
+	meshRenderer->setMesh(
+		&lm->mesh
+	);
+
+	meshRenderer->setMaterialInstance(
+		&lm->materialInstance
+	);
+
+	meshRenderer->setVisible(true);
+	meshRenderer->setCastShadow(true);
+
+	/*
+	// Física desactivada temporalmente.
+
+	auto rigidbody =
+		EU::MakeShared<RigidbodyComponent>();
+
+	rigidbody->mass = 1.0f;
+	rigidbody->useGravity = true;
+	rigidbody->isKinematic = false;
+
+	actor->addComponent(rigidbody);
+
+	auto collider =
+		EU::MakeShared<BoxColliderComponent>();
+
+	collider->center = EU::Vector3(
+		(lm->localMin.x + lm->localMax.x) * 0.5f,
+		(lm->localMin.y + lm->localMax.y) * 0.5f,
+		(lm->localMin.z + lm->localMax.z) * 0.5f
+	);
+
+	collider->size = EU::Vector3(
+		lm->localMax.x - lm->localMin.x,
+		lm->localMax.y - lm->localMin.y,
+		lm->localMax.z - lm->localMin.z
+	);
+
+	actor->addComponent(collider);
+	*/
+
+	// Mantener vivos la malla, el material y sus texturas.
+	m_loadedModels.push_back(
+		std::move(lm)
+	);
+
+	// Devolver el actor creado.
+	return actor;
 }
 
 bool
-BaseApp::getActorAABB(const EU::TSharedPointer<Actor>& actor, EU::Vector3& outMin, EU::Vector3& outMax) {
-	if (actor.isNull()) return false;
-	EU::TSharedPointer<MeshRendererComponent> mr = actor->getComponent<MeshRendererComponent>();
-	if (!mr) return false;
-	Mesh* mesh = mr->getMesh();
-	if (!mesh) return false;
-
-	if (mesh == &m_cyberGunRenderMesh) { outMin = m_modelLocalMin; outMax = m_modelLocalMax; return true; }
-	for (auto& lm : m_loadedModels) {
-		if (lm && &lm->mesh == mesh) { outMin = lm->localMin; outMax = lm->localMax; return true; }
+BaseApp::getActorAABB(
+	const EU::TSharedPointer<Actor>& actor,
+	EU::Vector3& outMin,
+	EU::Vector3& outMax)
+{
+	if (actor.isNull())
+	{
+		return false;
 	}
+
+	EU::TSharedPointer<MeshRendererComponent> meshRenderer =
+		actor->getComponent<MeshRendererComponent>();
+
+	if (!meshRenderer)
+	{
+		return false;
+	}
+
+	Mesh* mesh =
+		meshRenderer->getMesh();
+
+	if (!mesh)
+	{
+		return false;
+	}
+
+	// Modelo principal.
+	if (mesh == &m_cyberGunRenderMesh)
+	{
+		outMin = m_modelLocalMin;
+		outMax = m_modelLocalMax;
+
+		return true;
+	}
+
+	// Modelos cargados dinámicamente.
+	for (const auto& loadedModel : m_loadedModels)
+	{
+		if (loadedModel && &loadedModel->mesh == mesh)
+		{
+			outMin = loadedModel->localMin;
+			outMax = loadedModel->localMax;
+
+			return true;
+		}
+	}
+
 	return false;
 }

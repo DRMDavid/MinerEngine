@@ -166,6 +166,12 @@
     <ClCompile Include="Source\Rendering\RenderPipeline.cpp">
       <Filter>Source\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Source\PhysicsSystem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\BehaviorSystem.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -180,6 +186,7 @@
     <None Include="bin\DeferredLighting.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">
@@ -360,6 +367,21 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="Include\CommandManager.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\RigidbodyComponent.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\BoxColliderComponent.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\PhysicsSystem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\RotateBehaviorComponent.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\BehaviorSystem.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>

@@ -232,6 +232,7 @@ private:
     bool m_viewportActive = false;              ///< Bandera que indica si el viewport está activo.
     bool m_dockLayoutInitialized = false;       ///< Bandera que indica si el dockspace fue inicializado.
 
+
 public:
     bool m_isUsingGizmo = false;                ///< Indica si un Gizmo está siendo manipulado activamente.
     int selectedActorIndex = -1;                ///< Índice del actor actualmente seleccionado.
@@ -292,6 +293,10 @@ public:
     bool m_createPointLightRequested = false;       ///< Petición para luz puntual.
     bool m_createSpotLightRequested = false;        ///< Petición para luz spot.
 
+    bool m_playRequested = false;
+    bool m_pauseRequested = false;
+    bool m_stopRequested = false;
+
     /** @brief Consume la petición de crear luz direccional. @return true si se solicitó. */
     bool consumeCreateDirectionalLightRequest()
     {
@@ -314,6 +319,27 @@ public:
         bool r = m_createSpotLightRequested;
         m_createSpotLightRequested = false;
         return r;
+    }
+
+    bool consumePlayRequest()
+    {
+        bool requested = m_playRequested;
+        m_playRequested = false;
+        return requested;
+    }
+
+    bool consumePauseRequest()
+    {
+        bool requested = m_pauseRequested;
+        m_pauseRequested = false;
+        return requested;
+    }
+
+    bool consumeStopRequest()
+    {
+        bool requested = m_stopRequested;
+        m_stopRequested = false;
+        return requested;
     }
 
 };

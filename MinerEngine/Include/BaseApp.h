@@ -28,6 +28,8 @@
 #include "Rendering/RenderPipeline.h"
 #include "Rendering/RenderScene.h"
 #include "CommandManager.h"
+#include "PhysicsSystem.h"
+#include "BehaviorSystem.h"
 #include <string>
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -64,6 +66,18 @@ struct GizmoEditState {
     EU::Vector3 position; ///< Posición al momento de capturar el estado.
     EU::Vector3 rotation; ///< Rotación al momento de capturar el estado.
     EU::Vector3 scale;    ///< Escala al momento de capturar el estado.
+};
+
+
+/**
+ * @enum EngineMode
+ * @brief Representa el estado actual del motor.
+ */
+enum class EngineMode
+{
+    Edit = 0,
+    Play,
+    Paused
 };
 
 /**
@@ -158,6 +172,8 @@ public:
     void removeActorFromScene(const EU::TSharedPointer<Actor>& actor);
 
 private:
+
+   
     /**
      * @brief Función de callback principal para gestionar mensajes de Windows.
      * @param hWnd Handle de la ventana.
@@ -183,6 +199,11 @@ private:
     bool                m_d3dReady = false;     ///< Indica si DirectX se inicializó correctamente.
     Buffer              m_constantBuffer;       ///< Buffer constante principal de DirectX.
     CBMain              m_constantBufferStruct; ///< Estructura de datos del buffer constante principal.
+    PhysicsSystem       m_physicsSystem;
+    BehaviorSystem      m_behaviorSystem;
+    
+
+    EngineMode m_engineMode = EngineMode::Edit;
 
     /**
      * @struct InitialTransform
@@ -205,6 +226,14 @@ private:
     void captureInitialState();
     /** @brief Restaura la escena a los valores iniciales capturados. */
     void resetSceneToDefaults();
+    void startPlayMode();
+    void stopPlayMode();
+    void togglePauseMode();
+    void rotateActorInPlay(int actorIndex, float deltaTime);
+
+    bool isPlaying() const;
+    bool isPaused() const;
+    bool isEditing() const;
     /** @brief Mueve y ajusta la cámara para enfocar el actor especificado. */
     void focusCameraOnActor(const EU::TSharedPointer<Actor>& actor);
     /** @brief Ajusta la cámara para visualizar todos los elementos de la escena. */
@@ -284,6 +313,10 @@ private:
     EU::TSharedPointer<Actor> m_cyberGun;                       ///< Puntero de referencia rápida al actor de prueba.
     EU::TSharedPointer<Actor> m_drakefirePistol;                ///< Puntero de referencia rápida a segundo actor.
     EU::TSharedPointer<Actor> m_directionalLightActor;          ///< Puntero al actor que contiene la luz direccional principal.
+    /**
+    * @brief Actor invisible utilizado como suelo físico de la escena.
+    */
+    EU::TSharedPointer<Actor> m_groundActor;
 
     Model3D* m_model;                   ///< Puntero temporal o de compatibilidad a malla de modelo 1.
     Model3D* m_drakefireModel = nullptr;///< Puntero temporal a malla de modelo 2.

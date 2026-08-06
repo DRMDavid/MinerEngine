@@ -8,6 +8,12 @@
 #include "EngineUtilities/Utilities/Camera.h"
 #include "ECS/MeshRendererComponent.h"
 #include "ECS/LightComponent.h"
+#include "ECS/RigidbodyComponent.h"
+#include "ECS/BoxColliderComponent.h"
+#include "ECS/RotateBehaviorComponent.h"
+
+// Déjalo después de los headers principales del motor.
+
 #include <string>
 #include <vector>
 
@@ -210,17 +216,34 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	// HEADER
 	//============================================================
 
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
+	ImGui::PushStyleVar(
+		ImGuiStyleVar_FramePadding,
+		ImVec2(8.0f, 6.0f)
+	);
+
+	ImGui::PushStyleVar(
+		ImGuiStyleVar_ItemSpacing,
+		ImVec2(8.0f, 8.0f)
+	);
 
 	ImGui::Text("Actor");
 	ImGui::Separator();
 
-	char objectName[128];
-	strcpy_s(objectName, sizeof(objectName), actor->getName().c_str());
+	char objectName[128] = {};
 
-	if (ImGui::InputText("Name", objectName, IM_ARRAYSIZE(objectName)))
+	strcpy_s(
+		objectName,
+		sizeof(objectName),
+		actor->getName().c_str()
+	);
+
+	if (ImGui::InputText(
+		"Name",
+		objectName,
+		IM_ARRAYSIZE(objectName)))
+	{
 		actor->setName(objectName);
+	}
 
 	ImGui::Spacing();
 
@@ -228,31 +251,52 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	// TRANSFORM
 	//============================================================
 
-	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+	if (ImGui::CollapsingHeader(
+		"Transform",
+		ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		inspectorContainer(actor);
 	}
 
 	//============================================================
-	// RENDERER
+	// MESH RENDERER
 	//============================================================
 
-	if (ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen))
+	if (ImGui::CollapsingHeader(
+		"Mesh Renderer",
+		ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		auto mr = actor->getComponent<MeshRendererComponent>();
+		auto meshRenderer =
+			actor->getComponent<MeshRendererComponent>();
 
-		if (mr)
+		if (meshRenderer)
 		{
-			bool visible = mr->isVisible();
+			bool visible =
+				meshRenderer->isVisible();
 
-			if (ImGui::Checkbox("Visible", &visible))
-				mr->setVisible(visible);
+			if (ImGui::Checkbox(
+				"Visible",
+				&visible))
+			{
+				meshRenderer->setVisible(visible);
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled(
+				"No MeshRendererComponent found."
+			);
 		}
 
-		bool castShadow = actor->canCastShadow();
+		bool castShadow =
+			actor->canCastShadow();
 
-		if (ImGui::Checkbox("Cast Shadows", &castShadow))
+		if (ImGui::Checkbox(
+			"Cast Shadows",
+			&castShadow))
+		{
 			actor->setCastShadow(castShadow);
+		}
 	}
 
 	//============================================================
@@ -274,59 +318,494 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	// LIGHT
 	//============================================================
 
-	if (actor->getName().find("Light") != std::string::npos)
+	auto lightComponent =
+		actor->getComponent<LightComponent>();
+
+	if (lightComponent)
 	{
-		// 1. Obtenemos el componente real de la luz
-		auto lightComp = actor->getComponent<LightComponent>();
-
-		if (lightComp)
+		if (ImGui::CollapsingHeader(
+			"Light Settings",
+			ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::CollapsingHeader("Light Settings", ImGuiTreeNodeFlags_DefaultOpen))
+			auto& lightData =
+				lightComponent->getLightData();
+
+			ImGui::TextDisabled("Light Properties");
+
+			ImGui::ColorEdit3(
+				"Color",
+				&lightData.color.x
+			);
+
+			ImGui::DragFloat(
+				"Intensity",
+				&lightData.intensity,
+				0.1f,
+				0.0f,
+				100.0f,
+				"%.2f"
+			);
+
+			if (lightData.type == LightType::Point ||
+				lightData.type == LightType::Spot)
 			{
-				// 2. Extraemos los datos reales para modificarlos en MinerEngine
-				auto& lightData = lightComp->getLightData();
+				ImGui::DragFloat(
+					"Range",
+					&lightData.range,
+					0.5f,
+					0.1f,
+					500.0f,
+					"%.1f"
+				);
+			}
 
-				ImGui::TextDisabled("Light Properties");
+			if (lightData.type == LightType::Spot)
+			{
+				ImGui::DragFloat(
+					"Spot Angle",
+					&lightData.spotAngle,
+					1.0f,
+					1.0f,
+					90.0f,
+					"%.1f"
+				);
+			}
 
-				// 3. Modificador de Color real (Usa ColorEdit3 para la paleta RGB)
-				ImGui::ColorEdit3("Color", &lightData.color.x);
+			ImGui::Spacing();
 
-				// 4. Modificador de Intensidad real
-				ImGui::DragFloat("Intensity", &lightData.intensity, 0.1f, 0.0f, 100.0f, "%.2f");
+			bool castShadows =
+				actor->canCastShadow();
 
-				// 5. Rango (Solo para Point y Spot)
-				if (lightData.type == LightType::Point || lightData.type == LightType::Spot)
-				{
-					ImGui::DragFloat("Range", &lightData.range, 0.5f, 0.1f, 500.0f, "%.1f");
-				}
-
-				// 6. Ángulo (Solo para Spot)
-				if (lightData.type == LightType::Spot)
-				{
-					ImGui::DragFloat("Spot Angle", &lightData.spotAngle, 1.0f, 1.0f, 90.0f, "%.1f");
-				}
-
-				ImGui::Spacing();
-
-				// 7. Modificador de Sombras (Leyendo del actor real)
-				bool castShadows = actor->canCastShadow();
-				if (ImGui::Checkbox("Cast Shadows", &castShadows))
-				{
-					actor->setCastShadow(castShadows);
-				}
+			if (ImGui::Checkbox(
+				"Light Cast Shadows",
+				&castShadows))
+			{
+				actor->setCastShadow(castShadows);
 			}
 		}
-		else
+	}
+
+	//============================================================
+	// OBTENER COMPONENTES
+	//============================================================
+
+	auto rigidbody =
+		actor->getComponent<RigidbodyComponent>();
+
+	auto boxCollider =
+		actor->getComponent<BoxColliderComponent>();
+
+	auto rotateBehavior =
+		actor->getComponent<RotateBehaviorComponent>();
+
+	//============================================================
+	// PHYSICS
+	//============================================================
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	ImGui::Text("Physics");
+
+	//============================================================
+	// RIGIDBODY COMPONENT
+	//============================================================
+
+	if (rigidbody)
+	{
+		bool rigidbodyEnabled =
+			rigidbody->isEnabled();
+
+		if (ImGui::Checkbox(
+			"Rigidbody",
+			&rigidbodyEnabled))
 		{
-			ImGui::TextDisabled("No LightComponent found on this actor.");
+			rigidbody->setEnabled(
+				rigidbodyEnabled
+			);
+
+			if (rigidbodyEnabled)
+			{
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Rigidbody activado"
+				);
+			}
+			else
+			{
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Rigidbody desactivado"
+				);
+			}
+		}
+
+		if (rigidbody->isEnabled())
+		{
+			ImGui::Indent();
+
+			ImGui::DragFloat(
+				"Mass",
+				&rigidbody->mass,
+				0.1f,
+				0.01f,
+				1000.0f,
+				"%.2f"
+			);
+
+			if (ImGui::Checkbox(
+				"Use Gravity",
+				&rigidbody->useGravity))
+			{
+				if (rigidbody->useGravity)
+				{
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Gravedad activada"
+					);
+				}
+				else
+				{
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Gravedad desactivada"
+					);
+				}
+			}
+
+			if (ImGui::Checkbox(
+				"Is Kinematic",
+				&rigidbody->isKinematic))
+			{
+				if (rigidbody->isKinematic)
+				{
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Rigidbody configurado como Kinematic"
+					);
+				}
+				else
+				{
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Rigidbody configurado como Dynamic"
+					);
+				}
+			}
+
+			ImGui::DragFloat3(
+				"Velocity",
+				&rigidbody->velocity.x,
+				0.1f
+			);
+
+			ImGui::Text(
+				"Grounded: %s",
+				rigidbody->isGrounded
+				? "Yes"
+				: "No"
+			);
+
+			ImGui::Unindent();
 		}
 	}
+	else
+	{
+		if (ImGui::Button(
+			"Add Rigidbody",
+			ImVec2(-1.0f, 0.0f)))
+		{
+			auto newRigidbody =
+				EU::MakeShared<RigidbodyComponent>();
+
+			newRigidbody->mass = 1.0f;
+			newRigidbody->useGravity = true;
+			newRigidbody->isKinematic = false;
+			newRigidbody->isGrounded = false;
+
+			newRigidbody->velocity =
+				EU::Vector3(
+					0.0f,
+					0.0f,
+					0.0f
+				);
+
+			actor->addComponent(newRigidbody);
+
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Rigidbody agregado al actor"
+			);
+		}
+	}
+
+	//============================================================
+	// BOX COLLIDER COMPONENT
+	//============================================================
+
+	ImGui::Spacing();
+
+	if (boxCollider)
+	{
+		bool colliderEnabled =
+			boxCollider->isEnabled();
+
+		if (ImGui::Checkbox(
+			"Box Collider",
+			&colliderEnabled))
+		{
+			boxCollider->setEnabled(
+				colliderEnabled
+			);
+
+			if (colliderEnabled)
+			{
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Box Collider activado"
+				);
+			}
+			else
+			{
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Box Collider desactivado"
+				);
+			}
+		}
+
+		if (boxCollider->isEnabled())
+		{
+			ImGui::Indent();
+
+			ImGui::DragFloat3(
+				"Center",
+				&boxCollider->center.x,
+				0.1f
+			);
+
+			ImGui::DragFloat3(
+				"Size",
+				&boxCollider->size.x,
+				0.1f,
+				0.01f,
+				1000.0f
+			);
+
+			if (ImGui::Checkbox(
+				"Is Trigger",
+				&boxCollider->isTrigger))
+			{
+				if (boxCollider->isTrigger)
+				{
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Box Collider configurado como Trigger"
+					);
+				}
+				else
+				{
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Box Collider configurado como Solido"
+					);
+				}
+			}
+
+			ImGui::Unindent();
+		}
+	}
+	else
+	{
+		if (ImGui::Button(
+			"Add Box Collider",
+			ImVec2(-1.0f, 0.0f)))
+		{
+			auto newCollider =
+				EU::MakeShared<BoxColliderComponent>();
+
+			newCollider->center =
+				EU::Vector3(
+					0.0f,
+					0.0f,
+					0.0f
+				);
+
+			newCollider->size =
+				EU::Vector3(
+					1.0f,
+					1.0f,
+					1.0f
+				);
+
+			newCollider->isTrigger = false;
+
+			actor->addComponent(newCollider);
+
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Box Collider agregado al actor"
+			);
+		}
+	}
+
+	//============================================================
+	// ROTATE BEHAVIOR COMPONENT
+	//============================================================
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	if (rotateBehavior)
+	{
+		bool behaviorEnabled =
+			rotateBehavior->isEnabled();
+
+		if (ImGui::Checkbox(
+			"Rotate Behavior",
+			&behaviorEnabled))
+		{
+			rotateBehavior->setEnabled(
+				behaviorEnabled
+			);
+
+			if (behaviorEnabled)
+			{
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Rotate Behavior activado"
+				);
+			}
+			else
+			{
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Rotate Behavior desactivado"
+				);
+			}
+		}
+
+		if (rotateBehavior->isEnabled())
+		{
+			ImGui::Indent();
+
+			ImGui::DragFloat3(
+				"Rotation Axis",
+				&rotateBehavior->axis.x,
+				0.05f,
+				-1.0f,
+				1.0f
+			);
+
+			ImGui::DragFloat(
+				"Rotation Speed",
+				&rotateBehavior->speed,
+				1.0f,
+				0.0f,
+				1000.0f,
+				"%.2f"
+			);
+
+			bool reverseDirection =
+				rotateBehavior->direction < 0.0f;
+
+			if (ImGui::Checkbox(
+				"Reverse Direction",
+				&reverseDirection))
+			{
+				if (reverseDirection)
+				{
+					rotateBehavior->direction =
+						-1.0f;
+
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Direccion invertida"
+					);
+				}
+				else
+				{
+					rotateBehavior->direction =
+						1.0f;
+
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Direccion normal"
+					);
+				}
+			}
+
+			ImGui::Unindent();
+		}
+	}
+	else
+	{
+		if (ImGui::Button(
+			"Add Rotate Behavior",
+			ImVec2(-1.0f, 0.0f)))
+		{
+			auto newBehavior =
+				EU::MakeShared<RotateBehaviorComponent>();
+
+			newBehavior->axis =
+				EU::Vector3(
+					0.0f,
+					1.0f,
+					0.0f
+				);
+
+			newBehavior->speed = 45.0f;
+			newBehavior->direction = 1.0f;
+
+			actor->addComponent(newBehavior);
+
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Rotate Behavior agregado al actor"
+			);
+		}
+	}
+
+	//============================================================
+	// AUDIO SOURCE COMPONENT
+	// DESHABILITADO TEMPORALMENTE
+	//============================================================
+
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	ImGui::TextDisabled(
+		"Audio Source temporalmente deshabilitado"
+	);
+
+	//============================================================
+	// FINALIZAR INSPECTOR
+	//============================================================
 
 	ImGui::PopStyleVar(2);
 
 	ImGui::End();
 }
-
 void GUI::inspectorContainer(EU::TSharedPointer<Actor> actor) {
 	if (!actor) return;
 	auto transform = actor->getComponent<Transform>();
@@ -559,6 +1038,7 @@ void GUI::drawStudioTopRibbon() {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 4.0f));
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.085f, 0.070f, 0.120f, 1.0f));
 	if (ImGui::Begin("##StudioMenuBar", nullptr, menuFlags)) {
+
 		if (ImGui::BeginMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
 				ImGui::MenuItem("New Scene"); ImGui::MenuItem("Open Scene..."); ImGui::MenuItem("Save");
@@ -594,19 +1074,72 @@ void GUI::drawStudioTopRibbon() {
 			}
 
 			ImGui::EndMenuBar();
+
 		}
 	}
 	ImGui::End();
-	ImGui::PopStyleColor(); ImGui::PopStyleVar(2);
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar(2);
 
-	ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + menuBarHeight), ImGuiCond_Always);
-	ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, ribbonHeight), ImGuiCond_Always);
-	ImGuiWindowFlags ribbonFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar;
+	ImGui::SetNextWindowPos(
+		ImVec2(viewport->Pos.x, viewport->Pos.y + menuBarHeight),
+		ImGuiCond_Always
+	);
+
+	ImGui::SetNextWindowSize(
+		ImVec2(viewport->Size.x, ribbonHeight),
+		ImGuiCond_Always
+	);
+
+	ImGuiWindowFlags ribbonFlags =
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoScrollbar;
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.125f, 0.105f, 0.180f, 1.0f));
-	ImGui::PopStyleColor(1); ImGui::PopStyleVar(3);
+	ImGui::PushStyleVar(
+		ImGuiStyleVar_WindowPadding,
+		ImVec2(10.0f, 10.0f)
+	);
+
+	ImGui::PushStyleVar(
+		ImGuiStyleVar_ItemSpacing,
+		ImVec2(8.0f, 6.0f)
+	);
+
+	ImGui::PushStyleColor(
+		ImGuiCol_WindowBg,
+		ImVec4(0.125f, 0.105f, 0.180f, 1.0f)
+	);
+
+	if (ImGui::Begin("##StudioRibbon", nullptr, ribbonFlags))
+	{
+		if (ImGui::Button("Play", ImVec2(80.0f, 32.0f)))
+		{
+			m_playRequested = true;
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Pause", ImVec2(80.0f, 32.0f)))
+		{
+			m_pauseRequested = true;
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button("Stop", ImVec2(80.0f, 32.0f)))
+		{
+			m_stopRequested = true;
+		}
+	}
+
+	ImGui::End();
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar(3);
 }
 
 void GUI::drawViewportPanel(ID3D11ShaderResourceView* viewportSRV) {
@@ -1160,4 +1693,5 @@ void GUI::drawLightGizmo(Camera& cam, EU::TSharedPointer<Actor> actor) {
 	}
 
 	m_viewportDrawList->PopClipRect();
+
 }
