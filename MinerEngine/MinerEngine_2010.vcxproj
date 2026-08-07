@@ -436,6 +436,7 @@
     <ClCompile Include="Imgui\ImGuizmo\ImGuizmo.cpp" />
     <ClCompile Include="Include\SamplerState.cpp" />
     <ClCompile Include="MinerEngine.cpp" />
+    <ClCompile Include="Source\AudioSystem.cpp" />
     <ClCompile Include="Source\BaseApp.cpp" />
     <ClCompile Include="Source\BehaviorSystem.cpp" />
     <ClCompile Include="Source\Buffer.cpp" />
@@ -478,6 +479,7 @@
     <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_textedit.h" />
     <ClInclude Include="Imgui\imgui-docking-znly-docking\imstb_truetype.h" />
     <ClInclude Include="Imgui\ImGuizmo\ImGuizmo.h" />
+    <ClInclude Include="Include\AudioSystem.h" />
     <ClInclude Include="Include\BaseApp.h" />
     <ClInclude Include="Include\BehaviorSystem.h" />
     <ClInclude Include="Include\Buffer.h" />

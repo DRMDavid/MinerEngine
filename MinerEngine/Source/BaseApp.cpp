@@ -1,9 +1,7 @@
-#include <Audio.h>
 #include "BaseApp.h"
 #include "ResourceManager.h"
 #include "ECS/RigidbodyComponent.h"
 #include "ECS/BoxColliderComponent.h"
-#include <exception>
 #include <fstream>
 #include <memory>
 
@@ -146,61 +144,39 @@ HRESULT
 BaseApp::init() {
 	HRESULT hr = S_OK;
 
-	DirectX::AUDIO_ENGINE_FLAGS audioFlags =
-		DirectX::AudioEngine_Default;
+	//============================================================
+// AUDIO SYSTEM
+//============================================================
 
-#ifdef _DEBUG
-	audioFlags |= DirectX::AudioEngine_Debug;
-#endif
-
-	try
-	{
-		m_audioEngine =
-			std::make_unique<DirectX::AudioEngine>(
-				audioFlags
-			);
-
-		if (m_audioEngine->IsAudioDevicePresent())
-		{
-			MESSAGE(
-				"Audio",
-				"init",
-				"AudioEngine inicializado. Dispositivo de audio detectado."
-			);
-		}
-		else
-		{
-			ERROR(
-				"Audio",
-				"init",
-				"AudioEngine inicio en modo silencioso. No se detecto dispositivo de audio."
-			);
-		}
-		m_testSound =
-			std::make_unique<DirectX::SoundEffect>(
-				m_audioEngine.get(),
-				L"Assets/Audio/Test.wav"
-			);
-
-		MESSAGE(
-			"Audio",
-			"init",
-			"Test.wav cargado correctamente."
-		);
-	}
-	catch (const std::exception& exception)
+	if (!m_audioSystem.init())
 	{
 		ERROR(
 			"BaseApp",
 			"init",
-			exception.what()
+			"AudioSystem no pudo inicializarse"
 		);
-
-		// El sonido debe destruirse antes que AudioEngine.
-		m_testSound.reset();
-		m_audioEngine.reset();
 	}
 
+	// Continuar con la inicialización gráfica.
+	hr = m_swapChain.init(
+		m_device,
+		m_deviceContext,
+		m_backBuffer,
+		m_window
+	);
+
+	if (FAILED(hr))
+	{
+		ERROR(
+			"Main",
+			"InitDevice",
+			"Failed SwapChain."
+		);
+
+		return hr;
+	}
+
+		// Aquí continúa el resto de init()...
 	hr = m_swapChain.init(m_device, m_deviceContext, m_backBuffer, m_window);
 	if (FAILED(hr)) { ERROR("Main", "InitDevice", ("Failed SwapChain. HRESULT: " + std::to_string(hr)).c_str()); return hr; }
 
@@ -456,26 +432,7 @@ void
 BaseApp::update(float deltaTime) {
 	handleEditorViewportResize();
 
-	if (m_audioEngine)
-	{
-		if (!m_audioEngine->Update() &&
-			m_audioEngine->IsCriticalError())
-		{
-			static bool audioErrorReported = false;
-
-			if (!audioErrorReported)
-			{
-				ERROR(
-					"Audio",
-					"update",
-					"El dispositivo de audio se desconecto o encontro un error critico."
-				);
-
-				audioErrorReported = true;
-			}
-		}
-	}
-
+	m_audioSystem.update();
 	/*
 	if (!m_initialStateCaptured) {
 		captureInitialState();
@@ -484,19 +441,31 @@ BaseApp::update(float deltaTime) {
 	*/
 	// GUI
 	m_gui.update(m_viewport, m_window);
-	if (m_gui.consumePlayRequest())
-	{
-		startPlayMode();
-	}
+	const bool playRequested =
+		m_gui.consumePlayRequest();
 
-	if (m_gui.consumePauseRequest())
+	const bool pauseRequested =
+		m_gui.consumePauseRequest();
+
+	const bool stopRequested =
+		m_gui.consumeStopRequest();
+
+	// Procesar solamente una transición de estado por frame.
+	if (stopRequested)
+	{
+		stopPlayMode();
+	}
+	else if (pauseRequested)
 	{
 		togglePauseMode();
 	}
-
-	if (m_gui.consumeStopRequest())
+	else if (
+		playRequested &&
+		m_engineMode == EngineMode::Edit)
 	{
-		stopPlayMode();
+		// Play solamente puede iniciar desde Edit.
+		// No puede reanudar automáticamente desde Paused.
+		startPlayMode();
 	}
 	m_gui.drawViewportPanel(m_editorViewportPass.getSRV());
 	m_gui.drawViewportGrid(m_camera);
@@ -858,7 +827,8 @@ BaseApp::render() {
 void
 BaseApp::destroy()
 {
-	m_audioEngine.reset();
+	// Detener sonidos y liberar AudioEngine.
+	m_audioSystem.shutdown();
 
 	//============================================================
 	// RENDER Y ESCENA
@@ -1077,15 +1047,11 @@ bool BaseApp::isEditing() const
 	return m_engineMode == EngineMode::Edit;
 }
 
-void BaseApp::startPlayMode()
+void
+BaseApp::startPlayMode()
 {
-	if (m_engineMode == EngineMode::Play)
-		return;
-
-	if (m_engineMode == EngineMode::Paused)
+	if (m_engineMode != EngineMode::Edit)
 	{
-		m_engineMode = EngineMode::Play;
-		MESSAGE("BaseApp", "startPlayMode", "Modo Play reanudado");
 		return;
 	}
 
@@ -1093,16 +1059,9 @@ void BaseApp::startPlayMode()
 
 	m_engineMode = EngineMode::Play;
 
-	if (m_testSound)
-	{
-		m_testSound->Play();
-
-		MESSAGE(
-			"Audio",
-			"startPlayMode",
-			"Reproduciendo Test.wav"
-		);
-	}
+	m_audioSystem.playOnStart(
+		m_actors
+	);
 
 	MESSAGE(
 		"BaseApp",
@@ -1114,12 +1073,15 @@ void BaseApp::startPlayMode()
 void BaseApp::stopPlayMode()
 {
 	if (m_engineMode == EngineMode::Edit)
+	{
 		return;
+	}
 
-	// Restaurar el estado original de la escena.
+	// Detener el audio antes de restaurar la escena.
+	m_audioSystem.stopAll();
+
 	resetSceneToDefaults();
 
-	// Regresar al modo edición.
 	m_engineMode = EngineMode::Edit;
 
 	MESSAGE(
@@ -1128,22 +1090,36 @@ void BaseApp::stopPlayMode()
 		"Modo Play detenido"
 	);
 }
-void BaseApp::togglePauseMode()
+
+
+void
+BaseApp::togglePauseMode()
 {
 	if (m_engineMode == EngineMode::Play)
 	{
+		m_audioSystem.pauseAll();
+
 		m_engineMode = EngineMode::Paused;
 
-		MESSAGE("BaseApp", "togglePauseMode", "Modo Play pausado");
+		MESSAGE(
+			"BaseApp",
+			"togglePauseMode",
+			"Modo Play pausado"
+		);
 	}
 	else if (m_engineMode == EngineMode::Paused)
 	{
+		m_audioSystem.resumeAll();
+
 		m_engineMode = EngineMode::Play;
 
-		MESSAGE("BaseApp", "togglePauseMode", "Modo Play reanudado");
+		MESSAGE(
+			"BaseApp",
+			"togglePauseMode",
+			"Modo Play reanudado"
+		);
 	}
 }
-
 void BaseApp::rotateActorInPlay(int actorIndex, float deltaTime)
 {
 	// Verificar que el índice sea válido.

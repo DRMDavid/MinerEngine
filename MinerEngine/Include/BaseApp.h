@@ -30,14 +30,10 @@
 #include "CommandManager.h"
 #include "PhysicsSystem.h"
 #include "BehaviorSystem.h"
+#include "AudioSystem.h"
 #include <string>   
 #include <memory>
 
-namespace DirectX
-{
-    class AudioEngine;
-    class SoundEffect;
-}
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -212,8 +208,7 @@ private:
     CBMain              m_constantBufferStruct; ///< Estructura de datos del buffer constante principal.
     PhysicsSystem       m_physicsSystem;
     BehaviorSystem      m_behaviorSystem;
-    std::unique_ptr<DirectX::AudioEngine> m_audioEngine;
-    std::unique_ptr<DirectX::SoundEffect> m_testSound;
+    AudioSystem         m_audioSystem;
     
 
     EngineMode m_engineMode = EngineMode::Edit;

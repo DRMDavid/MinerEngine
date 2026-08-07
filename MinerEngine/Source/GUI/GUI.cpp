@@ -1201,26 +1201,37 @@ void GUI::drawStudioTopRibbon() {
 
 	if (ImGui::Begin("##StudioRibbon", nullptr, ribbonFlags))
 	{
-		if (ImGui::Button("Play", ImVec2(80.0f, 32.0f)))
+		if (ImGui::Button(
+			"Play",
+			ImVec2(80.0f, 32.0f)))
 		{
 			m_playRequested = true;
+			m_pauseRequested = false;
+			m_stopRequested = false;
 		}
 
 		ImGui::SameLine();
 
-		if (ImGui::Button("Pause", ImVec2(80.0f, 32.0f)))
+		if (ImGui::Button(
+			"Pause",
+			ImVec2(80.0f, 32.0f)))
 		{
+			m_playRequested = false;
 			m_pauseRequested = true;
+			m_stopRequested = false;
 		}
 
 		ImGui::SameLine();
 
-		if (ImGui::Button("Stop", ImVec2(80.0f, 32.0f)))
+		if (ImGui::Button(
+			"Stop",
+			ImVec2(80.0f, 32.0f)))
 		{
+			m_playRequested = false;
+			m_pauseRequested = false;
 			m_stopRequested = true;
-		}
+		}	
 	}
-
 	ImGui::End();
 
 	ImGui::PopStyleColor();
