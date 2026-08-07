@@ -4,15 +4,44 @@
 #include "ECS/Component.h"
 
 #include <cstring>
+#include <vector>
 
 class DeviceContext;
 
+//============================================================
+// DATOS DE UN SONIDO ADICIONAL
+//============================================================
+
+struct AudioClipData
+{
+	AudioClipData()
+	{
+		filePath[0] = '\0';
+	}
+
+	// Ruta relativa al directorio bin.
+	char filePath[260] = {};
+
+	// Volumen entre 0 y 1.
+	float volume = 1.0f;
+
+	// Repetir continuamente.
+	bool loop = false;
+
+	// Reproducir al entrar en Play.
+	bool playOnStart = false;
+
+	// Audio posicional.
+	bool spatial3D = false;
+
+	// Solicitudes temporales enviadas desde el Inspector.
+	bool previewRequested = false;
+	bool stopPreviewRequested = false;
+};
+
 /**
  * @class AudioSourceComponent
- * @brief Configuracion de una fuente de audio asociada a un actor.
- *
- * Contiene las propiedades configurables del sonido.
- * AudioSystem se encarga de cargarlo y reproducirlo.
+ * @brief Componente que almacena uno o varios sonidos.
  */
 class AudioSourceComponent : public Component
 {
@@ -34,43 +63,43 @@ public:
 
 	void update(float deltaTime) override
 	{
-		// Evitar advertencia por parametro no utilizado.
 		(void)deltaTime;
 	}
 
 	void render(DeviceContext& deviceContext) override
 	{
-		// Evitar advertencia por parametro no utilizado.
 		(void)deviceContext;
 	}
 
 	void destroy() override
 	{
+		sounds.clear();
 	}
 
 public:
 
-	// Ruta relativa al directorio bin del motor.
+	//========================================================
+	// SONIDO PRINCIPAL
+	// Se conserva para no romper el sistema actual.
+	//========================================================
+
 	char filePath[260] = {};
 
-	// Volumen entre 0 y 1.
 	float volume = 1.0f;
 
-	// Repetir continuamente.
 	bool loop = false;
 
-	// Reproducir cuando comienza el modo Play.
 	bool playOnStart = true;
 
-	// Activar audio posicional 3D.
-	// Su funcionamiento se implementara posteriormente.
 	bool spatial3D = false;
 
-	// Solicitud enviada desde el Inspector para escuchar el sonido.
-	// No se guarda como propiedad permanente del componente.
 	bool previewRequested = false;
 
-	// Solicitud enviada desde el Inspector para detener el Preview.
-	// No se guarda como propiedad permanente del componente.
 	bool stopPreviewRequested = false;
+
+	//========================================================
+	// SONIDOS ADICIONALES
+	//========================================================
+
+	std::vector<AudioClipData> sounds;
 };

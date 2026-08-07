@@ -216,105 +216,128 @@ AudioSystem::processPreviewRequests(
 			continue;
 		}
 
-		//----------------------------------------------------
-		// DETENER PREVIEW
-		//----------------------------------------------------
-
-		if (audioSource->stopPreviewRequested)
-		{
-			audioSource->stopPreviewRequested = false;
-			audioSource->previewRequested = false;
-
-			stopPreview();
-		}
-
-		//----------------------------------------------------
-		// INICIAR PREVIEW
-		//----------------------------------------------------
-
-		if (!audioSource->previewRequested)
-		{
-			continue;
-		}
-
-		// Consumir la solicitud para que no se ejecute
-		// nuevamente en cada frame.
-		audioSource->previewRequested = false;
-
-		if (audioSource->filePath[0] == '\0')
-		{
-			ERROR(
-				"AudioSystem",
-				"processPreviewRequests",
-				"No se selecciono un archivo de audio"
-			);
-
-			continue;
-		}
-
-		try
-		{
-			// Solo se permite un Preview activo.
-			stopPreview();
-
-			const std::string path =
-				audioSource->filePath;
-
-			const std::wstring widePath(
-				path.begin(),
-				path.end()
-			);
-
-			m_impl->previewSound =
-				std::make_unique<DirectX::SoundEffect>(
-					m_impl->engine.get(),
-					widePath.c_str()
-				);
-
-			m_impl->previewInstance =
-				m_impl->previewSound->CreateInstance(
-					DirectX::SoundEffectInstance_Default
-				);
-
-			if (!m_impl->previewInstance)
+		// Función local para procesar cualquier sonido.
+		auto processSoundPreview =
+			[this](
+				char* filePath,
+				float volume,
+				bool loop,
+				bool& previewRequested,
+				bool& stopPreviewRequested)
 			{
-				ERROR(
-					"AudioSystem",
-					"processPreviewRequests",
-					"No se pudo crear la instancia de Preview"
-				);
+				if (stopPreviewRequested)
+				{
+					stopPreviewRequested = false;
+					previewRequested = false;
 
-				m_impl->previewSound.reset();
-				continue;
-			}
+					stopPreview();
+				}
 
-			m_impl->previewInstance->SetVolume(
-				audioSource->volume
-			);
+				if (!previewRequested)
+				{
+					return;
+				}
 
-			m_impl->previewInstance->Play(
-				audioSource->loop
-			);
+				// Consumir la solicitud para no repetirla
+				// automáticamente cada frame.
+				previewRequested = false;
 
-			MESSAGE(
-				"AudioSystem",
-				"processPreviewRequests",
-				"Reproduciendo Preview"
-			);
-		}
-		catch (const std::exception& exception)
+				if (filePath == nullptr ||
+					filePath[0] == '\0')
+				{
+					ERROR(
+						"AudioSystem",
+						"processPreviewRequests",
+						"No se selecciono un archivo de audio"
+					);
+
+					return;
+				}
+
+				try
+				{
+					// Solo puede existir un Preview activo.
+					stopPreview();
+
+					const std::string path =
+						filePath;
+
+					const std::wstring widePath(
+						path.begin(),
+						path.end()
+					);
+
+					m_impl->previewSound =
+						std::make_unique<DirectX::SoundEffect>(
+							m_impl->engine.get(),
+							widePath.c_str()
+						);
+
+					m_impl->previewInstance =
+						m_impl->previewSound->CreateInstance(
+							DirectX::SoundEffectInstance_Default
+						);
+
+					if (!m_impl->previewInstance)
+					{
+						ERROR(
+							"AudioSystem",
+							"processPreviewRequests",
+							"No se pudo crear el Preview"
+						);
+
+						m_impl->previewSound.reset();
+						return;
+					}
+
+					m_impl->previewInstance->SetVolume(
+						volume
+					);
+
+					m_impl->previewInstance->Play(
+						loop
+					);
+
+					MESSAGE(
+						"AudioSystem",
+						"processPreviewRequests",
+						"Reproduciendo Preview"
+					);
+				}
+				catch (const std::exception& exception)
+				{
+					stopPreview();
+
+					ERROR(
+						"AudioSystem",
+						"processPreviewRequests",
+						exception.what()
+					);
+				}
+			};
+
+		// Procesar el sonido principal.
+		processSoundPreview(
+			audioSource->filePath,
+			audioSource->volume,
+			audioSource->loop,
+			audioSource->previewRequested,
+			audioSource->stopPreviewRequested
+		);
+
+		// Procesar todos los sonidos adicionales.
+		for (AudioClipData& sound : audioSource->sounds)
 		{
-			stopPreview();
-
-			ERROR(
-				"AudioSystem",
-				"processPreviewRequests",
-				exception.what()
+			processSoundPreview(
+				sound.filePath,
+				sound.volume,
+				sound.loop,
+				sound.previewRequested,
+				sound.stopPreviewRequested
 			);
 		}
 	}
 }
-
 //============================================================
 // REPRODUCIR AL ENTRAR EN PLAY
 //============================================================
@@ -334,7 +357,7 @@ AudioSystem::playOnStart(
 		return;
 	}
 
-	// Detener Preview y sonidos anteriores.
+	// Detener Preview y sonidos de una ejecución anterior.
 	stopAll();
 
 	for (const auto& actor : actors)
@@ -347,101 +370,130 @@ AudioSystem::playOnStart(
 		auto audioSource =
 			actor->getComponent<AudioSourceComponent>();
 
-		if (!audioSource)
+		if (!audioSource ||
+			!audioSource->isEnabled())
 		{
 			continue;
 		}
 
-		if (!audioSource->isEnabled())
-		{
-			continue;
-		}
-
-		if (!audioSource->playOnStart)
-		{
-			continue;
-		}
-
-		if (audioSource->filePath[0] == '\0')
-		{
-			ERROR(
-				"AudioSystem",
-				"playOnStart",
-				"Audio Source no tiene archivo"
-			);
-
-			continue;
-		}
-
-		if (audioSource->spatial3D)
-		{
-			MESSAGE(
-				"AudioSystem",
-				"playOnStart",
-				"Spatial 3D se implementara posteriormente"
-			);
-		}
-
-		try
-		{
-			const std::string path =
-				audioSource->filePath;
-
-			const std::wstring widePath(
-				path.begin(),
-				path.end()
-			);
-
-			Impl::ActiveSound activeSound;
-
-			activeSound.filePath = path;
-
-			activeSound.sound =
-				std::make_unique<DirectX::SoundEffect>(
-					m_impl->engine.get(),
-					widePath.c_str()
-				);
-
-			activeSound.instance =
-				activeSound.sound->CreateInstance(
-					DirectX::SoundEffectInstance_Default
-				);
-
-			if (!activeSound.instance)
+		// Función local para reproducir cualquier sonido.
+		auto playSound =
+			[this](
+				const char* filePath,
+				float volume,
+				bool loop,
+				bool playOnStart,
+				bool spatial3D)
 			{
-				ERROR(
-					"AudioSystem",
-					"playOnStart",
-					"No se pudo crear la instancia del sonido"
-				);
+				if (!playOnStart)
+				{
+					return;
+				}
 
-				continue;
-			}
+				if (filePath == nullptr ||
+					filePath[0] == '\0')
+				{
+					ERROR(
+						"AudioSystem",
+						"playOnStart",
+						"Audio Source no tiene archivo"
+					);
 
-			activeSound.instance->SetVolume(
-				audioSource->volume
-			);
+					return;
+				}
 
-			activeSound.instance->Play(
-				audioSource->loop
-			);
+				if (spatial3D)
+				{
+					MESSAGE(
+						"AudioSystem",
+						"playOnStart",
+						"Spatial 3D se implementara posteriormente"
+					);
+				}
 
-			m_impl->activeSounds.push_back(
-				std::move(activeSound)
-			);
+				try
+				{
+					const std::string path =
+						filePath;
 
-			MESSAGE(
-				"AudioSystem",
-				"playOnStart",
-				"Audio Source reproducido"
-			);
-		}
-		catch (const std::exception& exception)
+					const std::wstring widePath(
+						path.begin(),
+						path.end()
+					);
+
+					Impl::ActiveSound activeSound;
+
+					activeSound.filePath = path;
+
+					activeSound.sound =
+						std::make_unique<DirectX::SoundEffect>(
+							m_impl->engine.get(),
+							widePath.c_str()
+						);
+
+					activeSound.instance =
+						activeSound.sound->CreateInstance(
+							DirectX::SoundEffectInstance_Default
+						);
+
+					if (!activeSound.instance)
+					{
+						ERROR(
+							"AudioSystem",
+							"playOnStart",
+							"No se pudo crear la instancia"
+						);
+
+						return;
+					}
+
+					activeSound.instance->SetVolume(
+						volume
+					);
+
+					activeSound.instance->Play(
+						loop
+					);
+
+					m_impl->activeSounds.push_back(
+						std::move(activeSound)
+					);
+
+					MESSAGE(
+						"AudioSystem",
+						"playOnStart",
+						"Audio Source reproducido"
+					);
+				}
+				catch (const std::exception& exception)
+				{
+					ERROR(
+						"AudioSystem",
+						"playOnStart",
+						exception.what()
+					);
+				}
+			};
+
+		// Reproducir el sonido principal.
+		playSound(
+			audioSource->filePath,
+			audioSource->volume,
+			audioSource->loop,
+			audioSource->playOnStart,
+			audioSource->spatial3D
+		);
+
+		// Reproducir los sonidos adicionales.
+		for (const AudioClipData& sound :
+			audioSource->sounds)
 		{
-			ERROR(
-				"AudioSystem",
-				"playOnStart",
-				exception.what()
+			playSound(
+				sound.filePath,
+				sound.volume,
+				sound.loop,
+				sound.playOnStart,
+				sound.spatial3D
 			);
 		}
 	}

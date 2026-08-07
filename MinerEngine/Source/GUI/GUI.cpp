@@ -19,7 +19,14 @@
 #include <vector>
 #include <algorithm>
 #include <cstring>
+#include <commdlg.h>
 
+#pragma comment(lib, "Comdlg32.lib")
+
+
+//============================================================
+// LISTAR ARCHIVOS DE AUDIO
+//============================================================
 
 static std::vector<std::string>
 listAudioFiles(const std::string& directory)
@@ -73,7 +80,9 @@ listAudioFiles(const std::string& directory)
 				lowerName.size() - 4
 			) == ".wav")
 		{
-			files.push_back(fileName);
+			files.push_back(
+				fileName
+			);
 		}
 	} while (FindNextFileA(
 		findHandle,
@@ -88,6 +97,131 @@ listAudioFiles(const std::string& directory)
 	);
 
 	return files;
+}
+
+//============================================================
+// IMPORTAR ARCHIVO DE AUDIO
+//============================================================
+
+static bool
+importAudioFile(std::string& outRelativePath)
+{
+	char selectedFile[MAX_PATH] = {};
+
+	OPENFILENAMEA dialog{};
+
+	dialog.lStructSize =
+		sizeof(OPENFILENAMEA);
+
+	dialog.hwndOwner =
+		nullptr;
+
+	dialog.lpstrFile =
+		selectedFile;
+
+	dialog.nMaxFile =
+		MAX_PATH;
+
+	dialog.lpstrFilter =
+		"Wave Audio (*.wav)\0*.wav\0"
+		"All Files (*.*)\0*.*\0";
+
+	dialog.nFilterIndex = 1;
+
+	dialog.Flags =
+		OFN_FILEMUSTEXIST |
+		OFN_PATHMUSTEXIST |
+		OFN_NOCHANGEDIR;
+
+	dialog.lpstrTitle =
+		"Import Audio File";
+
+	if (!GetOpenFileNameA(&dialog))
+	{
+		// El usuario canceló la selección.
+		return false;
+	}
+
+	const std::string sourcePath =
+		selectedFile;
+
+	const std::size_t separatorPosition =
+		sourcePath.find_last_of("\\/");
+
+	const std::string fileName =
+		separatorPosition == std::string::npos
+		? sourcePath
+		: sourcePath.substr(
+			separatorPosition + 1
+		);
+
+	if (fileName.empty())
+	{
+		ERROR(
+			"GUI",
+			"importAudioFile",
+			"El archivo seleccionado no tiene nombre"
+		);
+
+		return false;
+	}
+
+	const std::string audioDirectory =
+		"Assets\\Audio";
+
+	// Crear Assets/Audio si todavía no existe.
+	if (!CreateDirectoryA(
+		audioDirectory.c_str(),
+		nullptr))
+	{
+		const DWORD directoryError =
+			GetLastError();
+
+		if (directoryError !=
+			ERROR_ALREADY_EXISTS)
+		{
+			ERROR(
+				"GUI",
+				"importAudioFile",
+				"No se pudo crear Assets/Audio"
+			);
+
+			return false;
+		}
+	}
+
+	const std::string destinationPath =
+		audioDirectory +
+		"\\" +
+		fileName;
+
+	// FALSE permite reemplazar un archivo
+	// que tenga el mismo nombre.
+	if (!CopyFileA(
+		sourcePath.c_str(),
+		destinationPath.c_str(),
+		FALSE))
+	{
+		ERROR(
+			"GUI",
+			"importAudioFile",
+			"No se pudo copiar el archivo"
+		);
+
+		return false;
+	}
+
+	outRelativePath =
+		"Assets/Audio/" +
+		fileName;
+
+	MESSAGE(
+		"GUI",
+		"importAudioFile",
+		"Audio importado correctamente"
+	);
+
+	return true;
 }
 
 
@@ -901,15 +1035,70 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	if (audioEnabled)
 	{
 		ImGui::Indent();
-
 		static std::vector<std::string> audioFiles =
 			listAudioFiles("Assets/Audio");
 
-		if (ImGui::Button("Refresh Audio Files"))
+		//====================================================
+		// IMPORTAR AUDIO DESDE LA COMPUTADORA
+		//====================================================
+
+		if (ImGui::Button(
+			"Import Audio",
+			ImVec2(-1.0f, 0.0f)))
+		{
+			std::string importedAudioPath;
+
+			if (importAudioFile(
+				importedAudioPath))
+			{
+				// Detener el Preview anterior.
+				audioSource->previewRequested = false;
+				audioSource->stopPreviewRequested = true;
+
+				// Seleccionar automáticamente el WAV importado.
+				strcpy_s(
+					audioSource->filePath,
+					sizeof(audioSource->filePath),
+					importedAudioPath.c_str()
+				);
+
+				// Actualizar la lista de archivos.
+				audioFiles =
+					listAudioFiles(
+						"Assets/Audio"
+					);
+
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Archivo importado y seleccionado"
+				);
+			}
+		}
+
+		//====================================================
+		// ACTUALIZAR ARCHIVOS DE AUDIO
+		//====================================================
+
+		if (ImGui::Button(
+			"Refresh Audio Files",
+			ImVec2(-1.0f, 0.0f)))
 		{
 			audioFiles =
-				listAudioFiles("Assets/Audio");
+				listAudioFiles(
+					"Assets/Audio"
+				);
+
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Lista de audio actualizada"
+			);
 		}
+
+		//====================================================
+		// SELECTOR DE ARCHIVO
+		//====================================================
 
 		const char* currentAudio =
 			audioSource->filePath[0] != '\0'
@@ -920,19 +1109,23 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 			"Audio File",
 			currentAudio))
 		{
-			for (const std::string& fileName : audioFiles)
+			for (const std::string& fileName :
+				audioFiles)
 			{
 				const std::string fullPath =
-					"Assets/Audio/" + fileName;
+					"Assets/Audio/" +
+					fileName;
 
 				const bool selected =
-					fullPath == audioSource->filePath;
+					fullPath ==
+					audioSource->filePath;
 
 				if (ImGui::Selectable(
 					fileName.c_str(),
 					selected))
 				{
-					// Detener el Preview anterior al cambiar de archivo.
+					// Detener el Preview anterior
+					// al cambiar de archivo.
 					audioSource->previewRequested = false;
 					audioSource->stopPreviewRequested = true;
 
@@ -966,7 +1159,7 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 		}
 
 		//====================================================
-		// PREVIEW
+		// PREVIEW DEL SONIDO PRINCIPAL
 		//====================================================
 
 		if (ImGui::Button(
@@ -1013,7 +1206,7 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 		ImGui::Spacing();
 
 		//====================================================
-		// PROPIEDADES
+		// PROPIEDADES DEL SONIDO PRINCIPAL
 		//====================================================
 
 		ImGui::SliderFloat(
@@ -1039,29 +1232,215 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 			&audioSource->spatial3D
 		);
 
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		//====================================================
+		// SONIDOS ADICIONALES
+		//====================================================
+
+		ImGui::Text("Additional Sounds");
+
+		if (ImGui::Button(
+			"Add Sound",
+			ImVec2(-1.0f, 0.0f)))
+		{
+			audioSource->sounds.emplace_back();
+
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Nuevo sonido agregado"
+			);
+		}
+
+		int soundToRemove = -1;
+
+		for (int soundIndex = 0;
+			soundIndex <
+			static_cast<int>(audioSource->sounds.size());
+			++soundIndex)
+		{
+			AudioClipData& sound =
+				audioSource->sounds[soundIndex];
+
+			ImGui::PushID(soundIndex);
+
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+
+			const std::string soundTitle =
+				"Sound " +
+				std::to_string(soundIndex + 2);
+
+			ImGui::Text(
+				"%s",
+				soundTitle.c_str()
+			);
+
+			const char* currentAdditionalAudio =
+				sound.filePath[0] != '\0'
+				? sound.filePath
+				: "Select WAV";
+
+			if (ImGui::BeginCombo(
+				"Audio File",
+				currentAdditionalAudio))
+			{
+				for (const std::string& fileName : audioFiles)
+				{
+					const std::string fullPath =
+						"Assets/Audio/" + fileName;
+
+					const bool selected =
+						fullPath == sound.filePath;
+
+					if (ImGui::Selectable(
+						fileName.c_str(),
+						selected))
+					{
+						sound.previewRequested = false;
+						sound.stopPreviewRequested = true;
+
+						strcpy_s(
+							sound.filePath,
+							sizeof(sound.filePath),
+							fullPath.c_str()
+						);
+
+						MESSAGE(
+							"GUI",
+							"inspectorGeneral",
+							"Archivo adicional seleccionado"
+						);
+					}
+
+					if (selected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+
+				ImGui::EndCombo();
+			}
+
+			//================================================
+			// PREVIEW DEL SONIDO ADICIONAL
+			//================================================
+
+			if (ImGui::Button(
+				"Preview",
+				ImVec2(120.0f, 0.0f)))
+			{
+				if (sound.filePath[0] != '\0')
+				{
+					sound.previewRequested = true;
+					sound.stopPreviewRequested = false;
+
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Preview adicional solicitado"
+					);
+				}
+				else
+				{
+					ERROR(
+						"GUI",
+						"inspectorGeneral",
+						"Selecciona un archivo de audio"
+					);
+				}
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button(
+				"Stop Preview",
+				ImVec2(120.0f, 0.0f)))
+			{
+				sound.previewRequested = false;
+				sound.stopPreviewRequested = true;
+			}
+
+			ImGui::SliderFloat(
+				"Volume",
+				&sound.volume,
+				0.0f,
+				1.0f,
+				"%.2f"
+			);
+
+			ImGui::Checkbox(
+				"Loop",
+				&sound.loop
+			);
+
+			ImGui::Checkbox(
+				"Play On Start",
+				&sound.playOnStart
+			);
+
+			ImGui::Checkbox(
+				"Spatial 3D",
+				&sound.spatial3D
+			);
+
+			if (ImGui::Button(
+				"Remove Sound",
+				ImVec2(-1.0f, 0.0f)))
+			{
+				soundToRemove = soundIndex;
+			}
+
+			ImGui::PopID();
+		}
+
+		// Eliminar después del for para no invalidar el vector.
+		if (soundToRemove >= 0)
+		{
+			// Stop Preview es global, por eso usamos la solicitud
+			// del componente principal antes de borrar el elemento.
+			audioSource->previewRequested = false;
+			audioSource->stopPreviewRequested = true;
+
+			audioSource->sounds.erase(
+				audioSource->sounds.begin() +
+				soundToRemove
+			);
+
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Sonido eliminado"
+			);
+		}
+
 		ImGui::Unindent();
 	}
 	  }
-else
-{
-	if (ImGui::Button(
-		"Add Audio Source",
-		ImVec2(-1.0f, 0.0f)))
-	{
-		auto newAudioSource =
-			EU::MakeShared<AudioSourceComponent>();
+	  else
+	  {
+		  if (ImGui::Button(
+			  "Add Audio Source",
+			  ImVec2(-1.0f, 0.0f)))
+		  {
+			  auto newAudioSource =
+				  EU::MakeShared<AudioSourceComponent>();
 
-		actor->addComponent(
-			newAudioSource
-		);
+			  actor->addComponent(
+				  newAudioSource
+			  );
 
-		MESSAGE(
-			"GUI",
-			"inspectorGeneral",
-			"Audio Source agregado al actor"
-		);
-	}
-}
+			  MESSAGE(
+				  "GUI",
+				  "inspectorGeneral",
+				  "Audio Source agregado al actor"
+			  );
+		  }
+	  }
 
 //============================================================
 // FINALIZAR INSPECTOR
