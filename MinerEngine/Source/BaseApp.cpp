@@ -176,6 +176,17 @@ BaseApp::init() {
 				"AudioEngine inicio en modo silencioso. No se detecto dispositivo de audio."
 			);
 		}
+		m_testSound =
+			std::make_unique<DirectX::SoundEffect>(
+				m_audioEngine.get(),
+				L"Assets/Audio/Test.wav"
+			);
+
+		MESSAGE(
+			"Audio",
+			"init",
+			"Test.wav cargado correctamente."
+		);
 	}
 	catch (const std::exception& exception)
 	{
@@ -185,6 +196,8 @@ BaseApp::init() {
 			exception.what()
 		);
 
+		// El sonido debe destruirse antes que AudioEngine.
+		m_testSound.reset();
 		m_audioEngine.reset();
 	}
 
@@ -1080,7 +1093,22 @@ void BaseApp::startPlayMode()
 
 	m_engineMode = EngineMode::Play;
 
-	MESSAGE("BaseApp", "startPlayMode", "Modo Play iniciado");
+	if (m_testSound)
+	{
+		m_testSound->Play();
+
+		MESSAGE(
+			"Audio",
+			"startPlayMode",
+			"Reproduciendo Test.wav"
+		);
+	}
+
+	MESSAGE(
+		"BaseApp",
+		"startPlayMode",
+		"Modo Play iniciado"
+	);
 }
 
 void BaseApp::stopPlayMode()

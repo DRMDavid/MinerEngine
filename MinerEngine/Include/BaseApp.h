@@ -36,6 +36,7 @@
 namespace DirectX
 {
     class AudioEngine;
+    class SoundEffect;
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -212,6 +213,7 @@ private:
     PhysicsSystem       m_physicsSystem;
     BehaviorSystem      m_behaviorSystem;
     std::unique_ptr<DirectX::AudioEngine> m_audioEngine;
+    std::unique_ptr<DirectX::SoundEffect> m_testSound;
     
 
     EngineMode m_engineMode = EngineMode::Edit;
