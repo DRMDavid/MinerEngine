@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cstring>
 #include <commdlg.h>
+#include <fstream>
 
 #pragma comment(lib, "Comdlg32.lib")
 
@@ -99,6 +100,74 @@ listAudioFiles(const std::string& directory)
 	return files;
 }
 
+
+//============================================================
+// VALIDAR ARCHIVO WAV
+//============================================================
+
+static bool
+isValidWaveFile(const std::string& filePath)
+{
+	std::ifstream file(
+		filePath,
+		std::ios::binary
+	);
+
+	if (!file.is_open())
+	{
+		ERROR(
+			"GUI",
+			"isValidWaveFile",
+			"No se pudo abrir el archivo seleccionado"
+		);
+
+		return false;
+	}
+
+	char header[12] = {};
+
+	file.read(
+		header,
+		sizeof(header)
+	);
+
+	if (file.gcount() != sizeof(header))
+	{
+		ERROR(
+			"GUI",
+			"isValidWaveFile",
+			"El archivo es demasiado pequeno o esta danado"
+		);
+
+		return false;
+	}
+
+	const bool hasRiffHeader =
+		header[0] == 'R' &&
+		header[1] == 'I' &&
+		header[2] == 'F' &&
+		header[3] == 'F';
+
+	const bool hasWaveHeader =
+		header[8] == 'W' &&
+		header[9] == 'A' &&
+		header[10] == 'V' &&
+		header[11] == 'E';
+
+	if (!hasRiffHeader || !hasWaveHeader)
+	{
+		ERROR(
+			"GUI",
+			"isValidWaveFile",
+			"El archivo seleccionado no es un WAV valido"
+		);
+
+		return false;
+	}
+
+	return true;
+}
+
 //============================================================
 // IMPORTAR ARCHIVO DE AUDIO
 //============================================================
@@ -144,6 +213,18 @@ importAudioFile(std::string& outRelativePath)
 
 	const std::string sourcePath =
 		selectedFile;
+
+	// Confirmar que el contenido sea realmente WAV.
+	if (!isValidWaveFile(sourcePath))
+	{
+		ERROR(
+			"GUI",
+			"importAudioFile",
+			"Importacion cancelada: WAV invalido"
+		);
+
+		return false;
+	}
 
 	const std::size_t separatorPosition =
 		sourcePath.find_last_of("\\/");
