@@ -11,6 +11,7 @@
 #include "ECS/RigidbodyComponent.h"
 #include "ECS/BoxColliderComponent.h"
 #include "ECS/RotateBehaviorComponent.h"
+#include "ECS/AudioSourceComponent.h"
 
 // Déjalo después de los headers principales del motor.
 
@@ -389,14 +390,13 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	// OBTENER COMPONENTES
 	//============================================================
 
-	auto rigidbody =
-		actor->getComponent<RigidbodyComponent>();
+	auto rigidbody =actor->getComponent<RigidbodyComponent>();
 
-	auto boxCollider =
-		actor->getComponent<BoxColliderComponent>();
+	auto boxCollider =actor->getComponent<BoxColliderComponent>();
 
-	auto rotateBehavior =
-		actor->getComponent<RotateBehaviorComponent>();
+	auto rotateBehavior =actor->getComponent<RotateBehaviorComponent>();
+
+	auto audioSource =actor->getComponent<AudioSourceComponent>();
 
 	//============================================================
 	// PHYSICS
@@ -786,25 +786,110 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	}
 
 	//============================================================
-	// AUDIO SOURCE COMPONENT
-	// DESHABILITADO TEMPORALMENTE
-	//============================================================
+    // AUDIO SOURCE COMPONENT
+    //============================================================
 
-	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::Spacing();
+      ImGui::Spacing();
+      ImGui::Separator();
+      ImGui::Spacing();
+      
+      ImGui::Text("Audio");
+      
+      if (audioSource)
+      {
+      	  bool audioEnabled =
+		  audioSource->isEnabled();
 
-	ImGui::TextDisabled(
-		"Audio Source temporalmente deshabilitado"
-	);
+	  if (ImGui::Checkbox(
+		  "Audio Source",
+		  &audioEnabled))
+	     {
+		  audioSource->setEnabled(
+			audioEnabled
+		);
 
-	//============================================================
-	// FINALIZAR INSPECTOR
-	//============================================================
+		if (audioEnabled)
+		{
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Audio Source activado"
+			);
+		}
+		else
+		{
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Audio Source desactivado"
+			);
+		}
+	}
 
-	ImGui::PopStyleVar(2);
+	if (audioEnabled)
+	{
+		ImGui::Indent();
 
-	ImGui::End();
+		ImGui::InputText(
+			"Audio File",
+			audioSource->filePath,
+			sizeof(audioSource->filePath)
+		);
+
+		ImGui::SliderFloat(
+			"Volume",
+			&audioSource->volume,
+			0.0f,
+			1.0f,
+			"%.2f"
+		);
+
+		ImGui::Checkbox(
+			"Loop",
+			&audioSource->loop
+		);
+
+		ImGui::Checkbox(
+			"Play On Start",
+			&audioSource->playOnStart
+		);
+
+		ImGui::Checkbox(
+			"Spatial 3D",
+			&audioSource->spatial3D
+		);
+
+		ImGui::Unindent();
+	}
+}
+else
+{
+	if (ImGui::Button(
+		"Add Audio Source",
+		ImVec2(-1.0f, 0.0f)))
+	{
+		auto newAudioSource =
+			EU::MakeShared<AudioSourceComponent>();
+
+		actor->addComponent(
+			newAudioSource
+		);
+
+		MESSAGE(
+			"GUI",
+			"inspectorGeneral",
+			"Audio Source agregado al actor"
+		);
+	}
+}
+
+//============================================================
+// FINALIZAR INSPECTOR
+//============================================================
+
+ImGui::PopStyleVar(2);
+
+ImGui::End();
 }
 void GUI::inspectorContainer(EU::TSharedPointer<Actor> actor) {
 	if (!actor) return;

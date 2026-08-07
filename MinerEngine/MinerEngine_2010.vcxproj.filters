@@ -384,6 +384,9 @@
     <ClInclude Include="Include\BehaviorSystem.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="Include\ECS\AudioSourceComponent.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="bin\ShadowMap.hlsl">

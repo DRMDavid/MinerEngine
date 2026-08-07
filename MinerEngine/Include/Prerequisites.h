@@ -129,5 +129,5 @@ enum ComponentType
     RIGIDBODY = 5,
     COLLIDER = 6,
     ROTATE_BEHAVIOR = 7,
-	
+    AUDIO_SOURCE = 8, 
 };

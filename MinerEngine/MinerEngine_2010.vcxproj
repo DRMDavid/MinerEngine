@@ -487,6 +487,7 @@
     <ClInclude Include="Include\Device.h" />
     <ClInclude Include="Include\DeviceContext.h" />
     <ClInclude Include="Include\ECS\Actor.h" />
+    <ClInclude Include="Include\ECS\AudioSourceComponent.h" />
     <ClInclude Include="Include\ECS\BoxColliderComponent.h" />
     <ClInclude Include="Include\ECS\Component.h" />
     <ClInclude Include="Include\ECS\Entity.h" />
