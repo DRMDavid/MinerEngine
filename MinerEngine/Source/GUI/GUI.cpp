@@ -17,6 +17,78 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <cstring>
+
+
+static std::vector<std::string>
+listAudioFiles(const std::string& directory)
+{
+	std::vector<std::string> files;
+
+	const std::string pattern =
+		directory + "\\*";
+
+	WIN32_FIND_DATAA findData{};
+
+	HANDLE findHandle =
+		FindFirstFileA(
+			pattern.c_str(),
+			&findData
+		);
+
+	if (findHandle == INVALID_HANDLE_VALUE)
+	{
+		return files;
+	}
+
+	do
+	{
+		if (findData.dwFileAttributes &
+			FILE_ATTRIBUTE_DIRECTORY)
+		{
+			continue;
+		}
+
+		std::string fileName =
+			findData.cFileName;
+
+		std::string lowerName =
+			fileName;
+
+		std::transform(
+			lowerName.begin(),
+			lowerName.end(),
+			lowerName.begin(),
+			[](unsigned char character)
+			{
+				return static_cast<char>(
+					std::tolower(character)
+					);
+			}
+		);
+
+		if (lowerName.size() >= 4 &&
+			lowerName.substr(
+				lowerName.size() - 4
+			) == ".wav")
+		{
+			files.push_back(fileName);
+		}
+	} while (FindNextFileA(
+		findHandle,
+		&findData
+	));
+
+	FindClose(findHandle);
+
+	std::sort(
+		files.begin(),
+		files.end()
+	);
+
+	return files;
+}
 
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
@@ -830,11 +902,64 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	{
 		ImGui::Indent();
 
-		ImGui::InputText(
+		static std::vector<std::string> audioFiles =
+			listAudioFiles("Assets/Audio");
+
+		if (ImGui::Button("Refresh Audio Files"))
+		{
+			audioFiles =
+				listAudioFiles("Assets/Audio");
+		}
+
+		const char* currentAudio =
+			audioSource->filePath[0] != '\0'
+			? audioSource->filePath
+			: "Select WAV";
+
+		if (ImGui::BeginCombo(
 			"Audio File",
-			audioSource->filePath,
-			sizeof(audioSource->filePath)
-		);
+			currentAudio))
+		{
+			for (const std::string& fileName : audioFiles)
+			{
+				const std::string fullPath =
+					"Assets/Audio/" + fileName;
+
+				const bool selected =
+					fullPath == audioSource->filePath;
+
+				if (ImGui::Selectable(
+					fileName.c_str(),
+					selected))
+				{
+					strcpy_s(
+						audioSource->filePath,
+						sizeof(audioSource->filePath),
+						fullPath.c_str()
+					);
+
+					MESSAGE(
+						"GUI",
+						"inspectorGeneral",
+						"Archivo de audio seleccionado"
+					);
+				}
+
+				if (selected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		if (audioFiles.empty())
+		{
+			ImGui::TextDisabled(
+				"No WAV files found in Assets/Audio"
+			);
+		}
 
 		ImGui::SliderFloat(
 			"Volume",

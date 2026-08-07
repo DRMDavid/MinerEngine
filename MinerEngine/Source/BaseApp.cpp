@@ -5,6 +5,7 @@
 #include <fstream>
 #include <memory>
 
+
 namespace {
 
 	static std::string toLowerCopy(std::string s) { for (char& c : s) if (c >= 'A' && c <= 'Z') c = (char)(c + 32); return s; }
