@@ -932,6 +932,10 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 					fileName.c_str(),
 					selected))
 				{
+					// Detener el Preview anterior al cambiar de archivo.
+					audioSource->previewRequested = false;
+					audioSource->stopPreviewRequested = true;
+
 					strcpy_s(
 						audioSource->filePath,
 						sizeof(audioSource->filePath),
@@ -961,6 +965,57 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 			);
 		}
 
+		//====================================================
+		// PREVIEW
+		//====================================================
+
+		if (ImGui::Button(
+			"Preview",
+			ImVec2(120.0f, 0.0f)))
+		{
+			if (audioSource->filePath[0] != '\0')
+			{
+				audioSource->previewRequested = true;
+				audioSource->stopPreviewRequested = false;
+
+				MESSAGE(
+					"GUI",
+					"inspectorGeneral",
+					"Preview solicitado"
+				);
+			}
+			else
+			{
+				ERROR(
+					"GUI",
+					"inspectorGeneral",
+					"Selecciona un archivo de audio"
+				);
+			}
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button(
+			"Stop Preview",
+			ImVec2(120.0f, 0.0f)))
+		{
+			audioSource->previewRequested = false;
+			audioSource->stopPreviewRequested = true;
+
+			MESSAGE(
+				"GUI",
+				"inspectorGeneral",
+				"Detener Preview solicitado"
+			);
+		}
+
+		ImGui::Spacing();
+
+		//====================================================
+		// PROPIEDADES
+		//====================================================
+
 		ImGui::SliderFloat(
 			"Volume",
 			&audioSource->volume,
@@ -986,7 +1041,7 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 
 		ImGui::Unindent();
 	}
-}
+	  }
 else
 {
 	if (ImGui::Button(

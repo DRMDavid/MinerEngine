@@ -9,10 +9,10 @@ class DeviceContext;
 
 /**
  * @class AudioSourceComponent
- * @brief Configuración de una fuente de audio asociada a un actor.
+ * @brief Configuracion de una fuente de audio asociada a un actor.
  *
- * En esta primera etapa contiene únicamente los datos configurables.
- * AudioSystem se encargará posteriormente de cargar y reproducir el sonido.
+ * Contiene las propiedades configurables del sonido.
+ * AudioSystem se encarga de cargarlo y reproducirlo.
  */
 class AudioSourceComponent : public Component
 {
@@ -23,17 +23,30 @@ public:
 	{
 		strcpy_s(
 			filePath,
+			sizeof(filePath),
 			"Assets/Audio/Test.wav"
 		);
 	}
 
-	void init() override {}
+	void init() override
+	{
+	}
 
-	void update(float deltaTime) override {}
+	void update(float deltaTime) override
+	{
+		// Evitar advertencia por parametro no utilizado.
+		(void)deltaTime;
+	}
 
-	void render(DeviceContext& deviceContext) override {}
+	void render(DeviceContext& deviceContext) override
+	{
+		// Evitar advertencia por parametro no utilizado.
+		(void)deviceContext;
+	}
 
-	void destroy() override {}
+	void destroy() override
+	{
+	}
 
 public:
 
@@ -46,9 +59,18 @@ public:
 	// Repetir continuamente.
 	bool loop = false;
 
-	// Reproducir cuando comienza Play.
+	// Reproducir cuando comienza el modo Play.
 	bool playOnStart = true;
 
 	// Activar audio posicional 3D.
+	// Su funcionamiento se implementara posteriormente.
 	bool spatial3D = false;
+
+	// Solicitud enviada desde el Inspector para escuchar el sonido.
+	// No se guarda como propiedad permanente del componente.
+	bool previewRequested = false;
+
+	// Solicitud enviada desde el Inspector para detener el Preview.
+	// No se guarda como propiedad permanente del componente.
+	bool stopPreviewRequested = false;
 };

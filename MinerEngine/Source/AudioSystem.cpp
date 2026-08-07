@@ -9,11 +9,16 @@
 #include <utility>
 #include <vector>
 
+//============================================================
+// IMPLEMENTACION PRIVADA
+//============================================================
+
 struct AudioSystem::Impl
 {
 	struct ActiveSound
 	{
-		// Debe declararse antes que instance.
+		// SoundEffect se declara antes que instance.
+		// De esta forma instance se destruye primero.
 		std::unique_ptr<DirectX::SoundEffect> sound;
 		std::unique_ptr<DirectX::SoundEffectInstance> instance;
 
@@ -21,20 +26,37 @@ struct AudioSystem::Impl
 	};
 
 	std::unique_ptr<DirectX::AudioEngine> engine;
+
 	std::vector<ActiveSound> activeSounds;
+
+	// Sonido utilizado por el Preview del Inspector.
+	std::unique_ptr<DirectX::SoundEffect> previewSound;
+	std::unique_ptr<DirectX::SoundEffectInstance> previewInstance;
 
 	bool criticalErrorReported = false;
 };
+
+//============================================================
+// CONSTRUCTOR
+//============================================================
 
 AudioSystem::AudioSystem()
 	: m_impl(std::make_unique<Impl>())
 {
 }
 
+//============================================================
+// DESTRUCTOR
+//============================================================
+
 AudioSystem::~AudioSystem()
 {
 	shutdown();
 }
+
+//============================================================
+// INICIALIZACION
+//============================================================
 
 bool
 AudioSystem::init()
@@ -95,6 +117,10 @@ AudioSystem::init()
 	return false;
 }
 
+//============================================================
+// ACTUALIZAR AUDIO ENGINE
+//============================================================
+
 void
 AudioSystem::update()
 {
@@ -103,7 +129,10 @@ AudioSystem::update()
 		return;
 	}
 
-	if (!m_impl->engine->Update() &&
+	const bool updateResult =
+		m_impl->engine->Update();
+
+	if (!updateResult &&
 		m_impl->engine->IsCriticalError())
 	{
 		if (!m_impl->criticalErrorReported)
@@ -123,6 +152,173 @@ AudioSystem::update()
 	m_impl->criticalErrorReported = false;
 }
 
+//============================================================
+// DETENER PREVIEW
+//============================================================
+
+void
+AudioSystem::stopPreview()
+{
+	if (!m_impl)
+	{
+		return;
+	}
+
+	const bool hadPreview =
+		m_impl->previewInstance != nullptr;
+
+	if (m_impl->previewInstance)
+	{
+		// true fuerza una detencion inmediata,
+		// incluso cuando el sonido esta en loop.
+		m_impl->previewInstance->Stop(true);
+		m_impl->previewInstance.reset();
+	}
+
+	// SoundEffect debe destruirse despues de su instancia.
+	m_impl->previewSound.reset();
+
+	if (hadPreview)
+	{
+		MESSAGE(
+			"AudioSystem",
+			"stopPreview",
+			"Preview detenido"
+		);
+	}
+}
+
+//============================================================
+// PROCESAR SOLICITUDES DE PREVIEW
+//============================================================
+
+void
+AudioSystem::processPreviewRequests(
+	const std::vector<EU::TSharedPointer<Actor>>& actors)
+{
+	if (!m_impl || !m_impl->engine)
+	{
+		return;
+	}
+
+	for (const auto& actor : actors)
+	{
+		if (actor.isNull())
+		{
+			continue;
+		}
+
+		auto audioSource =
+			actor->getComponent<AudioSourceComponent>();
+
+		if (!audioSource)
+		{
+			continue;
+		}
+
+		//----------------------------------------------------
+		// DETENER PREVIEW
+		//----------------------------------------------------
+
+		if (audioSource->stopPreviewRequested)
+		{
+			audioSource->stopPreviewRequested = false;
+			audioSource->previewRequested = false;
+
+			stopPreview();
+		}
+
+		//----------------------------------------------------
+		// INICIAR PREVIEW
+		//----------------------------------------------------
+
+		if (!audioSource->previewRequested)
+		{
+			continue;
+		}
+
+		// Consumir la solicitud para que no se ejecute
+		// nuevamente en cada frame.
+		audioSource->previewRequested = false;
+
+		if (audioSource->filePath[0] == '\0')
+		{
+			ERROR(
+				"AudioSystem",
+				"processPreviewRequests",
+				"No se selecciono un archivo de audio"
+			);
+
+			continue;
+		}
+
+		try
+		{
+			// Solo se permite un Preview activo.
+			stopPreview();
+
+			const std::string path =
+				audioSource->filePath;
+
+			const std::wstring widePath(
+				path.begin(),
+				path.end()
+			);
+
+			m_impl->previewSound =
+				std::make_unique<DirectX::SoundEffect>(
+					m_impl->engine.get(),
+					widePath.c_str()
+				);
+
+			m_impl->previewInstance =
+				m_impl->previewSound->CreateInstance(
+					DirectX::SoundEffectInstance_Default
+				);
+
+			if (!m_impl->previewInstance)
+			{
+				ERROR(
+					"AudioSystem",
+					"processPreviewRequests",
+					"No se pudo crear la instancia de Preview"
+				);
+
+				m_impl->previewSound.reset();
+				continue;
+			}
+
+			m_impl->previewInstance->SetVolume(
+				audioSource->volume
+			);
+
+			m_impl->previewInstance->Play(
+				audioSource->loop
+			);
+
+			MESSAGE(
+				"AudioSystem",
+				"processPreviewRequests",
+				"Reproduciendo Preview"
+			);
+		}
+		catch (const std::exception& exception)
+		{
+			stopPreview();
+
+			ERROR(
+				"AudioSystem",
+				"processPreviewRequests",
+				exception.what()
+			);
+		}
+	}
+}
+
+//============================================================
+// REPRODUCIR AL ENTRAR EN PLAY
+//============================================================
+
 void
 AudioSystem::playOnStart(
 	const std::vector<EU::TSharedPointer<Actor>>& actors)
@@ -138,7 +334,7 @@ AudioSystem::playOnStart(
 		return;
 	}
 
-	// Evitar instancias duplicadas al entrar nuevamente en Play.
+	// Detener Preview y sonidos anteriores.
 	stopAll();
 
 	for (const auto& actor : actors)
@@ -151,9 +347,17 @@ AudioSystem::playOnStart(
 		auto audioSource =
 			actor->getComponent<AudioSourceComponent>();
 
-		if (!audioSource ||
-			!audioSource->isEnabled() ||
-			!audioSource->playOnStart)
+		if (!audioSource)
+		{
+			continue;
+		}
+
+		if (!audioSource->isEnabled())
+		{
+			continue;
+		}
+
+		if (!audioSource->playOnStart)
 		{
 			continue;
 		}
@@ -174,16 +378,16 @@ AudioSystem::playOnStart(
 			MESSAGE(
 				"AudioSystem",
 				"playOnStart",
-				"Spatial 3D se implementara en el siguiente paso"
+				"Spatial 3D se implementara posteriormente"
 			);
 		}
 
 		try
 		{
-			std::string path =
+			const std::string path =
 				audioSource->filePath;
 
-			std::wstring widePath(
+			const std::wstring widePath(
 				path.begin(),
 				path.end()
 			);
@@ -199,7 +403,20 @@ AudioSystem::playOnStart(
 				);
 
 			activeSound.instance =
-				activeSound.sound->CreateInstance();
+				activeSound.sound->CreateInstance(
+					DirectX::SoundEffectInstance_Default
+				);
+
+			if (!activeSound.instance)
+			{
+				ERROR(
+					"AudioSystem",
+					"playOnStart",
+					"No se pudo crear la instancia del sonido"
+				);
+
+				continue;
+			}
 
 			activeSound.instance->SetVolume(
 				audioSource->volume
@@ -230,6 +447,10 @@ AudioSystem::playOnStart(
 	}
 }
 
+//============================================================
+// PAUSAR SONIDOS
+//============================================================
+
 void
 AudioSystem::pauseAll()
 {
@@ -252,6 +473,10 @@ AudioSystem::pauseAll()
 		"Todos los sonidos fueron pausados"
 	);
 }
+
+//============================================================
+// REANUDAR SONIDOS
+//============================================================
 
 void
 AudioSystem::resumeAll()
@@ -276,6 +501,10 @@ AudioSystem::resumeAll()
 	);
 }
 
+//============================================================
+// DETENER TODOS LOS SONIDOS
+//============================================================
+
 void
 AudioSystem::stopAll()
 {
@@ -284,17 +513,20 @@ AudioSystem::stopAll()
 		return;
 	}
 
+	// Detener también el Preview del Inspector.
+	stopPreview();
+
 	for (auto& activeSound : m_impl->activeSounds)
 	{
 		if (activeSound.instance)
 		{
-			// true fuerza la detención inmediata,
-			// incluso cuando el sonido está en loop.
+			// true fuerza una detencion inmediata,
+			// incluso cuando el sonido esta en loop.
 			activeSound.instance->Stop(true);
 		}
 	}
 
-	// Destruir primero las instancias y después sus SoundEffect.
+	// Destruye primero SoundEffectInstance y después SoundEffect.
 	m_impl->activeSounds.clear();
 
 	MESSAGE(
@@ -303,6 +535,10 @@ AudioSystem::stopAll()
 		"Todos los sonidos fueron detenidos"
 	);
 }
+
+//============================================================
+// DESTRUIR SISTEMA
+//============================================================
 
 void
 AudioSystem::shutdown()
@@ -314,9 +550,15 @@ AudioSystem::shutdown()
 
 	stopAll();
 
-	// AudioEngine debe destruirse después de las instancias.
+	// AudioEngine se destruye después de todos los sonidos.
 	m_impl->engine.reset();
+
+	m_impl->criticalErrorReported = false;
 }
+
+//============================================================
+// COMPROBAR ESTADO
+//============================================================
 
 bool
 AudioSystem::isReady() const
@@ -325,4 +567,4 @@ AudioSystem::isReady() const
 		m_impl &&
 		m_impl->engine &&
 		m_impl->engine->IsAudioDevicePresent();
-}
+}	

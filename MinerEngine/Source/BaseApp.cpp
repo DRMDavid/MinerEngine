@@ -434,6 +434,10 @@ BaseApp::update(float deltaTime) {
 	handleEditorViewportResize();
 
 	m_audioSystem.update();
+
+	m_audioSystem.processPreviewRequests(
+		m_actors
+	);
 	/*
 	if (!m_initialStateCaptured) {
 		captureInitialState();
