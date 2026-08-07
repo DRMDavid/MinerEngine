@@ -76,10 +76,19 @@ listAudioFiles(const std::string& directory)
 			}
 		);
 
-		if (lowerName.size() >= 4 &&
+		const bool isWav =
+			lowerName.size() >= 4 &&
 			lowerName.substr(
 				lowerName.size() - 4
-			) == ".wav")
+			) == ".wav";
+
+		const bool isMp3 =
+			lowerName.size() >= 4 &&
+			lowerName.substr(
+				lowerName.size() - 4
+			) == ".mp3";
+
+		if (isWav || isMp3)
 		{
 			files.push_back(
 				fileName
@@ -192,8 +201,9 @@ importAudioFile(std::string& outRelativePath)
 		MAX_PATH;
 
 	dialog.lpstrFilter =
+		"Audio Files (*.wav;*.mp3)\0*.wav;*.mp3\0"
 		"Wave Audio (*.wav)\0*.wav\0"
-		"All Files (*.*)\0*.*\0";
+		"MP3 Audio (*.mp3)\0*.mp3\0";
 
 	dialog.nFilterIndex = 1;
 
@@ -215,7 +225,47 @@ importAudioFile(std::string& outRelativePath)
 		selectedFile;
 
 	// Confirmar que el contenido sea realmente WAV.
-	if (!isValidWaveFile(sourcePath))
+	std::string lowerSourcePath =
+		sourcePath;
+
+	std::transform(
+		lowerSourcePath.begin(),
+		lowerSourcePath.end(),
+		lowerSourcePath.begin(),
+		[](unsigned char character)
+		{
+			return static_cast<char>(
+				std::tolower(character)
+				);
+		}
+	);
+
+	const bool isWav =
+		lowerSourcePath.size() >= 4 &&
+		lowerSourcePath.substr(
+			lowerSourcePath.size() - 4
+		) == ".wav";
+
+	const bool isMp3 =
+		lowerSourcePath.size() >= 4 &&
+		lowerSourcePath.substr(
+			lowerSourcePath.size() - 4
+		) == ".mp3";
+
+	if (!isWav && !isMp3)
+	{
+		ERROR(
+			"GUI",
+			"importAudioFile",
+			"Solo se permiten archivos WAV o MP3"
+		);
+
+		return false;
+	}
+
+	// La validación RIFF solo corresponde a archivos WAV.
+	if (isWav &&
+		!isValidWaveFile(sourcePath))
 	{
 		ERROR(
 			"GUI",

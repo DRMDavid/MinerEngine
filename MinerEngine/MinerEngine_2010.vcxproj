@@ -461,6 +461,7 @@
     <ClCompile Include="Source\SceneGraph\SceneGraph.cpp" />
     <ClCompile Include="Source\ShaderProgram.cpp" />
     <ClCompile Include="Source\Skybox.cpp" />
+    <ClCompile Include="Source\StreamingAudioPlayer.cpp" />
     <ClCompile Include="Source\SwapChain.cpp" />
     <ClCompile Include="Source\Texture.cpp" />
     <ClCompile Include="Source\Viewport.cpp" />
@@ -535,6 +536,7 @@
     <ClInclude Include="Include\SceneGraph\SceneGraph.h" />
     <ClInclude Include="Include\ShaderProgram.h" />
     <ClInclude Include="Include\stb_image.h" />
+    <ClInclude Include="Include\StreamingAudioPlayer.h" />
     <ClInclude Include="Include\SwapChain.h" />
     <ClInclude Include="Include\Texture.h" />
     <ClInclude Include="Include\Viewport.h" />

@@ -1,14 +1,80 @@
 #include <Audio.h>
 
 #include "AudioSystem.h"
+#include "StreamingAudioPlayer.h"
 #include "ECS/Actor.h"
 #include "ECS/AudioSourceComponent.h"
 
+#include <algorithm>
+#include <cctype>
 #include <exception>
 #include <string>
 #include <utility>
 #include <vector>
 
+
+
+//============================================================
+// DETERMINAR SI EL ARCHIVO NECESITA STREAMING
+//============================================================
+
+static bool
+shouldStreamAudio(const std::string& filePath)
+{
+	std::string lowerPath =
+		filePath;
+
+	std::transform(
+		lowerPath.begin(),
+		lowerPath.end(),
+		lowerPath.begin(),
+		[](unsigned char character)
+		{
+			return static_cast<char>(
+				std::tolower(character)
+				);
+		}
+	);
+
+	// Los MP3 siempre utilizan Media Foundation.
+	const bool isMp3 =
+		lowerPath.size() >= 4 &&
+		lowerPath.substr(
+			lowerPath.size() - 4
+		) == ".mp3";
+
+	if (isMp3)
+	{
+		return true;
+	}
+
+	// Consultar el tamaño de los WAV.
+	WIN32_FILE_ATTRIBUTE_DATA fileData{};
+
+	if (!GetFileAttributesExA(
+		filePath.c_str(),
+		GetFileExInfoStandard,
+		&fileData))
+	{
+		return false;
+	}
+
+	ULARGE_INTEGER fileSize{};
+
+	fileSize.HighPart =
+		fileData.nFileSizeHigh;
+
+	fileSize.LowPart =
+		fileData.nFileSizeLow;
+
+	// A partir de 8 MB se reproduce por streaming.
+	const ULONGLONG streamingThreshold =
+		8ULL * 1024ULL * 1024ULL;
+
+	return
+		fileSize.QuadPart >=
+		streamingThreshold;
+}
 //============================================================
 // IMPLEMENTACION PRIVADA
 //============================================================
@@ -27,11 +93,19 @@ struct AudioSystem::Impl
 
 	std::unique_ptr<DirectX::AudioEngine> engine;
 
+	// Sonidos WAV cortos cargados completamente en memoria.
 	std::vector<ActiveSound> activeSounds;
 
-	// Sonido utilizado por el Preview del Inspector.
+	// Reproductores MP3 o archivos largos por streaming.
+	std::vector<std::unique_ptr<StreamingAudioPlayer>>
+		activeStreams;
+
+	// Preview WAV corto.
 	std::unique_ptr<DirectX::SoundEffect> previewSound;
 	std::unique_ptr<DirectX::SoundEffectInstance> previewInstance;
+
+	// Preview MP3 o archivo largo.
+	std::unique_ptr<StreamingAudioPlayer> previewStream;
 
 	bool criticalErrorReported = false;
 };
@@ -165,18 +239,25 @@ AudioSystem::stopPreview()
 	}
 
 	const bool hadPreview =
-		m_impl->previewInstance != nullptr;
+		m_impl->previewInstance != nullptr ||
+		m_impl->previewStream != nullptr;
 
+	// Detener Preview WAV.
 	if (m_impl->previewInstance)
 	{
-		// true fuerza una detencion inmediata,
-		// incluso cuando el sonido esta en loop.
 		m_impl->previewInstance->Stop(true);
 		m_impl->previewInstance.reset();
 	}
 
-	// SoundEffect debe destruirse despues de su instancia.
 	m_impl->previewSound.reset();
+
+	// Detener Preview MP3 o streaming.
+	if (m_impl->previewStream)
+	{
+		m_impl->previewStream->stop();
+		m_impl->previewStream->shutdown();
+		m_impl->previewStream.reset();
+	}
 
 	if (hadPreview)
 	{
@@ -187,7 +268,6 @@ AudioSystem::stopPreview()
 		);
 	}
 }
-
 //============================================================
 // PROCESAR SOLICITUDES DE PREVIEW
 //============================================================
@@ -216,7 +296,6 @@ AudioSystem::processPreviewRequests(
 			continue;
 		}
 
-		// Función local para procesar cualquier sonido.
 		auto processSoundPreview =
 			[this](
 				char* filePath,
@@ -225,6 +304,10 @@ AudioSystem::processPreviewRequests(
 				bool& previewRequested,
 				bool& stopPreviewRequested)
 			{
+				//============================================
+				// DETENER PREVIEW
+				//============================================
+
 				if (stopPreviewRequested)
 				{
 					stopPreviewRequested = false;
@@ -238,8 +321,7 @@ AudioSystem::processPreviewRequests(
 					return;
 				}
 
-				// Consumir la solicitud para no repetirla
-				// automáticamente cada frame.
+				// Consumir la solicitud.
 				previewRequested = false;
 
 				if (filePath == nullptr ||
@@ -248,7 +330,7 @@ AudioSystem::processPreviewRequests(
 					ERROR(
 						"AudioSystem",
 						"processPreviewRequests",
-						"No se selecciono un archivo de audio"
+						"No se selecciono un archivo"
 					);
 
 					return;
@@ -256,7 +338,6 @@ AudioSystem::processPreviewRequests(
 
 				try
 				{
-					// Solo puede existir un Preview activo.
 					stopPreview();
 
 					const std::string path =
@@ -267,26 +348,92 @@ AudioSystem::processPreviewRequests(
 						path.end()
 					);
 
+					//========================================
+					// MP3 O ARCHIVO GRANDE
+					//========================================
+
+					if (shouldStreamAudio(path))
+					{
+						auto stream =
+							std::make_unique<
+							StreamingAudioPlayer
+							>();
+
+						if (!stream->init())
+						{
+							ERROR(
+								"AudioSystem",
+								"processPreviewRequests",
+								"No se pudo iniciar streaming"
+							);
+
+							return;
+						}
+
+						if (!stream->load(widePath))
+						{
+							stream->shutdown();
+
+							ERROR(
+								"AudioSystem",
+								"processPreviewRequests",
+								"No se pudo cargar el archivo"
+							);
+
+							return;
+						}
+
+						stream->setVolume(
+							volume
+						);
+
+						stream->setLoop(
+							loop
+						);
+
+						stream->play();
+
+						m_impl->previewStream =
+							std::move(stream);
+
+						MESSAGE(
+							"AudioSystem",
+							"processPreviewRequests",
+							"Reproduciendo Preview por streaming"
+						);
+
+						return;
+					}
+
+					//========================================
+					// WAV CORTO
+					//========================================
+
 					m_impl->previewSound =
-						std::make_unique<DirectX::SoundEffect>(
+						std::make_unique<
+						DirectX::SoundEffect
+						>(
 							m_impl->engine.get(),
 							widePath.c_str()
 						);
 
 					m_impl->previewInstance =
-						m_impl->previewSound->CreateInstance(
-							DirectX::SoundEffectInstance_Default
+						m_impl->previewSound
+						->CreateInstance(
+							DirectX::
+							SoundEffectInstance_Default
 						);
 
 					if (!m_impl->previewInstance)
 					{
+						m_impl->previewSound.reset();
+
 						ERROR(
 							"AudioSystem",
 							"processPreviewRequests",
 							"No se pudo crear el Preview"
 						);
 
-						m_impl->previewSound.reset();
 						return;
 					}
 
@@ -301,7 +448,7 @@ AudioSystem::processPreviewRequests(
 					MESSAGE(
 						"AudioSystem",
 						"processPreviewRequests",
-						"Reproduciendo Preview"
+						"Reproduciendo Preview WAV"
 					);
 				}
 				catch (const std::exception& exception)
@@ -316,7 +463,10 @@ AudioSystem::processPreviewRequests(
 				}
 			};
 
-		// Procesar el sonido principal.
+		//============================================
+		// SONIDO PRINCIPAL
+		//============================================
+
 		processSoundPreview(
 			audioSource->filePath,
 			audioSource->volume,
@@ -325,8 +475,12 @@ AudioSystem::processPreviewRequests(
 			audioSource->stopPreviewRequested
 		);
 
-		// Procesar todos los sonidos adicionales.
-		for (AudioClipData& sound : audioSource->sounds)
+		//============================================
+		// SONIDOS ADICIONALES
+		//============================================
+
+		for (AudioClipData& sound :
+			audioSource->sounds)
 		{
 			processSoundPreview(
 				sound.filePath,
@@ -357,7 +511,7 @@ AudioSystem::playOnStart(
 		return;
 	}
 
-	// Detener Preview y sonidos de una ejecución anterior.
+	// Detener Preview y sonidos anteriores.
 	stopAll();
 
 	for (const auto& actor : actors)
@@ -376,7 +530,6 @@ AudioSystem::playOnStart(
 			continue;
 		}
 
-		// Función local para reproducir cualquier sonido.
 		auto playSound =
 			[this](
 				const char* filePath,
@@ -402,15 +555,6 @@ AudioSystem::playOnStart(
 					return;
 				}
 
-				if (spatial3D)
-				{
-					MESSAGE(
-						"AudioSystem",
-						"playOnStart",
-						"Spatial 3D se implementara posteriormente"
-					);
-				}
-
 				try
 				{
 					const std::string path =
@@ -421,19 +565,95 @@ AudioSystem::playOnStart(
 						path.end()
 					);
 
+					//========================================
+					// MP3 O ARCHIVO GRANDE
+					//========================================
+
+					if (shouldStreamAudio(path))
+					{
+						auto stream =
+							std::make_unique<
+							StreamingAudioPlayer
+							>();
+
+						if (!stream->init())
+						{
+							ERROR(
+								"AudioSystem",
+								"playOnStart",
+								"No se pudo iniciar streaming"
+							);
+
+							return;
+						}
+
+						if (!stream->load(widePath))
+						{
+							stream->shutdown();
+
+							ERROR(
+								"AudioSystem",
+								"playOnStart",
+								"No se pudo cargar el streaming"
+							);
+
+							return;
+						}
+
+						stream->setVolume(
+							volume
+						);
+
+						stream->setLoop(
+							loop
+						);
+
+						stream->play();
+
+						m_impl->activeStreams.push_back(
+							std::move(stream)
+						);
+
+						MESSAGE(
+							"AudioSystem",
+							"playOnStart",
+							"Audio reproducido por streaming"
+						);
+
+						return;
+					}
+
+					//========================================
+					// WAV CORTO
+					//========================================
+
+					if (spatial3D)
+					{
+						MESSAGE(
+							"AudioSystem",
+							"playOnStart",
+							"Spatial 3D se implementara posteriormente"
+						);
+					}
+
 					Impl::ActiveSound activeSound;
 
-					activeSound.filePath = path;
+					activeSound.filePath =
+						path;
 
 					activeSound.sound =
-						std::make_unique<DirectX::SoundEffect>(
+						std::make_unique<
+						DirectX::SoundEffect
+						>(
 							m_impl->engine.get(),
 							widePath.c_str()
 						);
 
 					activeSound.instance =
-						activeSound.sound->CreateInstance(
-							DirectX::SoundEffectInstance_Default
+						activeSound.sound
+						->CreateInstance(
+							DirectX::
+							SoundEffectInstance_Default
 						);
 
 					if (!activeSound.instance)
@@ -462,7 +682,7 @@ AudioSystem::playOnStart(
 					MESSAGE(
 						"AudioSystem",
 						"playOnStart",
-						"Audio Source reproducido"
+						"Audio WAV reproducido"
 					);
 				}
 				catch (const std::exception& exception)
@@ -475,7 +695,7 @@ AudioSystem::playOnStart(
 				}
 			};
 
-		// Reproducir el sonido principal.
+		// Sonido principal.
 		playSound(
 			audioSource->filePath,
 			audioSource->volume,
@@ -484,7 +704,7 @@ AudioSystem::playOnStart(
 			audioSource->spatial3D
 		);
 
-		// Reproducir los sonidos adicionales.
+		// Sonidos adicionales.
 		for (const AudioClipData& sound :
 			audioSource->sounds)
 		{
@@ -519,6 +739,14 @@ AudioSystem::pauseAll()
 		}
 	}
 
+	for (auto& stream : m_impl->activeStreams)
+	{
+		if (stream)
+		{
+			stream->pause();
+		}
+	}
+
 	MESSAGE(
 		"AudioSystem",
 		"pauseAll",
@@ -546,6 +774,14 @@ AudioSystem::resumeAll()
 		}
 	}
 
+	for (auto& stream : m_impl->activeStreams)
+	{
+		if (stream)
+		{
+			stream->resume();
+		}
+	}
+
 	MESSAGE(
 		"AudioSystem",
 		"resumeAll",
@@ -565,21 +801,31 @@ AudioSystem::stopAll()
 		return;
 	}
 
-	// Detener también el Preview del Inspector.
+	// Detener cualquier Preview.
 	stopPreview();
 
+	// Detener WAV cortos.
 	for (auto& activeSound : m_impl->activeSounds)
 	{
 		if (activeSound.instance)
 		{
-			// true fuerza una detencion inmediata,
-			// incluso cuando el sonido esta en loop.
 			activeSound.instance->Stop(true);
 		}
 	}
 
-	// Destruye primero SoundEffectInstance y después SoundEffect.
 	m_impl->activeSounds.clear();
+
+	// Detener MP3 y archivos largos.
+	for (auto& stream : m_impl->activeStreams)
+	{
+		if (stream)
+		{
+			stream->stop();
+			stream->shutdown();
+		}
+	}
+
+	m_impl->activeStreams.clear();
 
 	MESSAGE(
 		"AudioSystem",
@@ -587,7 +833,6 @@ AudioSystem::stopAll()
 		"Todos los sonidos fueron detenidos"
 	);
 }
-
 //============================================================
 // DESTRUIR SISTEMA
 //============================================================
