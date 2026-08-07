@@ -30,7 +30,10 @@
 #include "CommandManager.h"
 #include "PhysicsSystem.h"
 #include "BehaviorSystem.h"
-#include <string>
+#include "AudioSystem.h"
+#include <string>   
+#include <memory>
+
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -88,8 +91,12 @@ enum class EngineMode
  */
 class BaseApp {
 public:
-    BaseApp() = default;
-    ~BaseApp() { destroy(); }
+
+    BaseApp();
+    ~BaseApp();
+    //BaseApp() = default;
+    //~BaseApp();
+    //~BaseApp() { destroy(); }
 
     /**
      * @brief Preparación temprana antes de la inicialización completa.
@@ -201,6 +208,7 @@ private:
     CBMain              m_constantBufferStruct; ///< Estructura de datos del buffer constante principal.
     PhysicsSystem       m_physicsSystem;
     BehaviorSystem      m_behaviorSystem;
+    AudioSystem         m_audioSystem;
     
 
     EngineMode m_engineMode = EngineMode::Edit;

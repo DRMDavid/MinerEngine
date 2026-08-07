@@ -4,6 +4,7 @@
 #include "ECS/Actor.h"
 #include "ECS/Transform.h"
 #include "ECS/RotateBehaviorComponent.h"
+#include <xnamath.h>
 
 /**
  * @class BehaviorSystem

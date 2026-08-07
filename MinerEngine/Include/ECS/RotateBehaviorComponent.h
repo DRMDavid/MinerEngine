@@ -2,6 +2,7 @@
 
 #include "Prerequisites.h"
 #include "ECS/Component.h"
+#include <xnamath.h>
 
 class DeviceContext;
 

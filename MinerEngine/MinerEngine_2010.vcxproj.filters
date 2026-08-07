@@ -172,6 +172,12 @@
     <ClCompile Include="Source\BehaviorSystem.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\AudioSystem.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\StreamingAudioPlayer.cpp">
+      <Filter>Include\ImGui\source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -382,6 +388,15 @@
       <Filter>Include\ECS</Filter>
     </ClInclude>
     <ClInclude Include="Include\BehaviorSystem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\AudioSourceComponent.h">
+      <Filter>Include\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\AudioSystem.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\StreamingAudioPlayer.h">
       <Filter>Include</Filter>
     </ClInclude>
   </ItemGroup>
