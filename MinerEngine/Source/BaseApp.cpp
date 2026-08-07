@@ -435,6 +435,12 @@ BaseApp::update(float deltaTime) {
 
 	m_audioSystem.update();
 
+	m_audioSystem.update3D(
+		m_camera.getPosition(),
+		m_camera.GetForward(),
+		m_camera.GetUp()
+	);
+
 	m_audioSystem.processPreviewRequests(
 		m_actors
 	);

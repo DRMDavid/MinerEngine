@@ -33,6 +33,12 @@ public:
 	 */
 	void update();
 
+	void update3D(
+		const EU::Vector3& listenerPosition,
+		const EU::Vector3& listenerForward,
+		const EU::Vector3& listenerUp
+	);
+
 	/**
 	 * @brief Procesa las solicitudes de Preview del Inspector.
 	 */

@@ -3,6 +3,7 @@
 #include "AudioSystem.h"
 #include "StreamingAudioPlayer.h"
 #include "ECS/Actor.h"
+#include "ECS/Transform.h"
 #include "ECS/AudioSourceComponent.h"
 
 #include <algorithm>
@@ -83,18 +84,32 @@ struct AudioSystem::Impl
 {
 	struct ActiveSound
 	{
-		// SoundEffect se declara antes que instance.
-		// De esta forma instance se destruye primero.
 		std::unique_ptr<DirectX::SoundEffect> sound;
 		std::unique_ptr<DirectX::SoundEffectInstance> instance;
 
 		std::string filePath;
+
+		// Actor que contiene la fuente de audio.
+		EU::TSharedPointer<Actor> actor;
+
+		// Indica si esta instancia utiliza audio 3D.
+		bool spatial3D = false;
+
+		// -1 significa sonido principal.
+        // 0 o mayor representa sounds[index].
+		int soundIndex = -1;
+
+		// Posición y propiedades espaciales del emisor.
+		DirectX::AudioEmitter emitter;
 	};
 
 	std::unique_ptr<DirectX::AudioEngine> engine;
 
 	// Sonidos WAV cortos cargados completamente en memoria.
 	std::vector<ActiveSound> activeSounds;
+
+	// Listener 3D asociado a la cámara.
+	DirectX::AudioListener listener;
 
 	// Reproductores MP3 o archivos largos por streaming.
 	std::vector<std::unique_ptr<StreamingAudioPlayer>>
@@ -224,6 +239,141 @@ AudioSystem::update()
 	}
 
 	m_impl->criticalErrorReported = false;
+}
+
+//============================================================
+// ACTUALIZAR AUDIO 3D
+//============================================================
+
+void
+AudioSystem::update3D(
+	const EU::Vector3& listenerPosition,
+	const EU::Vector3& listenerForward,
+	const EU::Vector3& listenerUp)
+{
+	if (!m_impl || !m_impl->engine)
+	{
+		return;
+	}
+
+	//========================================================
+	// ACTUALIZAR LISTENER
+	//========================================================
+
+	m_impl->listener.SetPosition(
+		DirectX::XMFLOAT3(
+			listenerPosition.x,
+			listenerPosition.y,
+			listenerPosition.z
+		)
+	);
+
+	m_impl->listener.SetOrientation(
+		DirectX::XMFLOAT3(
+			listenerForward.x,
+			listenerForward.y,
+			listenerForward.z
+		),
+		DirectX::XMFLOAT3(
+			listenerUp.x,
+			listenerUp.y,
+			listenerUp.z
+		)
+	);
+
+	//========================================================
+	// ACTUALIZAR SONIDOS ACTIVOS
+	//========================================================
+
+	for (auto& activeSound :
+		m_impl->activeSounds)
+	{
+		if (!activeSound.instance ||
+			activeSound.actor.isNull())
+		{
+			continue;
+		}
+
+		auto audioSource =
+			activeSound.actor
+			->getComponent<AudioSourceComponent>();
+
+		if (!audioSource)
+		{
+			continue;
+		}
+
+		//====================================================
+		// VOLUMEN EN TIEMPO REAL
+		//====================================================
+
+		float currentVolume = 1.0f;
+
+		if (activeSound.soundIndex < 0)
+		{
+			// Sonido principal.
+			currentVolume =
+				audioSource->volume;
+		}
+		else if (
+			activeSound.soundIndex <
+			static_cast<int>(
+				audioSource->sounds.size()
+				))
+		{
+			// Sonido adicional.
+			currentVolume =
+				audioSource
+				->sounds[activeSound.soundIndex]
+				.volume;
+		}
+
+		activeSound.instance->SetVolume(
+			currentVolume
+		);
+
+		// Los sonidos 2D solamente necesitan actualizar volumen.
+		if (!activeSound.spatial3D)
+		{
+			continue;
+		}
+
+		//====================================================
+		// POSICION DEL EMISOR 3D
+		//====================================================
+
+		auto transform =
+			activeSound.actor
+			->getComponent<Transform>();
+
+		if (!transform)
+		{
+			continue;
+		}
+
+		const EU::Vector3& sourcePosition =
+			transform->getPosition();
+
+		activeSound.emitter.SetPosition(
+			DirectX::XMFLOAT3(
+				sourcePosition.x,
+				sourcePosition.y,
+				sourcePosition.z
+			)
+		);
+
+		activeSound.emitter.CurveDistanceScaler =
+			20.0f;
+
+		activeSound.emitter.DopplerScaler =
+			1.0f;
+
+		activeSound.instance->Apply3D(
+			m_impl->listener,
+			activeSound.emitter,
+			false
+		);
+	}
 }
 
 //============================================================
@@ -531,12 +681,13 @@ AudioSystem::playOnStart(
 		}
 
 		auto playSound =
-			[this](
+		 [this, &actor](
 				const char* filePath,
 				float volume,
 				bool loop,
-				bool playOnStart,
-				bool spatial3D)
+			    bool playOnStart,
+			    bool spatial3D,
+			    int soundIndex)
 			{
 				if (!playOnStart)
 				{
@@ -627,20 +778,26 @@ AudioSystem::playOnStart(
 					// WAV CORTO
 					//========================================
 
-					if (spatial3D)
-					{
-						MESSAGE(
-							"AudioSystem",
-							"playOnStart",
-							"Spatial 3D se implementara posteriormente"
-						);
-					}
-
 					Impl::ActiveSound activeSound;
 
+					// Guardar la ruta del archivo.
 					activeSound.filePath =
 						path;
 
+					// Guardar el actor propietario.
+					activeSound.actor =
+						actor;
+
+					// Guardar si utiliza audio 3D.
+					activeSound.spatial3D =
+						spatial3D;
+
+					// -1 para el sonido principal.
+					// 0 o mayor para sonidos adicionales.
+					activeSound.soundIndex =
+						soundIndex;
+
+					// Cargar el WAV.
 					activeSound.sound =
 						std::make_unique<
 						DirectX::SoundEffect
@@ -649,11 +806,25 @@ AudioSystem::playOnStart(
 							widePath.c_str()
 						);
 
+					// Configurar la instancia como 2D o 3D.
+					DirectX::
+						SOUND_EFFECT_INSTANCE_FLAGS
+						instanceFlags =
+						DirectX::
+						SoundEffectInstance_Default;
+
+					if (spatial3D)
+					{
+						instanceFlags =
+							DirectX::
+							SoundEffectInstance_Use3D;
+					}
+
+					// Crear una sola instancia.
 					activeSound.instance =
 						activeSound.sound
 						->CreateInstance(
-							DirectX::
-							SoundEffectInstance_Default
+							instanceFlags
 						);
 
 					if (!activeSound.instance)
@@ -667,23 +838,80 @@ AudioSystem::playOnStart(
 						return;
 					}
 
+					// Aplicar volumen inicial.
 					activeSound.instance->SetVolume(
 						volume
 					);
 
+					// Aplicar posición inicial si es 3D.
+					if (spatial3D)
+					{
+						auto transform =
+							actor->getComponent<Transform>();
+
+						if (transform)
+						{
+							const EU::Vector3&
+								sourcePosition =
+								transform->getPosition();
+
+							activeSound.emitter.SetPosition(
+								DirectX::XMFLOAT3(
+									sourcePosition.x,
+									sourcePosition.y,
+									sourcePosition.z
+								)
+							);
+
+							// Alcance aproximado de 20
+							// unidades del mundo.
+							activeSound.emitter
+								.CurveDistanceScaler =
+								20.0f;
+
+							activeSound.emitter
+								.DopplerScaler =
+								1.0f;
+
+							// false porque el motor utiliza
+							// coordenadas Left-Handed.
+							activeSound.instance->Apply3D(
+								m_impl->listener,
+								activeSound.emitter,
+								false
+							);
+						}
+					}
+
+					// Reproducir la instancia.
 					activeSound.instance->Play(
 						loop
 					);
 
+					// Guardar exactamente la misma instancia
+					// para actualizar volumen y posición.
 					m_impl->activeSounds.push_back(
 						std::move(activeSound)
 					);
 
-					MESSAGE(
-						"AudioSystem",
-						"playOnStart",
-						"Audio WAV reproducido"
-					);
+					if (spatial3D)
+					{
+						MESSAGE(
+							"AudioSystem",
+							"playOnStart",
+							"Audio WAV 3D reproducido"
+						);
+					}
+					else
+					{
+						MESSAGE(
+							"AudioSystem",
+							"playOnStart",
+							"Audio WAV 2D reproducido"
+						);
+					}
+
+				
 				}
 				catch (const std::exception& exception)
 				{
@@ -696,26 +924,33 @@ AudioSystem::playOnStart(
 			};
 
 		// Sonido principal.
-		playSound(
-			audioSource->filePath,
-			audioSource->volume,
-			audioSource->loop,
-			audioSource->playOnStart,
-			audioSource->spatial3D
-		);
+			playSound(
+				audioSource->filePath,
+				audioSource->volume,
+				audioSource->loop,
+				audioSource->playOnStart,
+				audioSource->spatial3D,
+				-1
+			);
 
 		// Sonidos adicionales.
-		for (const AudioClipData& sound :
-			audioSource->sounds)
-		{
-			playSound(
-				sound.filePath,
-				sound.volume,
-				sound.loop,
-				sound.playOnStart,
-				sound.spatial3D
-			);
-		}
+			for (int soundIndex = 0;
+				soundIndex <
+				static_cast<int>(audioSource->sounds.size());
+				++soundIndex)
+			{
+				const AudioClipData& sound =
+					audioSource->sounds[soundIndex];
+
+				playSound(
+					sound.filePath,
+					sound.volume,
+					sound.loop,
+					sound.playOnStart,
+					sound.spatial3D,
+					soundIndex
+				);
+			}
 	}
 }
 
