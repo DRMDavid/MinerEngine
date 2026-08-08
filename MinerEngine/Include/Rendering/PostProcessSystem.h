@@ -13,6 +13,14 @@ class Buffer;
 class RasterizerState;
 class DepthStencilState;
 
+struct FxaaData
+{
+	float texelSizeX = 0.0f;
+	float texelSizeY = 0.0f;
+	float enabled = 0.0f;
+	float padding = 0.0f;
+};
+
 
 struct BloomData
 {
@@ -88,6 +96,9 @@ public:
 	void setBloomIntensity(float intensity);
 	float getBloomIntensity() const;
 
+	void setFxaaEnabled(bool enabled);
+	bool isFxaaEnabled() const;
+
 	/**
 	 * @brief Inicializa el render target HDR.
 	 */
@@ -131,6 +142,15 @@ public:
 		DepthStencilState& disabledDepthStencil
 	);
 
+	void renderFxaa(
+		DeviceContext& deviceContext,
+		ID3D11RenderTargetView* outputRTV,
+		Buffer& fullscreenVertexBuffer,
+		Buffer& fullscreenIndexBuffer,
+		RasterizerState& fullscreenRasterizer,
+		DepthStencilState& disabledDepthStencil
+	);
+
 	/**
 	 * @brief Destruye todos los recursos.
 	 */
@@ -163,7 +183,10 @@ public:
 		return
 			m_hdrTexture.m_texture != nullptr &&
 			m_hdrSRV.m_textureFromImg != nullptr &&
-			m_hdrRTV.get() != nullptr;
+			m_hdrRTV.get() != nullptr &&
+			m_ldrTexture.m_texture != nullptr &&
+			m_ldrSRV.m_textureFromImg != nullptr &&
+			m_ldrRTV.get() != nullptr;
 	}
 
 private:
@@ -189,13 +212,16 @@ private:
 	ShaderProgram m_bloomExtractShader;
 	SamplerState m_linearSampler;
 	ShaderProgram m_bloomBlurShader;
+	ShaderProgram m_fxaaShader;
 	Buffer m_tonemappingBuffer;
 	Buffer m_bloomBuffer;
 	Buffer m_bloomBlurBuffer;
+	Buffer m_fxaaBuffer;
 
 	TonemappingData m_tonemappingData{};
 	BloomData m_bloomData{};
 	BloomBlurData m_bloomBlurData{};
+	FxaaData m_fxaaData{};
 	// Texturas de Bloom a media resolución.
     // Se utilizan alternadamente para el desenfoque.
 	Texture m_bloomTextureA;
@@ -205,4 +231,10 @@ private:
 	Texture m_bloomTextureB;
 	Texture m_bloomSRVB;
 	RenderTargetView m_bloomRTVB;
+
+	// Resultado LDR después de Tonemapping.
+    // FXAA leerá esta textura antes de escribir al viewport.
+	Texture m_ldrTexture;
+	Texture m_ldrSRV;
+	RenderTargetView m_ldrRTV;
 };

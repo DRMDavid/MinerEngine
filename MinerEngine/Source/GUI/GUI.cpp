@@ -2279,10 +2279,56 @@ void GUI::drawLightingPanel(float* lightDir,float* lightColor,DeferredRenderer& 
 		}
 
 		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		//====================================================
+		// FXAA
+		//====================================================
+
+		bool fxaaEnabled =
+			deferredRenderer.isFxaaEnabled();
+
+		if (ImGui::Checkbox(
+			"FXAA",
+			&fxaaEnabled))
+		{
+			deferredRenderer.setFxaaEnabled(
+				fxaaEnabled
+			);
+
+			if (fxaaEnabled)
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"FXAA activado"
+				);
+			}
+			else
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"FXAA desactivado"
+				);
+			}
+		}
+
+		ImGui::TextDisabled(
+			"Suaviza bordes dentados en la imagen final."
+		);
+
+		ImGui::Spacing();
 
 		if (ImGui::Button(
 			"Reset Post Processing"))
 		{
+
+			deferredRenderer.setFxaaEnabled(
+				false
+			);
+
 			deferredRenderer.setTonemappingEnabled(
 				false
 			);

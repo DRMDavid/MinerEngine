@@ -25,11 +25,13 @@ PostProcessSystem::init(
 	unsigned int width,
 	unsigned int height)
 {
-	// Evitar conservar recursos de una inicialización anterior.
+	// Eliminar cualquier inicialización anterior.
 	destroy();
 
-	// El fullscreen quad utiliza el mismo layout
-	// que el lighting pass del deferred.
+	//========================================================
+	// LAYOUT DEL FULLSCREEN QUAD
+	//========================================================
+
 	LayoutBuilder fullscreenBuilder;
 
 	fullscreenBuilder
@@ -54,11 +56,13 @@ PostProcessSystem::init(
 			DXGI_FORMAT_R32G32_FLOAT
 		);
 
+	HRESULT result = S_OK;
+
 	//========================================================
 	// SHADER DE TONEMAPPING
 	//========================================================
 
-	HRESULT result =
+	result =
 		m_tonemappingShader.init(
 			device,
 			"Tonemapping.hlsl",
@@ -77,6 +81,10 @@ PostProcessSystem::init(
 		return result;
 	}
 
+	//========================================================
+	// SHADER DE EXTRACCIÓN BLOOM
+	//========================================================
+
 	result =
 		m_bloomExtractShader.init(
 			device,
@@ -92,8 +100,13 @@ PostProcessSystem::init(
 			"No se pudo cargar BloomExtract.hlsl"
 		);
 
+		destroy();
 		return result;
 	}
+
+	//========================================================
+	// SHADER DE DESENFOQUE BLOOM
+	//========================================================
 
 	result =
 		m_bloomBlurShader.init(
@@ -110,13 +123,19 @@ PostProcessSystem::init(
 			"No se pudo cargar BloomBlur.hlsl"
 		);
 
+		destroy();
 		return result;
 	}
 
+	//========================================================
+	// SHADER DE FXAA
+	//========================================================
+
 	result =
-		m_bloomBlurBuffer.init(
+		m_fxaaShader.init(
 			device,
-			sizeof(BloomBlurData)
+			"FXAA.hlsl",
+			fullscreenBuilder
 		);
 
 	if (FAILED(result))
@@ -124,14 +143,15 @@ PostProcessSystem::init(
 		ERROR(
 			"PostProcessSystem",
 			"init",
-			"No se pudo crear el constant buffer de Bloom Blur"
+			"No se pudo cargar FXAA.hlsl"
 		);
 
+		destroy();
 		return result;
 	}
 
 	//========================================================
-	// SAMPLER
+	// SAMPLER LINEAL
 	//========================================================
 
 	result =
@@ -144,7 +164,7 @@ PostProcessSystem::init(
 		ERROR(
 			"PostProcessSystem",
 			"init",
-			"No se pudo crear el sampler"
+			"No se pudo crear el sampler lineal"
 		);
 
 		destroy();
@@ -152,7 +172,7 @@ PostProcessSystem::init(
 	}
 
 	//========================================================
-	// CONSTANT BUFFER
+	// CONSTANT BUFFER DE TONEMAPPING
 	//========================================================
 
 	result =
@@ -166,12 +186,16 @@ PostProcessSystem::init(
 		ERROR(
 			"PostProcessSystem",
 			"init",
-			"No se pudo crear el constant buffer"
+			"No se pudo crear el constant buffer de Tonemapping"
 		);
 
 		destroy();
 		return result;
 	}
+
+	//========================================================
+	// CONSTANT BUFFER DE BLOOM
+	//========================================================
 
 	result =
 		m_bloomBuffer.init(
@@ -187,10 +211,56 @@ PostProcessSystem::init(
 			"No se pudo crear el constant buffer de Bloom"
 		);
 
+		destroy();
 		return result;
 	}
+
 	//========================================================
-	// RENDER TARGET HDR
+	// CONSTANT BUFFER DE BLOOM BLUR
+	//========================================================
+
+	result =
+		m_bloomBlurBuffer.init(
+			device,
+			sizeof(BloomBlurData)
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo crear el constant buffer de Bloom Blur"
+		);
+
+		destroy();
+		return result;
+	}
+
+	//========================================================
+	// CONSTANT BUFFER DE FXAA
+	//========================================================
+
+	result =
+		m_fxaaBuffer.init(
+			device,
+			sizeof(FxaaData)
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo crear el constant buffer de FXAA"
+		);
+
+		destroy();
+		return result;
+	}
+
+	//========================================================
+	// CREAR RENDER TARGETS
 	//========================================================
 
 	result =
@@ -202,6 +272,12 @@ PostProcessSystem::init(
 
 	if (FAILED(result))
 	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudieron crear los render targets"
+		);
+
 		destroy();
 		return result;
 	}
@@ -209,11 +285,12 @@ PostProcessSystem::init(
 	MESSAGE(
 		"PostProcessSystem",
 		"init",
-		"Tonemapping inicializado correctamente"
+		"Post Processing inicializado correctamente"
 	);
 
 	return S_OK;
 }
+
 
 //============================================================
 // RESIZE
@@ -332,6 +409,58 @@ PostProcessSystem::createHdrResources(
 			device,
 			m_hdrTexture,
 			hdrFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	//========================================================
+// TEXTURA LDR PARA FXAA
+//========================================================
+
+	const DXGI_FORMAT ldrFormat =
+		DXGI_FORMAT_R8G8B8A8_UNORM;
+
+	result =
+		m_ldrTexture.init(
+			device,
+			width,
+			height,
+			ldrFormat,
+			D3D11_BIND_RENDER_TARGET |
+			D3D11_BIND_SHADER_RESOURCE,
+			1,
+			0
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_ldrRTV.init(
+			device,
+			m_ldrTexture,
+			D3D11_RTV_DIMENSION_TEXTURE2D,
+			ldrFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_ldrSRV.init(
+			device,
+			m_ldrTexture,
+			ldrFormat
 		);
 
 	if (FAILED(result))
@@ -473,6 +602,11 @@ PostProcessSystem::createHdrResources(
 void
 PostProcessSystem::destroyHdrResources()
 {
+	// Resultado LDR
+	m_ldrRTV.destroy();
+	m_ldrSRV.destroy();
+	m_ldrTexture.destroy();
+
 	// Bloom B
 	m_bloomRTVB.destroy();
 	m_bloomSRVB.destroy();
@@ -1024,10 +1158,14 @@ PostProcessSystem::renderTonemapping(
 		nullptr
 	);
 
-	// Seleccionar el render target final del viewport.
+	// Tonemapping escribe en la textura LDR.
+	// FXAA llevará después este resultado al viewport.
+	ID3D11RenderTargetView* ldrTarget =
+		m_ldrRTV.get();
+
 	deviceContext.OMSetRenderTargets(
 		1,
-		&outputRTV,
+		&ldrTarget,
 		nullptr
 	);
 
@@ -1135,6 +1273,153 @@ PostProcessSystem::renderTonemapping(
 		0,
 		2,
 		nullResources
+	);
+}
+
+//============================================================
+// APLICAR FXAA Y PRESENTAR EN EL VIEWPORT
+//============================================================
+
+void
+PostProcessSystem::renderFxaa(
+	DeviceContext& deviceContext,
+	ID3D11RenderTargetView* outputRTV,
+	Buffer& fullscreenVertexBuffer,
+	Buffer& fullscreenIndexBuffer,
+	RasterizerState& fullscreenRasterizer,
+	DepthStencilState& disabledDepthStencil)
+{
+	if (!isReady() ||
+		outputRTV == nullptr)
+	{
+		return;
+	}
+
+	// Configurar el viewport completo.
+	D3D11_VIEWPORT fullViewport{};
+
+	fullViewport.TopLeftX = 0.0f;
+	fullViewport.TopLeftY = 0.0f;
+	fullViewport.Width =
+		static_cast<float>(m_width);
+	fullViewport.Height =
+		static_cast<float>(m_height);
+	fullViewport.MinDepth = 0.0f;
+	fullViewport.MaxDepth = 1.0f;
+
+	deviceContext.RSSetViewports(
+		1,
+		&fullViewport
+	);
+
+	// Desconectar la textura LDR como render target.
+	ID3D11RenderTargetView* nullRenderTarget[1] =
+	{
+		nullptr
+	};
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		nullRenderTarget,
+		nullptr
+	);
+
+	// Seleccionar el viewport como destino final.
+	deviceContext.OMSetRenderTargets(
+		1,
+		&outputRTV,
+		nullptr
+	);
+
+	// Conectar el resultado del tonemapping.
+	ID3D11ShaderResourceView* ldrResource =
+		m_ldrSRV.m_textureFromImg;
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		&ldrResource
+	);
+
+	disabledDepthStencil.render(
+		deviceContext,
+		0,
+		false
+	);
+
+	fullscreenRasterizer.render(
+		deviceContext
+	);
+
+	m_linearSampler.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	m_fxaaShader.render(
+		deviceContext
+	);
+
+	m_fxaaData.texelSizeX =
+		1.0f /
+		static_cast<float>(m_width);
+
+	m_fxaaData.texelSizeY =
+		1.0f /
+		static_cast<float>(m_height);
+
+	m_fxaaBuffer.update(
+		deviceContext,
+		nullptr,
+		0,
+		nullptr,
+		&m_fxaaData,
+		0,
+		0
+	);
+
+	m_fxaaBuffer.render(
+		deviceContext,
+		0,
+		1,
+		true
+	);
+
+	deviceContext.IASetPrimitiveTopology(
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	);
+
+	fullscreenVertexBuffer.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	fullscreenIndexBuffer.render(
+		deviceContext,
+		0,
+		1,
+		false,
+		DXGI_FORMAT_R32_UINT
+	);
+
+	deviceContext.DrawIndexed(
+		6,
+		0,
+		0
+	);
+
+	// Desconectar la textura LDR.
+	ID3D11ShaderResourceView* nullResource[1] =
+	{
+		nullptr
+	};
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		nullResource
 	);
 }
 
@@ -1272,4 +1557,24 @@ float
 PostProcessSystem::getBloomIntensity() const
 {
 	return m_bloomData.intensity;
+}
+
+//============================================================
+// CONTROLES DE FXAA
+//============================================================
+
+void
+PostProcessSystem::setFxaaEnabled(
+	bool enabled)
+{
+	m_fxaaData.enabled =
+		enabled ? 1.0f : 0.0f;
+}
+
+bool
+PostProcessSystem::isFxaaEnabled() const
+{
+	return
+		m_fxaaData.enabled >
+		0.5f;
 }

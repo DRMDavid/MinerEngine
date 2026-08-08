@@ -82,6 +82,9 @@ public:
 	void setBloomIntensity(float intensity);
 	float getBloomIntensity() const;
 
+	void setFxaaEnabled(bool enabled);
+	bool isFxaaEnabled() const;
+
 	/**
 	 * @brief Obtiene el Shader Resource View (SRV) del mapa de sombras.
 	 * @return Puntero al SRV de profundidad de las sombras.

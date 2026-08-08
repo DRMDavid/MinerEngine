@@ -468,6 +468,19 @@ DeferredRenderer::renderSceneToTarget(DeviceContext& deviceContext,
 	);
 
 	//============================================================
+// FXAA Y SALIDA FINAL
+//============================================================
+
+	m_postProcessSystem.renderFxaa(
+		deviceContext,
+		finalViewportRTV,
+		m_fullscreenVertexBuffer,
+		m_fullscreenIndexBuffer,
+		m_fullscreenRasterizer,
+		m_disabledDepthStencil
+	);	
+
+	//============================================================
 	// TONEMAPPING FINAL
 	//============================================================
 
@@ -1181,4 +1194,24 @@ DeferredRenderer::getBloomIntensity() const
 {
 	return
 		m_postProcessSystem.getBloomIntensity();
+}
+
+//============================================================
+// CONTROLES DE FXAA
+//============================================================
+
+void
+DeferredRenderer::setFxaaEnabled(
+	bool enabled)
+{
+	m_postProcessSystem.setFxaaEnabled(
+		enabled
+	);
+}
+
+bool
+DeferredRenderer::isFxaaEnabled() const
+{
+	return
+		m_postProcessSystem.isFxaaEnabled();
 }
