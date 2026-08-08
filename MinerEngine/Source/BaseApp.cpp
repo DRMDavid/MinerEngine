@@ -506,7 +506,10 @@ BaseApp::update(float deltaTime) {
 		m_renderPipeline.getPreShadowSRV(),
 		m_editorViewportPass.getSRV(),
 		m_renderPipeline.getShadowMapSRV());
-	m_gui.drawLightingPanel(&m_constantBufferStruct.LightDir.x, &m_constantBufferStruct.LightColor.x);
+	m_gui.drawLightingPanel(
+		&m_constantBufferStruct.LightDir.x,
+		&m_constantBufferStruct.LightColor.x,
+		m_renderPipeline.getDeferredRenderer());
 	m_gui.drawStatsPanel(deltaTime, m_lastDrawCalls);
 	m_gui.drawTexturePreview();
 	m_gui.drawConsolePanel();

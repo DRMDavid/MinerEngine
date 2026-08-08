@@ -12,6 +12,7 @@
 #include "ECS/BoxColliderComponent.h"
 #include "ECS/RotateBehaviorComponent.h"
 #include "ECS/AudioSourceComponent.h"
+#include "Rendering/DeferredRenderer.h"
 
 // Déjalo después de los headers principales del motor.
 
@@ -2083,7 +2084,7 @@ void GUI::drawRenderDebugPanel(ID3D11ShaderResourceView* preShadowSRV,
 	ImGui::End();
 }
 
-void GUI::drawLightingPanel(float* lightDir, float* lightColor)
+void GUI::drawLightingPanel(float* lightDir,float* lightColor,DeferredRenderer& deferredRenderer)
 {
 	ImGui::Begin("Scene Settings");
 
@@ -2141,8 +2142,101 @@ void GUI::drawLightingPanel(float* lightDir, float* lightColor)
 		}
 	}
 
+	ImGui::Spacing();
+
+	//============================================================
+	// POST PROCESSING
+	//============================================================
+
+	if (ImGui::CollapsingHeader(
+		"Post Processing",
+		ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		bool tonemappingEnabled =
+			deferredRenderer.isTonemappingEnabled();
+
+		if (ImGui::Checkbox(
+			"Tonemapping",
+			&tonemappingEnabled))
+		{
+			deferredRenderer.setTonemappingEnabled(
+				tonemappingEnabled
+			);
+
+			if (tonemappingEnabled)
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"Tonemapping activado"
+				);
+			}
+			else
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"Tonemapping desactivado"
+				);
+			}
+		}
+
+		float exposure =
+			deferredRenderer.getTonemappingExposure();
+
+		if (ImGui::SliderFloat(
+			"Exposure",
+			&exposure,
+			0.10f,
+			3.00f,
+			"%.2f"))
+		{
+			deferredRenderer.setTonemappingExposure(
+				exposure
+			);
+		}
+
+		float gamma =
+			deferredRenderer.getTonemappingGamma();
+
+		if (ImGui::SliderFloat(
+			"Gamma",
+			&gamma,
+			0.50f,
+			2.50f,
+			"%.2f"))
+		{
+			deferredRenderer.setTonemappingGamma(
+				gamma
+			);
+		}
+
+		if (ImGui::Button(
+			"Reset Post Processing"))
+		{
+			deferredRenderer.setTonemappingEnabled(
+				false
+			);
+
+			deferredRenderer.setTonemappingExposure(
+				1.0f
+			);
+
+			deferredRenderer.setTonemappingGamma(
+				1.0f
+			);
+
+			MESSAGE(
+				"GUI",
+				"drawLightingPanel",
+				"Post Processing restablecido"
+			);
+		}
+	}
+
 	ImGui::End();
 }
+
 
 void GUI::drawStatsPanel(float deltaTime, unsigned int drawCalls) {
 	ImGui::Begin("Performance");

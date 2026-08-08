@@ -32,6 +32,7 @@ public:
 	ID3D11ShaderResourceView* getGBufferEmissiveAlphaSRV() const { return m_active ? m_active->getGBufferEmissiveAlphaSRV() : nullptr; }
 	void setShadowFactorDebugEnabled(bool enabled) { if (m_active) m_active->setShadowFactorDebugEnabled(enabled); }
 	void setDeferredDebugViewMode(int mode) { if (m_active) m_active->setDeferredDebugViewMode(mode); }
+	DeferredRenderer& getDeferredRenderer(){return m_deferredRenderer;}const DeferredRenderer&getDeferredRenderer() const{return m_deferredRenderer;}
 
 private:
 	ForwardRenderer  m_forwardRenderer;

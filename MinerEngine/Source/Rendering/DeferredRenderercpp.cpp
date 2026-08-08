@@ -393,10 +393,56 @@ DeferredRenderer::renderSceneToTarget(DeviceContext& deviceContext,
 	bindGBufferTargets(deviceContext, ResolveViewportDSV(targetPass));
 	renderGeometryPass(deviceContext);
 
-	bindFinalTarget(deviceContext, ResolveViewportRTV(targetPass), ResolveViewportDSV(targetPass));
-	renderLightingPass(deviceContext);
-	renderSkyboxPass(deviceContext, scene);
-	renderTransparentPass(deviceContext);
+	// Guardar el render target final del viewport.
+	ID3D11RenderTargetView* finalViewportRTV =
+		ResolveViewportRTV(targetPass);
+
+	ID3D11DepthStencilView* finalViewportDSV =
+		ResolveViewportDSV(targetPass);
+
+	//============================================================
+	// RENDERIZAR LA ESCENA EN HDR
+	//============================================================
+
+	bindFinalTarget(
+		deviceContext,
+		m_postProcessSystem.getHdrRTV(),
+		finalViewportDSV
+	);
+
+	renderLightingPass(
+		deviceContext
+	);
+
+	renderSkyboxPass(
+		deviceContext,
+		scene
+	);
+
+	renderTransparentPass(
+		deviceContext
+	);
+
+	//============================================================
+	// APLICAR TONEMAPPING AL VIEWPORT
+	//============================================================
+
+	// El transparent pass puede cambiar el blend state.
+	// Restauramos el estado opaco para el fullscreen pass.
+	deviceContext.OMSetBlendState(
+		m_opaqueBlendState,
+		m_blendFactor,
+		0xffffffff
+	);
+
+	m_postProcessSystem.renderTonemapping(
+		deviceContext,
+		finalViewportRTV,
+		m_fullscreenVertexBuffer,
+		m_fullscreenIndexBuffer,
+		m_fullscreenRasterizer,
+		m_disabledDepthStencil
+	);
 }
 
 void
@@ -982,4 +1028,56 @@ DeferredRenderer::resolveBlendState(const Material* material) const {
 	default:
 		return m_alphaBlendState ? m_alphaBlendState : m_opaqueBlendState;
 	}
+}
+
+//============================================================
+// CONTROLES DE POST-PROCESO
+//============================================================
+
+void
+DeferredRenderer::setTonemappingEnabled(
+	bool enabled)
+{
+	m_postProcessSystem.setTonemappingEnabled(
+		enabled
+	);
+}
+
+bool
+DeferredRenderer::isTonemappingEnabled() const
+{
+	return
+		m_postProcessSystem.isTonemappingEnabled();
+}
+
+void
+DeferredRenderer::setTonemappingExposure(
+	float exposure)
+{
+	m_postProcessSystem.setExposure(
+		exposure
+	);
+}
+
+float
+DeferredRenderer::getTonemappingExposure() const
+{
+	return
+		m_postProcessSystem.getExposure();
+}
+
+void
+DeferredRenderer::setTonemappingGamma(
+	float gamma)
+{
+	m_postProcessSystem.setGamma(
+		gamma
+	);
+}
+
+float
+DeferredRenderer::getTonemappingGamma() const
+{
+	return
+		m_postProcessSystem.getGamma();
 }

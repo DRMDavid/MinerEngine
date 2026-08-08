@@ -13,7 +13,7 @@ class Device;
 class DeviceContext;
 class Actor;
 class Camera;
-
+class DeferredRenderer;
 /**
  * @struct AssetThumb
  * @brief Estructura que representa la miniatura de un asset para la interfaz.
@@ -22,6 +22,7 @@ struct AssetThumb {
     std::string name;                   ///< Nombre del asset.
     ID3D11ShaderResourceView* srv;      ///< Vista del recurso (textura) de la miniatura.
 };
+
 
 /**
  * @class GUI
@@ -184,7 +185,11 @@ public:
      * @param lightDir Puntero a la dirección de la luz.
      * @param lightColor Puntero al color de la luz.
      */
-    void drawLightingPanel(float* lightDir, float* lightColor);
+    void drawLightingPanel(
+        float* lightDir,
+        float* lightColor,
+        DeferredRenderer& deferredRenderer
+    );
 
     // void drawStatsPanel(float deltaTime);
 

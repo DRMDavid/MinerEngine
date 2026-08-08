@@ -64,6 +64,15 @@ public:
 	 */
 	void destroy() override;
 
+	void setTonemappingEnabled(bool enabled);
+	bool isTonemappingEnabled() const;
+
+	void setTonemappingExposure(float exposure);
+	float getTonemappingExposure() const;
+
+	void setTonemappingGamma(float gamma);
+	float getTonemappingGamma() const;
+
 	/**
 	 * @brief Obtiene el Shader Resource View (SRV) del mapa de sombras.
 	 * @return Puntero al SRV de profundidad de las sombras.
