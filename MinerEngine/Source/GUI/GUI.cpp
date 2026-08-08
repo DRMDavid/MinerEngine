@@ -2211,6 +2211,75 @@ void GUI::drawLightingPanel(float* lightDir,float* lightColor,DeferredRenderer& 
 			);
 		}
 
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		//====================================================
+		// BLOOM
+		//====================================================
+
+		bool bloomEnabled =
+			deferredRenderer.isBloomEnabled();
+
+		if (ImGui::Checkbox(
+			"Bloom",
+			&bloomEnabled))
+		{
+			deferredRenderer.setBloomEnabled(
+				bloomEnabled
+			);
+
+			if (bloomEnabled)
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"Bloom activado"
+				);
+			}
+			else
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"Bloom desactivado"
+				);
+			}
+		}
+
+		float bloomThreshold =
+			deferredRenderer.getBloomThreshold();
+
+		if (ImGui::SliderFloat(
+			"Bloom Threshold",
+			&bloomThreshold,
+			0.0f,
+			3.0f,
+			"%.2f"))
+		{
+			deferredRenderer.setBloomThreshold(
+				bloomThreshold
+			);
+		}
+
+		float bloomIntensity =
+			deferredRenderer.getBloomIntensity();
+
+		if (ImGui::SliderFloat(
+			"Bloom Intensity",
+			&bloomIntensity,
+			0.0f,
+			3.0f,
+			"%.2f"))
+		{
+			deferredRenderer.setBloomIntensity(
+				bloomIntensity
+			);
+		}
+
+		ImGui::Spacing();
+
 		if (ImGui::Button(
 			"Reset Post Processing"))
 		{
@@ -2226,11 +2295,25 @@ void GUI::drawLightingPanel(float* lightDir,float* lightColor,DeferredRenderer& 
 				1.0f
 			);
 
+			deferredRenderer.setBloomEnabled(
+				false
+			);
+
+			deferredRenderer.setBloomThreshold(
+				0.80f
+			);
+
+			deferredRenderer.setBloomIntensity(
+				0.80f
+			);
+
 			MESSAGE(
 				"GUI",
 				"drawLightingPanel",
 				"Post Processing restablecido"
 			);
+
+
 		}
 	}
 

@@ -199,6 +199,12 @@
     <None Include="bin\Tonemapping.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="bin\BloomExtract.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="bin\BloomBlur.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">

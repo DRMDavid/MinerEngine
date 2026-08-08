@@ -77,6 +77,59 @@ PostProcessSystem::init(
 		return result;
 	}
 
+	result =
+		m_bloomExtractShader.init(
+			device,
+			"BloomExtract.hlsl",
+			fullscreenBuilder
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo cargar BloomExtract.hlsl"
+		);
+
+		return result;
+	}
+
+	result =
+		m_bloomBlurShader.init(
+			device,
+			"BloomBlur.hlsl",
+			fullscreenBuilder
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo cargar BloomBlur.hlsl"
+		);
+
+		return result;
+	}
+
+	result =
+		m_bloomBlurBuffer.init(
+			device,
+			sizeof(BloomBlurData)
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo crear el constant buffer de Bloom Blur"
+		);
+
+		return result;
+	}
+
 	//========================================================
 	// SAMPLER
 	//========================================================
@@ -120,6 +173,22 @@ PostProcessSystem::init(
 		return result;
 	}
 
+	result =
+		m_bloomBuffer.init(
+			device,
+			sizeof(BloomData)
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo crear el constant buffer de Bloom"
+		);
+
+		return result;
+	}
 	//========================================================
 	// RENDER TARGET HDR
 	//========================================================
@@ -224,7 +293,7 @@ PostProcessSystem::createHdrResources(
 		DXGI_FORMAT_R16G16B16A16_FLOAT;
 
 	//========================================================
-	// TEXTURA HDR
+	// TEXTURA HDR PRINCIPAL
 	//========================================================
 
 	HRESULT result =
@@ -241,18 +310,8 @@ PostProcessSystem::createHdrResources(
 
 	if (FAILED(result))
 	{
-		ERROR(
-			"PostProcessSystem",
-			"createHdrResources",
-			"No se pudo crear la textura HDR"
-		);
-
 		return result;
 	}
-
-	//========================================================
-	// RENDER TARGET VIEW
-	//========================================================
 
 	result =
 		m_hdrRTV.init(
@@ -264,19 +323,9 @@ PostProcessSystem::createHdrResources(
 
 	if (FAILED(result))
 	{
-		ERROR(
-			"PostProcessSystem",
-			"createHdrResources",
-			"No se pudo crear el HDR RTV"
-		);
-
 		destroyHdrResources();
 		return result;
 	}
-
-	//========================================================
-	// SHADER RESOURCE VIEW
-	//========================================================
 
 	result =
 		m_hdrSRV.init(
@@ -287,19 +336,136 @@ PostProcessSystem::createHdrResources(
 
 	if (FAILED(result))
 	{
-		ERROR(
-			"PostProcessSystem",
-			"createHdrResources",
-			"No se pudo crear el HDR SRV"
-		);
-
 		destroyHdrResources();
 		return result;
 	}
 
+	//========================================================
+	// TAMAÑO DE BLOOM
+	//========================================================
+
+	unsigned int bloomWidth =
+		width / 2;
+
+	unsigned int bloomHeight =
+		height / 2;
+
+	if (bloomWidth < 1)
+	{
+		bloomWidth = 1;
+	}
+
+	if (bloomHeight < 1)
+	{
+		bloomHeight = 1;
+	}
+
+	//========================================================
+	// TEXTURA BLOOM A
+	//========================================================
+
+	result =
+		m_bloomTextureA.init(
+			device,
+			bloomWidth,
+			bloomHeight,
+			hdrFormat,
+			D3D11_BIND_RENDER_TARGET |
+			D3D11_BIND_SHADER_RESOURCE,
+			1,
+			0
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_bloomRTVA.init(
+			device,
+			m_bloomTextureA,
+			D3D11_RTV_DIMENSION_TEXTURE2D,
+			hdrFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_bloomSRVA.init(
+			device,
+			m_bloomTextureA,
+			hdrFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	//========================================================
+	// TEXTURA BLOOM B
+	//========================================================
+
+	result =
+		m_bloomTextureB.init(
+			device,
+			bloomWidth,
+			bloomHeight,
+			hdrFormat,
+			D3D11_BIND_RENDER_TARGET |
+			D3D11_BIND_SHADER_RESOURCE,
+			1,
+			0
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_bloomRTVB.init(
+			device,
+			m_bloomTextureB,
+			D3D11_RTV_DIMENSION_TEXTURE2D,
+			hdrFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_bloomSRVB.init(
+			device,
+			m_bloomTextureB,
+			hdrFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	MESSAGE(
+		"PostProcessSystem",
+		"createHdrResources",
+		"Texturas auxiliares de Bloom creadas"
+	);
+
 	return S_OK;
 }
-
 //============================================================
 // DESTRUIR RECURSOS HDR
 //============================================================
@@ -307,11 +473,21 @@ PostProcessSystem::createHdrResources(
 void
 PostProcessSystem::destroyHdrResources()
 {
+	// Bloom B
+	m_bloomRTVB.destroy();
+	m_bloomSRVB.destroy();
+	m_bloomTextureB.destroy();
+
+	// Bloom A
+	m_bloomRTVA.destroy();
+	m_bloomSRVA.destroy();
+	m_bloomTextureA.destroy();
+
+	// HDR principal
 	m_hdrRTV.destroy();
 	m_hdrSRV.destroy();
 	m_hdrTexture.destroy();
 }
-
 //============================================================
 // DESTROY COMPLETO
 //============================================================
@@ -319,19 +495,41 @@ PostProcessSystem::destroyHdrResources()
 void
 PostProcessSystem::destroy()
 {
-	// Primero destruir los recursos que dependen
-	// de las texturas.
+	//========================================================
+	// TEXTURAS Y RENDER TARGETS
+	//========================================================
+
 	destroyHdrResources();
 
-	// Después destruir los recursos del shader.
+	//========================================================
+	// CONSTANT BUFFERS
+	//========================================================
+
+	m_bloomBlurBuffer.destroy();
+	m_bloomBuffer.destroy();
 	m_tonemappingBuffer.destroy();
+
+	//========================================================
+	// SAMPLERS
+	//========================================================
+
 	m_linearSampler.destroy();
+
+	//========================================================
+	// SHADERS
+	//========================================================
+
+	m_bloomBlurShader.destroy();
+	m_bloomExtractShader.destroy();
 	m_tonemappingShader.destroy();
+
+	//========================================================
+	// ESTADO
+	//========================================================
 
 	m_width = 0;
 	m_height = 0;
 }
-
 //============================================================
 // GET HDR RTV
 //============================================================
@@ -339,8 +537,7 @@ PostProcessSystem::destroy()
 ID3D11RenderTargetView*
 PostProcessSystem::getHdrRTV() const
 {
-	return
-		m_hdrRTV.get();
+	return m_hdrRTV.get();
 }
 
 //============================================================
@@ -350,13 +547,439 @@ PostProcessSystem::getHdrRTV() const
 ID3D11ShaderResourceView*
 PostProcessSystem::getHdrSRV() const
 {
-	return
-		m_hdrSRV.m_textureFromImg;
+	return m_hdrSRV.m_textureFromImg;
 }
-
 //============================================================
 // APLICAR TONEMAPPING
 //============================================================
+//============================================================
+// EXTRAER ZONAS BRILLANTES PARA BLOOM
+//============================================================
+
+void
+PostProcessSystem::extractBloom(
+	DeviceContext& deviceContext,
+	Buffer& fullscreenVertexBuffer,
+	Buffer& fullscreenIndexBuffer,
+	RasterizerState& fullscreenRasterizer,
+	DepthStencilState& disabledDepthStencil)
+{
+	if (!isReady() ||
+		!isBloomEnabled())
+	{
+		return;
+	}
+	unsigned int bloomWidth =
+		m_width / 2;
+
+	unsigned int bloomHeight =
+		m_height / 2;
+
+	if (bloomWidth < 1)
+	{
+		bloomWidth = 1;
+	}
+
+	if (bloomHeight < 1)
+	{
+		bloomHeight = 1;
+	}
+
+	// Desconectar el HDR como render target antes de leerlo.
+	ID3D11RenderTargetView* nullRenderTarget[1] =
+	{
+		nullptr
+	};
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		nullRenderTarget,
+		nullptr
+	);
+
+	// Configurar el viewport de Bloom a media resolución.
+	D3D11_VIEWPORT bloomViewport{};
+
+	bloomViewport.TopLeftX = 0.0f;
+	bloomViewport.TopLeftY = 0.0f;
+	bloomViewport.Width =
+		static_cast<float>(bloomWidth);
+	bloomViewport.Height =
+		static_cast<float>(bloomHeight);
+	bloomViewport.MinDepth = 0.0f;
+	bloomViewport.MaxDepth = 1.0f;
+
+	deviceContext.RSSetViewports(
+		1,
+		&bloomViewport
+	);
+
+	// Seleccionar Bloom A como destino.
+	ID3D11RenderTargetView* bloomTarget =
+		m_bloomRTVA.get();
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		&bloomTarget,
+		nullptr
+	);
+
+	const float clearColor[4] =
+	{
+		0.0f,
+		0.0f,
+		0.0f,
+		0.0f
+	};
+
+	deviceContext.ClearRenderTargetView(
+		bloomTarget,
+		clearColor
+	);
+
+	// Leer la escena HDR.
+	ID3D11ShaderResourceView* hdrResource =
+		getHdrSRV();
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		&hdrResource
+	);
+
+	disabledDepthStencil.render(
+		deviceContext,
+		0,
+		false
+	);
+
+	fullscreenRasterizer.render(
+		deviceContext
+	);
+
+	m_linearSampler.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	m_bloomExtractShader.render(
+		deviceContext
+	);
+
+	m_bloomData.texelSizeX =
+		1.0f /
+		static_cast<float>(bloomWidth);
+
+	m_bloomData.texelSizeY =
+		1.0f /
+		static_cast<float>(bloomHeight);
+
+	m_bloomBuffer.update(
+		deviceContext,
+		nullptr,
+		0,
+		nullptr,
+		&m_bloomData,
+		0,
+		0
+	);
+
+	m_bloomBuffer.render(
+		deviceContext,
+		0,
+		1,
+		true
+	);
+
+	deviceContext.IASetPrimitiveTopology(
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	);
+
+	fullscreenVertexBuffer.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	fullscreenIndexBuffer.render(
+		deviceContext,
+		0,
+		1,
+		false,
+		DXGI_FORMAT_R32_UINT
+	);
+
+	deviceContext.DrawIndexed(
+		6,
+		0,
+		0
+	);
+
+	// Desconectar el HDR del shader.
+	ID3D11ShaderResourceView* nullResource[1] =
+	{
+		nullptr
+	};
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		nullResource
+	);
+}
+
+//============================================================
+// DESENFOCAR BLOOM
+//============================================================
+
+void
+PostProcessSystem::blurBloom(
+	DeviceContext& deviceContext,
+	Buffer& fullscreenVertexBuffer,
+	Buffer& fullscreenIndexBuffer,
+	RasterizerState& fullscreenRasterizer,
+	DepthStencilState& disabledDepthStencil)
+{
+	if (!isReady() ||
+		!isBloomEnabled())
+	{
+		return;
+	}
+
+	unsigned int bloomWidth =
+		m_width / 2;
+
+	unsigned int bloomHeight =
+		m_height / 2;
+
+	if (bloomWidth < 1)
+	{
+		bloomWidth = 1;
+	}
+
+	if (bloomHeight < 1)
+	{
+		bloomHeight = 1;
+	}
+
+	D3D11_VIEWPORT bloomViewport{};
+
+	bloomViewport.TopLeftX = 0.0f;
+	bloomViewport.TopLeftY = 0.0f;
+	bloomViewport.Width =
+		static_cast<float>(bloomWidth);
+	bloomViewport.Height =
+		static_cast<float>(bloomHeight);
+	bloomViewport.MinDepth = 0.0f;
+	bloomViewport.MaxDepth = 1.0f;
+
+	deviceContext.RSSetViewports(
+		1,
+		&bloomViewport
+	);
+
+	disabledDepthStencil.render(
+		deviceContext,
+		0,
+		false
+	);
+
+	fullscreenRasterizer.render(
+		deviceContext
+	);
+
+	m_linearSampler.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	m_bloomBlurShader.render(
+		deviceContext
+	);
+
+	deviceContext.IASetPrimitiveTopology(
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	);
+
+	fullscreenVertexBuffer.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	fullscreenIndexBuffer.render(
+		deviceContext,
+		0,
+		1,
+		false,
+		DXGI_FORMAT_R32_UINT
+	);
+
+	m_bloomBlurData.texelSizeX =
+		1.0f /
+		static_cast<float>(bloomWidth);
+
+	m_bloomBlurData.texelSizeY =
+		1.0f /
+		static_cast<float>(bloomHeight);
+
+	//========================================================
+	// PASE HORIZONTAL: BLOOM A -> BLOOM B
+	//========================================================
+
+	ID3D11RenderTargetView* nullRenderTarget[1] =
+	{
+		nullptr
+	};
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		nullRenderTarget,
+		nullptr
+	);
+
+	ID3D11RenderTargetView* bloomTargetB =
+		m_bloomRTVB.get();
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		&bloomTargetB,
+		nullptr
+	);
+
+	const float clearColor[4] =
+	{
+		0.0f,
+		0.0f,
+		0.0f,
+		0.0f
+	};
+
+	deviceContext.ClearRenderTargetView(
+		bloomTargetB,
+		clearColor
+	);
+
+	ID3D11ShaderResourceView* bloomResourceA =
+		m_bloomSRVA.m_textureFromImg;
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		&bloomResourceA
+	);
+
+	m_bloomBlurData.directionX = 1.0f;
+	m_bloomBlurData.directionY = 0.0f;
+
+	m_bloomBlurBuffer.update(
+		deviceContext,
+		nullptr,
+		0,
+		nullptr,
+		&m_bloomBlurData,
+		0,
+		0
+	);
+
+	m_bloomBlurBuffer.render(
+		deviceContext,
+		0,
+		1,
+		true
+	);
+
+	deviceContext.DrawIndexed(
+		6,
+		0,
+		0
+	);
+
+	ID3D11ShaderResourceView* nullResource[1] =
+	{
+		nullptr
+	};
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		nullResource
+	);
+
+	//========================================================
+	// PASE VERTICAL: BLOOM B -> BLOOM A
+	//========================================================
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		nullRenderTarget,
+		nullptr
+	);
+
+	ID3D11RenderTargetView* bloomTargetA =
+		m_bloomRTVA.get();
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		&bloomTargetA,
+		nullptr
+	);
+
+	deviceContext.ClearRenderTargetView(
+		bloomTargetA,
+		clearColor
+	);
+
+	ID3D11ShaderResourceView* bloomResourceB =
+		m_bloomSRVB.m_textureFromImg;
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		&bloomResourceB
+	);
+
+	m_bloomBlurData.directionX = 0.0f;
+	m_bloomBlurData.directionY = 1.0f;
+
+	m_bloomBlurBuffer.update(
+		deviceContext,
+		nullptr,
+		0,
+		nullptr,
+		&m_bloomBlurData,
+		0,
+		0
+	);
+
+	m_bloomBlurBuffer.render(
+		deviceContext,
+		0,
+		1,
+		true
+	);
+
+	deviceContext.DrawIndexed(
+		6,
+		0,
+		0
+	);
+
+	deviceContext.PSSetShaderResources(
+		0,
+		1,
+		nullResource
+	);
+
+	// Dejar Bloom A desconectado como render target.
+	deviceContext.OMSetRenderTargets(
+		1,
+		nullRenderTarget,
+		nullptr
+	);
+}
 
 void
 PostProcessSystem::renderTonemapping(
@@ -371,6 +994,22 @@ PostProcessSystem::renderTonemapping(
 	{
 		return;
 	}
+	// Restaurar el viewport completo después del pase Bloom.
+	D3D11_VIEWPORT fullViewport{};
+
+	fullViewport.TopLeftX = 0.0f;
+	fullViewport.TopLeftY = 0.0f;
+	fullViewport.Width =
+		static_cast<float>(m_width);
+	fullViewport.Height =
+		static_cast<float>(m_height);
+	fullViewport.MinDepth = 0.0f;
+	fullViewport.MaxDepth = 1.0f;
+
+	deviceContext.RSSetViewports(
+		1,
+		&fullViewport
+	);
 
 	// Desconectar el HDR como Render Target antes de utilizarlo
 	// como Shader Resource.
@@ -393,13 +1032,16 @@ PostProcessSystem::renderTonemapping(
 	);
 
 	// Conectar la textura HDR al shader de tonemapping.
-	ID3D11ShaderResourceView* hdrResource =
-		getHdrSRV();
+	ID3D11ShaderResourceView* postProcessResources[2] =
+	{
+		getHdrSRV(),
+		m_bloomSRVA.m_textureFromImg
+	};
 
 	deviceContext.PSSetShaderResources(
 		0,
-		1,
-		&hdrResource
+		2,
+		postProcessResources
 	);
 
 	// Configurar el fullscreen pass.
@@ -440,7 +1082,22 @@ PostProcessSystem::renderTonemapping(
 		1,
 		true
 	);
+	m_bloomBuffer.update(
+		deviceContext,
+		nullptr,
+		0,
+		nullptr,
+		&m_bloomData,
+		0,
+		0
+	);
 
+	m_bloomBuffer.render(
+		deviceContext,
+		1,
+		1,
+		true
+	);
 	// Dibujar el fullscreen quad.
 	deviceContext.IASetPrimitiveTopology(
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
@@ -468,15 +1125,16 @@ PostProcessSystem::renderTonemapping(
 
 	// Desconectar la textura HDR para evitar conflictos
 	// en el siguiente frame.
-	ID3D11ShaderResourceView* nullResource[1] =
+	ID3D11ShaderResourceView* nullResources[2] =
 	{
+		nullptr,
 		nullptr
 	};
 
 	deviceContext.PSSetShaderResources(
 		0,
-		1,
-		nullResource
+		2,
+		nullResources
 	);
 }
 
@@ -546,4 +1204,72 @@ float
 PostProcessSystem::getGamma() const
 {
 	return m_tonemappingData.gamma;
+}
+
+//============================================================
+// CONTROLES DE BLOOM
+//============================================================
+
+void
+PostProcessSystem::setBloomEnabled(
+	bool enabled)
+{
+	m_bloomData.enabled =
+		enabled ? 1.0f : 0.0f;
+}
+
+bool
+PostProcessSystem::isBloomEnabled() const
+{
+	return
+		m_bloomData.enabled >
+		0.5f;
+}
+
+void
+PostProcessSystem::setBloomThreshold(
+	float threshold)
+{
+	if (threshold < 0.0f)
+	{
+		threshold = 0.0f;
+	}
+
+	if (threshold > 5.0f)
+	{
+		threshold = 5.0f;
+	}
+
+	m_bloomData.threshold =
+		threshold;
+}
+
+float
+PostProcessSystem::getBloomThreshold() const
+{
+	return m_bloomData.threshold;
+}
+
+void
+PostProcessSystem::setBloomIntensity(
+	float intensity)
+{
+	if (intensity < 0.0f)
+	{
+		intensity = 0.0f;
+	}
+
+	if (intensity > 5.0f)
+	{
+		intensity = 5.0f;
+	}
+
+	m_bloomData.intensity =
+		intensity;
+}
+
+float
+PostProcessSystem::getBloomIntensity() const
+{
+	return m_bloomData.intensity;
 }

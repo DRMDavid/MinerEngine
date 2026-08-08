@@ -423,17 +423,66 @@ DeferredRenderer::renderSceneToTarget(DeviceContext& deviceContext,
 		deviceContext
 	);
 
-	//============================================================
-	// APLICAR TONEMAPPING AL VIEWPORT
-	//============================================================
-
-	// El transparent pass puede cambiar el blend state.
-	// Restauramos el estado opaco para el fullscreen pass.
+	// Restaurar el blend state opaco para los pases fullscreen.
 	deviceContext.OMSetBlendState(
 		m_opaqueBlendState,
 		m_blendFactor,
 		0xffffffff
 	);
+
+	//============================================================
+	// EXTRAER ZONAS BRILLANTES
+	//============================================================
+
+	m_postProcessSystem.extractBloom(
+		deviceContext,
+		m_fullscreenVertexBuffer,
+		m_fullscreenIndexBuffer,
+		m_fullscreenRasterizer,
+		m_disabledDepthStencil
+	);
+
+	//============================================================
+	// DESENFOCAR BLOOM
+	//============================================================
+
+	m_postProcessSystem.blurBloom(
+		deviceContext,
+		m_fullscreenVertexBuffer,
+		m_fullscreenIndexBuffer,
+		m_fullscreenRasterizer,
+		m_disabledDepthStencil
+	);
+
+	//============================================================
+	// COMBINAR BLOOM Y APLICAR TONEMAPPING
+	//============================================================
+
+	m_postProcessSystem.renderTonemapping(
+		deviceContext,
+		finalViewportRTV,
+		m_fullscreenVertexBuffer,
+		m_fullscreenIndexBuffer,
+		m_fullscreenRasterizer,
+		m_disabledDepthStencil
+	);
+
+	//============================================================
+	// TONEMAPPING FINAL
+	//============================================================
+
+	m_postProcessSystem.renderTonemapping(
+		deviceContext,
+		finalViewportRTV,
+		m_fullscreenVertexBuffer,
+		m_fullscreenIndexBuffer,
+		m_fullscreenRasterizer,
+		m_disabledDepthStencil
+	);
+
+	//============================================================
+	// TONEMAPPING FINAL
+	//============================================================
 
 	m_postProcessSystem.renderTonemapping(
 		deviceContext,
@@ -1080,4 +1129,56 @@ DeferredRenderer::getTonemappingGamma() const
 {
 	return
 		m_postProcessSystem.getGamma();
+}
+
+//============================================================
+// CONTROLES DE BLOOM
+//============================================================
+
+void
+DeferredRenderer::setBloomEnabled(
+	bool enabled)
+{
+	m_postProcessSystem.setBloomEnabled(
+		enabled
+	);
+}
+
+bool
+DeferredRenderer::isBloomEnabled() const
+{
+	return
+		m_postProcessSystem.isBloomEnabled();
+}
+
+void
+DeferredRenderer::setBloomThreshold(
+	float threshold)
+{
+	m_postProcessSystem.setBloomThreshold(
+		threshold
+	);
+}
+
+float
+DeferredRenderer::getBloomThreshold() const
+{
+	return
+		m_postProcessSystem.getBloomThreshold();
+}
+
+void
+DeferredRenderer::setBloomIntensity(
+	float intensity)
+{
+	m_postProcessSystem.setBloomIntensity(
+		intensity
+	);
+}
+
+float
+DeferredRenderer::getBloomIntensity() const
+{
+	return
+		m_postProcessSystem.getBloomIntensity();
 }

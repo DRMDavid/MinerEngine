@@ -73,6 +73,15 @@ public:
 	void setTonemappingGamma(float gamma);
 	float getTonemappingGamma() const;
 
+	void setBloomEnabled(bool enabled);
+	bool isBloomEnabled() const;
+
+	void setBloomThreshold(float threshold);
+	float getBloomThreshold() const;
+
+	void setBloomIntensity(float intensity);
+	float getBloomIntensity() const;
+
 	/**
 	 * @brief Obtiene el Shader Resource View (SRV) del mapa de sombras.
 	 * @return Puntero al SRV de profundidad de las sombras.

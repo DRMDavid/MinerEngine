@@ -14,6 +14,27 @@ class RasterizerState;
 class DepthStencilState;
 
 
+struct BloomData
+{
+	float threshold = 0.80f;
+	float intensity = 0.80f;
+	float texelSizeX = 0.0f;
+	float texelSizeY = 0.0f;
+
+	float enabled = 0.0f;
+	float padding0 = 0.0f;
+	float padding1 = 0.0f;
+	float padding2 = 0.0f;
+};
+
+struct BloomBlurData
+{
+	float texelSizeX = 0.0f;
+	float texelSizeY = 0.0f;
+	float directionX = 1.0f;
+	float directionY = 0.0f;
+};
+
 /**
  * @struct TonemappingData
  * @brief Datos enviados al shader de Tonemapping.
@@ -58,6 +79,15 @@ public:
 	void setGamma(float gamma);
 	float getGamma() const;
 
+	void setBloomEnabled(bool enabled);
+	bool isBloomEnabled() const;
+
+	void setBloomThreshold(float threshold);
+	float getBloomThreshold() const;
+
+	void setBloomIntensity(float intensity);
+	float getBloomIntensity() const;
+
 	/**
 	 * @brief Inicializa el render target HDR.
 	 */
@@ -74,6 +104,22 @@ public:
 		Device& device,
 		unsigned int width,
 		unsigned int height
+	);
+
+	void extractBloom(
+		DeviceContext& deviceContext,
+		Buffer& fullscreenVertexBuffer,
+		Buffer& fullscreenIndexBuffer,
+		RasterizerState& fullscreenRasterizer,
+		DepthStencilState& disabledDepthStencil
+	);
+
+	void blurBloom(
+		DeviceContext& deviceContext,
+		Buffer& fullscreenVertexBuffer,
+		Buffer& fullscreenIndexBuffer,
+		RasterizerState& fullscreenRasterizer,
+		DepthStencilState& disabledDepthStencil
 	);
 
 	void renderTonemapping(
@@ -140,8 +186,23 @@ private:
 	unsigned int m_height = 0;
 
 	ShaderProgram m_tonemappingShader;
+	ShaderProgram m_bloomExtractShader;
 	SamplerState m_linearSampler;
+	ShaderProgram m_bloomBlurShader;
 	Buffer m_tonemappingBuffer;
+	Buffer m_bloomBuffer;
+	Buffer m_bloomBlurBuffer;
 
 	TonemappingData m_tonemappingData{};
+	BloomData m_bloomData{};
+	BloomBlurData m_bloomBlurData{};
+	// Texturas de Bloom a media resolución.
+    // Se utilizan alternadamente para el desenfoque.
+	Texture m_bloomTextureA;
+	Texture m_bloomSRVA;
+	RenderTargetView m_bloomRTVA;
+
+	Texture m_bloomTextureB;
+	Texture m_bloomSRVB;
+	RenderTargetView m_bloomRTVB;
 };
