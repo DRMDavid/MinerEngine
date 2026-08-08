@@ -130,6 +130,23 @@ DeferredRenderer::init(Device& device) {
 		return hr;
 	}
 
+	hr = m_postProcessSystem.init(
+		device,
+		m_renderWidth,
+		m_renderHeight
+	);
+
+	if (FAILED(hr))
+	{
+		ERROR(
+			"DeferredRenderer",
+			"init",
+			"No se pudo inicializar PostProcessSystem"
+		);
+
+		return hr;
+	}
+
 	hr = createLightingResources(device);
 	if (FAILED(hr)) {
 		return hr;
@@ -149,14 +166,61 @@ DeferredRenderer::init(Device& device) {
 }
 
 void
-DeferredRenderer::resize(Device& device, unsigned int width, unsigned int height) {
-	if (width < 64) width = 64;
-	if (height < 64) height = 64;
+DeferredRenderer::resize(
+	Device& device,
+	unsigned int width,
+	unsigned int height)
+{
+	if (width < 64)
+	{
+		width = 64;
+	}
+
+	if (height < 64)
+	{
+		height = 64;
+	}
 
 	m_renderWidth = width;
 	m_renderHeight = height;
-	m_preShadowDebugPass.resize(device, width, height);
-	createGBufferResources(device, width, height);
+
+	m_preShadowDebugPass.resize(
+		device,
+		width,
+		height
+	);
+
+	const HRESULT gBufferResult =
+		createGBufferResources(
+			device,
+			width,
+			height
+		);
+
+	if (FAILED(gBufferResult))
+	{
+		ERROR(
+			"DeferredRenderer",
+			"resize",
+			"No se pudo redimensionar el GBuffer"
+		);
+	}
+
+	const HRESULT postProcessResult =
+		m_postProcessSystem.resize(
+			device,
+			width,
+			height
+		);
+
+	if (FAILED(postProcessResult))
+	{
+		ERROR(
+			"DeferredRenderer",
+			"resize",
+			"No se pudo redimensionar el HDR"
+		);
+	}
 }
 
 void
@@ -217,6 +281,7 @@ DeferredRenderer::destroy() {
 	m_shadowDepthSRV.destroy();
 	m_shadowDepthTexture.destroy();
 	m_preShadowDebugPass.destroy();
+	m_postProcessSystem.destroy();
 }
 
 void

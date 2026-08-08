@@ -178,6 +178,9 @@
     <ClCompile Include="Source\StreamingAudioPlayer.cpp">
       <Filter>Include\ImGui\source</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Rendering\PostProcessSystem.cpp">
+      <Filter>Source\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="MinerEngine.fx">
@@ -398,6 +401,9 @@
     </ClInclude>
     <ClInclude Include="Include\StreamingAudioPlayer.h">
       <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Rendering\PostProcessSystem.h">
+      <Filter>Include\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

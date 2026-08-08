@@ -31,8 +31,7 @@ public:
      *
      * @post Si retorna @c S_OK, @c m_renderTargetView != nullptr.
      */
-    HRESULT
-        init(Device& device, Texture& backBuffer, DXGI_FORMAT Format);
+    HRESULT init(Device& device, Texture& backBuffer, DXGI_FORMAT Format);
 
     /**
      * @brief Inicializa el Render Target View desde una textura genérica.
@@ -45,8 +44,7 @@ public:
      *
      * @note Útil para render targets auxiliares (G-Buffer, mapas de sombra, etc.).
      */
-    HRESULT
-        init(Device& device,
+    HRESULT init(Device& device,
             Texture& inTex,
             D3D11_RTV_DIMENSION ViewDimension,
             DXGI_FORMAT Format);
@@ -59,8 +57,7 @@ public:
      *
      * @note Actualmente no realiza ninguna operación.
      */
-    void
-        update();
+    void update();
 
     /**
      * @brief Limpia y asigna el RTV junto con un Depth Stencil View.
@@ -74,8 +71,7 @@ public:
      *
      * @pre @c m_renderTargetView debe estar creado con init().
      */
-    void
-        render(DeviceContext& deviceContext,
+    void render(DeviceContext& deviceContext,
             DepthStencilView& depthStencilView,
             unsigned int numViews,
             const float ClearColor[4]);
@@ -90,8 +86,7 @@ public:
      *
      * @pre @c m_renderTargetView debe estar creado con init().
      */
-    void
-        render(DeviceContext& deviceContext,
+    void render(DeviceContext& deviceContext,
             unsigned int numViews);
 
     /**
@@ -101,12 +96,18 @@ public:
      *
      * @post @c m_renderTargetView == nullptr.
      */
-    void
-        destroy();
-private:
+    void destroy();
+
     /**
-     * @brief Recurso COM de Direct3D 11 para la vista de Render Target.
-     * @details Válido tras init(); @c nullptr después de destroy().
+     * @brief Obtiene el puntero nativo del Render Target View.
      */
+    ID3D11RenderTargetView*
+        get() const
+    {
+        return m_renderTargetView;
+    }
+
+private:
+
     ID3D11RenderTargetView* m_renderTargetView = nullptr;
 };

@@ -11,6 +11,7 @@
 #include "Rendering/ISceneRenderer.h"
 #include "Rendering/RenderScene.h"
 #include "Rendering/RenderTypes.h"
+#include "Rendering/PostProcessSystem.h"
 #include "SamplerState.h"
 #include "ShaderProgram.h"
 #include "Texture.h"
@@ -239,6 +240,7 @@ private:
 	// =========================================================================
 
 	EditorViewportPass m_preShadowDebugPass;
+	PostProcessSystem m_postProcessSystem;
 	bool m_applyShadows = true;
 	unsigned int m_renderWidth = 1280;
 	unsigned int m_renderHeight = 720;
