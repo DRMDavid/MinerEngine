@@ -400,6 +400,21 @@ DeferredRenderer::renderSceneToTarget(DeviceContext& deviceContext,
 	ID3D11DepthStencilView* finalViewportDSV =
 		ResolveViewportDSV(targetPass);
 
+
+	//============================================================
+    // GENERAR SSAO DESDE EL G-BUFFER
+    //============================================================
+
+	m_postProcessSystem.renderSsao(
+		deviceContext,
+		m_gBufferWorldAoSRV.m_textureFromImg,
+		m_gBufferNormalRoughnessSRV.m_textureFromImg,
+		m_fullscreenVertexBuffer,
+		m_fullscreenIndexBuffer,
+		m_fullscreenRasterizer,
+		m_disabledDepthStencil
+	);
+
 	//============================================================
 	// RENDERIZAR LA ESCENA EN HDR
 	//============================================================
@@ -1214,4 +1229,88 @@ DeferredRenderer::isFxaaEnabled() const
 {
 	return
 		m_postProcessSystem.isFxaaEnabled();
+}
+
+//============================================================
+// CONTROLES DE SSAO
+//============================================================
+
+void
+DeferredRenderer::setSsaoEnabled(
+	bool enabled)
+{
+	m_postProcessSystem.setSsaoEnabled(
+		enabled
+	);
+}
+
+bool
+DeferredRenderer::isSsaoEnabled() const
+{
+	return
+		m_postProcessSystem.isSsaoEnabled();
+}
+
+void
+DeferredRenderer::setSsaoRadius(
+	float radius)
+{
+	m_postProcessSystem.setSsaoRadius(
+		radius
+	);
+}
+
+float
+DeferredRenderer::getSsaoRadius() const
+{
+	return
+		m_postProcessSystem.getSsaoRadius();
+}
+
+void
+DeferredRenderer::setSsaoBias(
+	float bias)
+{
+	m_postProcessSystem.setSsaoBias(
+		bias
+	);
+}
+
+float
+DeferredRenderer::getSsaoBias() const
+{
+	return
+		m_postProcessSystem.getSsaoBias();
+}
+
+void
+DeferredRenderer::setSsaoIntensity(
+	float intensity)
+{
+	m_postProcessSystem.setSsaoIntensity(
+		intensity
+	);
+}
+
+float
+DeferredRenderer::getSsaoIntensity() const
+{
+	return
+		m_postProcessSystem.getSsaoIntensity();
+}
+
+void
+DeferredRenderer::setSsaoPower(
+	float power)
+{
+	m_postProcessSystem.setSsaoPower(
+		power
+	);
+}
+
+float
+DeferredRenderer::getSsaoPower() const
+{
+	return
+		m_postProcessSystem.getSsaoPower();
 }

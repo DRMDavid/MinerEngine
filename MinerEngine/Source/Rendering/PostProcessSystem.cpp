@@ -150,6 +150,25 @@ PostProcessSystem::init(
 		return result;
 	}
 
+	result =
+		m_ssaoShader.init(
+			device,
+			"SSAO.hlsl",
+			fullscreenBuilder
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo cargar SSAO.hlsl"
+		);
+
+		destroy();
+		return result;
+	}
+
 	//========================================================
 	// SAMPLER LINEAL
 	//========================================================
@@ -253,6 +272,24 @@ PostProcessSystem::init(
 			"PostProcessSystem",
 			"init",
 			"No se pudo crear el constant buffer de FXAA"
+		);
+
+		destroy();
+		return result;
+	}
+
+	result =
+		m_ssaoBuffer.init(
+			device,
+			sizeof(SsaoData)
+		);
+
+	if (FAILED(result))
+	{
+		ERROR(
+			"PostProcessSystem",
+			"init",
+			"No se pudo crear el constant buffer de SSAO"
 		);
 
 		destroy();
@@ -470,6 +507,58 @@ PostProcessSystem::createHdrResources(
 	}
 
 	//========================================================
+// TEXTURA SSAO
+//========================================================
+
+	const DXGI_FORMAT ssaoFormat =
+		DXGI_FORMAT_R8_UNORM;
+
+	result =
+		m_ssaoTexture.init(
+			device,
+			width,
+			height,
+			ssaoFormat,
+			D3D11_BIND_RENDER_TARGET |
+			D3D11_BIND_SHADER_RESOURCE,
+			1,
+			0
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_ssaoRTV.init(
+			device,
+			m_ssaoTexture,
+			D3D11_RTV_DIMENSION_TEXTURE2D,
+			ssaoFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	result =
+		m_ssaoSRV.init(
+			device,
+			m_ssaoTexture,
+			ssaoFormat
+		);
+
+	if (FAILED(result))
+	{
+		destroyHdrResources();
+		return result;
+	}
+
+	//========================================================
 	// TAMAÑO DE BLOOM
 	//========================================================
 
@@ -602,6 +691,11 @@ PostProcessSystem::createHdrResources(
 void
 PostProcessSystem::destroyHdrResources()
 {
+	// SSAO
+	m_ssaoRTV.destroy();
+	m_ssaoSRV.destroy();
+	m_ssaoTexture.destroy();
+
 	// Resultado LDR
 	m_ldrRTV.destroy();
 	m_ldrSRV.destroy();
@@ -639,6 +733,8 @@ PostProcessSystem::destroy()
 	// CONSTANT BUFFERS
 	//========================================================
 
+	m_ssaoBuffer.destroy();
+	m_fxaaBuffer.destroy();
 	m_bloomBlurBuffer.destroy();
 	m_bloomBuffer.destroy();
 	m_tonemappingBuffer.destroy();
@@ -653,6 +749,8 @@ PostProcessSystem::destroy()
 	// SHADERS
 	//========================================================
 
+	m_ssaoShader.destroy();
+	m_fxaaShader.destroy();
 	m_bloomBlurShader.destroy();
 	m_bloomExtractShader.destroy();
 	m_tonemappingShader.destroy();
@@ -683,9 +781,179 @@ PostProcessSystem::getHdrSRV() const
 {
 	return m_hdrSRV.m_textureFromImg;
 }
+
+
 //============================================================
-// APLICAR TONEMAPPING
+// GENERAR SSAO DESDE EL G-BUFFER
 //============================================================
+
+void
+PostProcessSystem::renderSsao(
+	DeviceContext& deviceContext,
+	ID3D11ShaderResourceView* worldPositionSRV,
+	ID3D11ShaderResourceView* normalRoughnessSRV,
+	Buffer& fullscreenVertexBuffer,
+	Buffer& fullscreenIndexBuffer,
+	RasterizerState& fullscreenRasterizer,
+	DepthStencilState& disabledDepthStencil)
+{
+	if (!isReady() ||
+		!isSsaoEnabled() ||
+		worldPositionSRV == nullptr ||
+		normalRoughnessSRV == nullptr)
+	{
+		return;
+	}
+
+	D3D11_VIEWPORT fullViewport{};
+
+	fullViewport.TopLeftX = 0.0f;
+	fullViewport.TopLeftY = 0.0f;
+	fullViewport.Width =
+		static_cast<float>(m_width);
+	fullViewport.Height =
+		static_cast<float>(m_height);
+	fullViewport.MinDepth = 0.0f;
+	fullViewport.MaxDepth = 1.0f;
+
+	deviceContext.RSSetViewports(
+		1,
+		&fullViewport
+	);
+
+	ID3D11RenderTargetView* nullRenderTarget[1] =
+	{
+		nullptr
+	};
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		nullRenderTarget,
+		nullptr
+	);
+
+	ID3D11RenderTargetView* ssaoTarget =
+		m_ssaoRTV.get();
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		&ssaoTarget,
+		nullptr
+	);
+
+	const float clearColor[4] =
+	{
+		1.0f,
+		1.0f,
+		1.0f,
+		1.0f
+	};
+
+	deviceContext.ClearRenderTargetView(
+		ssaoTarget,
+		clearColor
+	);
+
+	ID3D11ShaderResourceView* ssaoInputs[2] =
+	{
+		worldPositionSRV,
+		normalRoughnessSRV
+	};
+
+	deviceContext.PSSetShaderResources(
+		0,
+		2,
+		ssaoInputs
+	);
+
+	disabledDepthStencil.render(
+		deviceContext,
+		0,
+		false
+	);
+
+	fullscreenRasterizer.render(
+		deviceContext
+	);
+
+	m_linearSampler.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	m_ssaoShader.render(
+		deviceContext
+	);
+
+	m_ssaoData.texelSizeX =
+		1.0f /
+		static_cast<float>(m_width);
+
+	m_ssaoData.texelSizeY =
+		1.0f /
+		static_cast<float>(m_height);
+
+	m_ssaoBuffer.update(
+		deviceContext,
+		nullptr,
+		0,
+		nullptr,
+		&m_ssaoData,
+		0,
+		0
+	);
+
+	m_ssaoBuffer.render(
+		deviceContext,
+		0,
+		1,
+		true
+	);
+
+	deviceContext.IASetPrimitiveTopology(
+		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+	);
+
+	fullscreenVertexBuffer.render(
+		deviceContext,
+		0,
+		1
+	);
+
+	fullscreenIndexBuffer.render(
+		deviceContext,
+		0,
+		1,
+		false,
+		DXGI_FORMAT_R32_UINT
+	);
+
+	deviceContext.DrawIndexed(
+		6,
+		0,
+		0
+	);
+
+	ID3D11ShaderResourceView* nullResources[2] =
+	{
+		nullptr,
+		nullptr
+	};
+
+	deviceContext.PSSetShaderResources(
+		0,
+		2,
+		nullResources
+	);
+
+	deviceContext.OMSetRenderTargets(
+		1,
+		nullRenderTarget,
+		nullptr
+	);
+}
+
 //============================================================
 // EXTRAER ZONAS BRILLANTES PARA BLOOM
 //============================================================
@@ -1170,15 +1438,16 @@ PostProcessSystem::renderTonemapping(
 	);
 
 	// Conectar la textura HDR al shader de tonemapping.
-	ID3D11ShaderResourceView* postProcessResources[2] =
+	ID3D11ShaderResourceView* postProcessResources[3] =
 	{
 		getHdrSRV(),
-		m_bloomSRVA.m_textureFromImg
+		m_bloomSRVA.m_textureFromImg,
+		m_ssaoSRV.m_textureFromImg
 	};
 
 	deviceContext.PSSetShaderResources(
 		0,
-		2,
+		3,
 		postProcessResources
 	);
 
@@ -1236,6 +1505,24 @@ PostProcessSystem::renderTonemapping(
 		1,
 		true
 	);
+
+	m_ssaoBuffer.update(
+		deviceContext,
+		nullptr,
+		0,
+		nullptr,
+		&m_ssaoData,
+		0,
+		0
+	);
+
+	m_ssaoBuffer.render(
+		deviceContext,
+		2,
+		1,
+		true
+	);
+
 	// Dibujar el fullscreen quad.
 	deviceContext.IASetPrimitiveTopology(
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
@@ -1263,15 +1550,16 @@ PostProcessSystem::renderTonemapping(
 
 	// Desconectar la textura HDR para evitar conflictos
 	// en el siguiente frame.
-	ID3D11ShaderResourceView* nullResources[2] =
+	ID3D11ShaderResourceView* nullResources[3] =
 	{
+		nullptr,
 		nullptr,
 		nullptr
 	};
 
 	deviceContext.PSSetShaderResources(
 		0,
-		2,
+		3,
 		nullResources
 	);
 }
@@ -1577,4 +1865,120 @@ PostProcessSystem::isFxaaEnabled() const
 	return
 		m_fxaaData.enabled >
 		0.5f;
+}
+
+//============================================================
+// CONTROLES DE SSAO
+//============================================================
+
+void
+PostProcessSystem::setSsaoEnabled(
+	bool enabled)
+{
+	m_ssaoData.enabled =
+		enabled ? 1.0f : 0.0f;
+}
+
+bool
+PostProcessSystem::isSsaoEnabled() const
+{
+	return
+		m_ssaoData.enabled >
+		0.5f;
+}
+
+void
+PostProcessSystem::setSsaoRadius(
+	float radius)
+{
+	if (radius < 0.05f)
+	{
+		radius = 0.05f;
+	}
+
+	if (radius > 10.0f)
+	{
+		radius = 10.0f;
+	}
+
+	m_ssaoData.radius =
+		radius;
+}
+
+float
+PostProcessSystem::getSsaoRadius() const
+{
+	return m_ssaoData.radius;
+}
+
+void
+PostProcessSystem::setSsaoBias(
+	float bias)
+{
+	if (bias < 0.0f)
+	{
+		bias = 0.0f;
+	}
+
+	if (bias > 0.50f)
+	{
+		bias = 0.50f;
+	}
+
+	m_ssaoData.bias =
+		bias;
+}
+
+float
+PostProcessSystem::getSsaoBias() const
+{
+	return m_ssaoData.bias;
+}
+
+void
+PostProcessSystem::setSsaoIntensity(
+	float intensity)
+{
+	if (intensity < 0.0f)
+	{
+		intensity = 0.0f;
+	}
+
+	if (intensity > 5.0f)
+	{
+		intensity = 5.0f;
+	}
+
+	m_ssaoData.intensity =
+		intensity;
+}
+
+float
+PostProcessSystem::getSsaoIntensity() const
+{
+	return m_ssaoData.intensity;
+}
+
+void
+PostProcessSystem::setSsaoPower(
+	float power)
+{
+	if (power < 0.10f)
+	{
+		power = 0.10f;
+	}
+
+	if (power > 5.0f)
+	{
+		power = 5.0f;
+	}
+
+	m_ssaoData.power =
+		power;
+}
+
+float
+PostProcessSystem::getSsaoPower() const
+{
+	return m_ssaoData.power;
 }

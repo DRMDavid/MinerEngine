@@ -208,6 +208,9 @@
     <None Include="bin\FXAA.hlsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="bin\SSAO.hlsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">

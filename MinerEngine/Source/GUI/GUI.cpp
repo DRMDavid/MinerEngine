@@ -2320,10 +2320,130 @@ void GUI::drawLightingPanel(float* lightDir,float* lightColor,DeferredRenderer& 
 		);
 
 		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		//====================================================
+		// SSAO
+		//====================================================
+
+		bool ssaoEnabled =
+			deferredRenderer.isSsaoEnabled();
+
+		if (ImGui::Checkbox(
+			"SSAO",
+			&ssaoEnabled))
+		{
+			deferredRenderer.setSsaoEnabled(
+				ssaoEnabled
+			);
+
+			if (ssaoEnabled)
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"SSAO activado"
+				);
+			}
+			else
+			{
+				MESSAGE(
+					"GUI",
+					"drawLightingPanel",
+					"SSAO desactivado"
+				);
+			}
+		}
+
+		float ssaoRadius =
+			deferredRenderer.getSsaoRadius();
+
+		if (ImGui::SliderFloat(
+			"SSAO Radius",
+			&ssaoRadius,
+			0.05f,
+			5.0f,
+			"%.2f"))
+		{
+			deferredRenderer.setSsaoRadius(
+				ssaoRadius
+			);
+		}
+
+		float ssaoBias =
+			deferredRenderer.getSsaoBias();
+
+		if (ImGui::SliderFloat(
+			"SSAO Bias",
+			&ssaoBias,
+			0.0f,
+			0.20f,
+			"%.3f"))
+		{
+			deferredRenderer.setSsaoBias(
+				ssaoBias
+			);
+		}
+
+		float ssaoIntensity =
+			deferredRenderer.getSsaoIntensity();
+
+		if (ImGui::SliderFloat(
+			"SSAO Intensity",
+			&ssaoIntensity,
+			0.0f,
+			5.0f,
+			"%.2f"))
+		{
+			deferredRenderer.setSsaoIntensity(
+				ssaoIntensity
+			);
+		}
+
+		float ssaoPower =
+			deferredRenderer.getSsaoPower();
+
+		if (ImGui::SliderFloat(
+			"SSAO Power",
+			&ssaoPower,
+			0.10f,
+			5.0f,
+			"%.2f"))
+		{
+			deferredRenderer.setSsaoPower(
+				ssaoPower
+			);
+		}
+
+		ImGui::TextDisabled(
+			"Agrega sombras de contacto usando el G-Buffer."
+		);
+
+		ImGui::Spacing();
 
 		if (ImGui::Button(
 			"Reset Post Processing"))
 		{
+			deferredRenderer.setSsaoEnabled(
+				false
+			);
+
+			deferredRenderer.setSsaoRadius(
+				1.50f
+			);
+
+			deferredRenderer.setSsaoBias(
+				0.02f
+			);
+
+			deferredRenderer.setSsaoIntensity(
+				1.20f
+			);
+
+			deferredRenderer.setSsaoPower(
+				1.50f
+			);
 
 			deferredRenderer.setFxaaEnabled(
 				false

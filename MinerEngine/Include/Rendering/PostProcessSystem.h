@@ -13,6 +13,19 @@ class Buffer;
 class RasterizerState;
 class DepthStencilState;
 
+struct SsaoData
+{
+	float radius = 1.50f;
+	float bias = 0.02f;
+	float intensity = 1.20f;
+	float power = 1.50f;
+
+	float texelSizeX = 0.0f;
+	float texelSizeY = 0.0f;
+	float sampleRadiusPixels = 4.0f;
+	float enabled = 0.0f;
+};
+
 struct FxaaData
 {
 	float texelSizeX = 0.0f;
@@ -99,6 +112,21 @@ public:
 	void setFxaaEnabled(bool enabled);
 	bool isFxaaEnabled() const;
 
+	void setSsaoEnabled(bool enabled);
+	bool isSsaoEnabled() const;
+
+	void setSsaoRadius(float radius);
+	float getSsaoRadius() const;
+
+	void setSsaoBias(float bias);
+	float getSsaoBias() const;
+
+	void setSsaoIntensity(float intensity);
+	float getSsaoIntensity() const;
+
+	void setSsaoPower(float power);
+	float getSsaoPower() const;
+
 	/**
 	 * @brief Inicializa el render target HDR.
 	 */
@@ -151,6 +179,16 @@ public:
 		DepthStencilState& disabledDepthStencil
 	);
 
+	void renderSsao(
+		DeviceContext& deviceContext,
+		ID3D11ShaderResourceView* worldPositionSRV,
+		ID3D11ShaderResourceView* normalRoughnessSRV,
+		Buffer& fullscreenVertexBuffer,
+		Buffer& fullscreenIndexBuffer,
+		RasterizerState& fullscreenRasterizer,
+		DepthStencilState& disabledDepthStencil
+	);
+
 	/**
 	 * @brief Destruye todos los recursos.
 	 */
@@ -184,9 +222,14 @@ public:
 			m_hdrTexture.m_texture != nullptr &&
 			m_hdrSRV.m_textureFromImg != nullptr &&
 			m_hdrRTV.get() != nullptr &&
+
 			m_ldrTexture.m_texture != nullptr &&
 			m_ldrSRV.m_textureFromImg != nullptr &&
-			m_ldrRTV.get() != nullptr;
+			m_ldrRTV.get() != nullptr &&
+
+			m_ssaoTexture.m_texture != nullptr &&
+			m_ssaoSRV.m_textureFromImg != nullptr &&
+			m_ssaoRTV.get() != nullptr;
 	}
 
 private:
@@ -213,15 +256,18 @@ private:
 	SamplerState m_linearSampler;
 	ShaderProgram m_bloomBlurShader;
 	ShaderProgram m_fxaaShader;
+	ShaderProgram m_ssaoShader;
 	Buffer m_tonemappingBuffer;
 	Buffer m_bloomBuffer;
 	Buffer m_bloomBlurBuffer;
 	Buffer m_fxaaBuffer;
+	Buffer m_ssaoBuffer;
 
 	TonemappingData m_tonemappingData{};
 	BloomData m_bloomData{};
 	BloomBlurData m_bloomBlurData{};
 	FxaaData m_fxaaData{};
+	SsaoData m_ssaoData{};
 	// Texturas de Bloom a media resolución.
     // Se utilizan alternadamente para el desenfoque.
 	Texture m_bloomTextureA;
@@ -237,4 +283,9 @@ private:
 	Texture m_ldrTexture;
 	Texture m_ldrSRV;
 	RenderTargetView m_ldrRTV;
+
+	// Textura de oclusión ambiental en espacio de pantalla.
+	Texture m_ssaoTexture;
+	Texture m_ssaoSRV;
+	RenderTargetView m_ssaoRTV;
 };

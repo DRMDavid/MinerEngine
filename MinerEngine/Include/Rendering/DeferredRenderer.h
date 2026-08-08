@@ -85,6 +85,21 @@ public:
 	void setFxaaEnabled(bool enabled);
 	bool isFxaaEnabled() const;
 
+	void setSsaoEnabled(bool enabled);
+	bool isSsaoEnabled() const;
+
+	void setSsaoRadius(float radius);
+	float getSsaoRadius() const;
+
+	void setSsaoBias(float bias);
+	float getSsaoBias() const;
+
+	void setSsaoIntensity(float intensity);
+	float getSsaoIntensity() const;
+
+	void setSsaoPower(float power);
+	float getSsaoPower() const;
+
 	/**
 	 * @brief Obtiene el Shader Resource View (SRV) del mapa de sombras.
 	 * @return Puntero al SRV de profundidad de las sombras.
