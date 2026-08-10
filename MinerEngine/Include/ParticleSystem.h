@@ -35,7 +35,18 @@ struct Particle
 
 	float age = 0.0f;
 	float lifetime = 1.0f;
+
 	float size = 1.0f;
+
+	/**
+	 * @brief Rotación actual del billboard en radianes.
+	 */
+	float rotation = 0.0f;
+
+	/**
+	 * @brief Velocidad de rotación en radianes por segundo.
+	 */
+	float angularVelocity = 0.0f;
 
 	bool alive = false;
 };
@@ -59,6 +70,10 @@ public:
 		const ParticleSystem&
 		) = delete;
 
+	//========================================================
+	// ACTUALIZACION
+	//========================================================
+
 	void updateEmitter(
 		ParticleEmitterComponent& emitter,
 		const EU::Vector3& emitterPosition,
@@ -70,6 +85,10 @@ public:
 	);
 
 	void clear();
+
+	//========================================================
+	// CONSULTAS
+	//========================================================
 
 	std::size_t getAliveParticleCount(
 		const ParticleEmitterComponent& emitter
@@ -104,6 +123,7 @@ private:
 	struct LayerRuntime
 	{
 		std::vector<Particle> particles;
+
 		float emissionAccumulator = 0.0f;
 	};
 
@@ -114,8 +134,13 @@ private:
 	struct EmitterRuntime
 	{
 		std::vector<LayerRuntime> layers;
+
 		float elapsedTime = 0.0f;
 	};
+
+	//========================================================
+	// ACTUALIZACION INTERNA
+	//========================================================
 
 	void updateLayer(
 		LayerRuntime& runtime,
@@ -131,6 +156,48 @@ private:
 		const EU::Vector3& emitterPosition
 	);
 
+	//========================================================
+	// FORMAS DE EMISION
+	//========================================================
+
+	void generateBoxEmission(
+		const ParticleLayer& layer,
+		const EU::Vector3& emitterPosition,
+		EU::Vector3& outPosition,
+		EU::Vector3& outDirection
+	);
+
+	void generateSphereEmission(
+		const ParticleLayer& layer,
+		const EU::Vector3& emitterPosition,
+		EU::Vector3& outPosition,
+		EU::Vector3& outDirection
+	);
+
+	void generateConeEmission(
+		const ParticleLayer& layer,
+		const EU::Vector3& emitterPosition,
+		EU::Vector3& outPosition,
+		EU::Vector3& outDirection
+	);
+
+	//========================================================
+	// UTILIDADES
+	//========================================================
+
+	float randomRange(
+		float minimumValue,
+		float maximumValue
+	);
+
+	static EU::Vector3 normalizeVector(
+		const EU::Vector3& vector
+	);
+
+	static float degreesToRadians(
+		float degrees
+	);
+
 	static float lerp(
 		float start,
 		float end,
@@ -142,6 +209,10 @@ private:
 		const ParticleColor& end,
 		float amount
 	);
+
+	//========================================================
+	// DATOS
+	//========================================================
 
 	std::unordered_map<
 		const ParticleEmitterComponent*,

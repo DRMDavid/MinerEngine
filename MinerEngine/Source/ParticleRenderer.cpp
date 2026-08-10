@@ -6,9 +6,10 @@
 #include "EngineUtilities/Utilities/Camera.h"
 #include "EngineUtilities/Utilities/LayoutBuilder.h"
 
-#include <cstring>
 #include <algorithm>
 #include <cctype>
+#include <cmath>
+#include <cstring>
 
 //============================================================
 // DESTRUCTOR
@@ -32,6 +33,10 @@ ParticleRenderer::init(
 	{
 		return E_POINTER;
 	}
+
+	//========================================================
+	// SHADER
+	//========================================================
 
 	LayoutBuilder layout;
 
@@ -67,6 +72,10 @@ ParticleRenderer::init(
 		return result;
 	}
 
+	//========================================================
+	// CONSTANT BUFFER
+	//========================================================
+
 	result =
 		m_frameBuffer.init(
 			device,
@@ -84,6 +93,10 @@ ParticleRenderer::init(
 		destroy();
 		return result;
 	}
+
+	//========================================================
+	// VERTEX BUFFER
+	//========================================================
 
 	result =
 		createVertexBuffer(
@@ -103,6 +116,10 @@ ParticleRenderer::init(
 		return result;
 	}
 
+	//========================================================
+	// BLEND STATES
+	//========================================================
+
 	result =
 		createBlendState(
 			device
@@ -113,30 +130,57 @@ ParticleRenderer::init(
 		ERROR(
 			"ParticleRenderer",
 			"init",
-			"No se pudo crear el blend state"
+			"No se pudieron crear los blend states"
 		);
 
 		destroy();
 		return result;
 	}
 
-	D3D11_DEPTH_STENCIL_DESC depthDescription{};
+	//========================================================
+	// DEPTH STATE
+	//========================================================
 
-	depthDescription.DepthEnable = TRUE;
+	D3D11_DEPTH_STENCIL_DESC
+		depthDescription{};
+
+	depthDescription.DepthEnable =
+		TRUE;
+
 	depthDescription.DepthWriteMask =
 		D3D11_DEPTH_WRITE_MASK_ZERO;
+
 	depthDescription.DepthFunc =
 		D3D11_COMPARISON_LESS_EQUAL;
 
-	depthDescription.StencilEnable = FALSE;
+	depthDescription.StencilEnable =
+		FALSE;
 
 	result =
-		device.m_device->CreateDepthStencilState(
+		device.m_device
+		->CreateDepthStencilState(
 			&depthDescription,
 			&m_depthReadState
 		);
 
-	D3D11_RASTERIZER_DESC rasterizerDescription{};
+	if (FAILED(result))
+	{
+		ERROR(
+			"ParticleRenderer",
+			"init",
+			"No se pudo crear el depth state"
+		);
+
+		destroy();
+		return result;
+	}
+
+	//========================================================
+	// RASTERIZER STATE
+	//========================================================
+
+	D3D11_RASTERIZER_DESC
+		rasterizerDescription{};
 
 	rasterizerDescription.FillMode =
 		D3D11_FILL_SOLID;
@@ -146,10 +190,6 @@ ParticleRenderer::init(
 
 	rasterizerDescription.FrontCounterClockwise =
 		FALSE;
-
-	rasterizerDescription.DepthBias = 0;
-	rasterizerDescription.DepthBiasClamp = 0.0f;
-	rasterizerDescription.SlopeScaledDepthBias = 0.0f;
 
 	rasterizerDescription.DepthClipEnable =
 		TRUE;
@@ -164,7 +204,8 @@ ParticleRenderer::init(
 		FALSE;
 
 	result =
-		device.m_device->CreateRasterizerState(
+		device.m_device
+		->CreateRasterizerState(
 			&rasterizerDescription,
 			&m_noCullRasterizerState
 		);
@@ -174,87 +215,65 @@ ParticleRenderer::init(
 		ERROR(
 			"ParticleRenderer",
 			"init",
-			"No se pudo crear el rasterizer sin culling"
+			"No se pudo crear el rasterizer state"
 		);
 
 		destroy();
 		return result;
 	}
+
+	//========================================================
+	// SAMPLER
+	//========================================================
+
+	D3D11_SAMPLER_DESC
+		samplerDescription{};
+
+	samplerDescription.Filter =
+		D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+
+	samplerDescription.AddressU =
+		D3D11_TEXTURE_ADDRESS_CLAMP;
+
+	samplerDescription.AddressV =
+		D3D11_TEXTURE_ADDRESS_CLAMP;
+
+	samplerDescription.AddressW =
+		D3D11_TEXTURE_ADDRESS_CLAMP;
+
+	samplerDescription.MipLODBias =
+		0.0f;
+
+	samplerDescription.MaxAnisotropy =
+		1;
+
+	samplerDescription.ComparisonFunc =
+		D3D11_COMPARISON_NEVER;
+
+	samplerDescription.MinLOD =
+		0.0f;
+
+	samplerDescription.MaxLOD =
+		D3D11_FLOAT32_MAX;
+
+	result =
+		device.m_device
+		->CreateSamplerState(
+			&samplerDescription,
+			&m_particleSampler
+		);
 
 	if (FAILED(result))
 	{
 		ERROR(
 			"ParticleRenderer",
 			"init",
-			"No se pudo crear el depth state"
+			"No se pudo crear el sampler"
 		);
 
 		destroy();
 		return result;
 	}
-
-	
-//========================================================
-// SAMPLER PARA TEXTURAS DE PARTÍCULAS
-//========================================================
-
-D3D11_SAMPLER_DESC samplerDescription{};
-
-samplerDescription.Filter =
-D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-
-samplerDescription.AddressU =
-D3D11_TEXTURE_ADDRESS_CLAMP;
-
-samplerDescription.AddressV =
-D3D11_TEXTURE_ADDRESS_CLAMP;
-
-samplerDescription.AddressW =
-D3D11_TEXTURE_ADDRESS_CLAMP;
-
-samplerDescription.MipLODBias = 0.0f;
-samplerDescription.MaxAnisotropy = 1;
-
-samplerDescription.ComparisonFunc =
-D3D11_COMPARISON_NEVER;
-
-samplerDescription.BorderColor[0] = 0.0f;
-samplerDescription.BorderColor[1] = 0.0f;
-samplerDescription.BorderColor[2] = 0.0f;
-samplerDescription.BorderColor[3] = 0.0f;
-
-samplerDescription.MinLOD = 0.0f;
-samplerDescription.MaxLOD = D3D11_FLOAT32_MAX;
-
-result =
-device.m_device->CreateSamplerState(
-	&samplerDescription,
-	&m_particleSampler
-);
-
-if (FAILED(result))
-{
-	ERROR(
-		"ParticleRenderer",
-		"init",
-		"No se pudo crear el sampler de particulas"
-	);
-
-	destroy();
-	return result;
-}
-
-if (FAILED(result))
-{
-	ERROR(
-		"ParticleRenderer",
-		"init",
-		"No se pudo crear el sampler de particulas"
-	);
-
-	destroy();
-	return result;
-}
 
 	MESSAGE(
 		"ParticleRenderer",
@@ -266,7 +285,7 @@ if (FAILED(result))
 }
 
 //============================================================
-// CREAR VERTEX BUFFER DINAMICO
+// CREAR VERTEX BUFFER
 //============================================================
 
 HRESULT
@@ -290,7 +309,8 @@ ParticleRenderer::createVertexBuffer(
 		m_vertexBuffer = nullptr;
 	}
 
-	D3D11_BUFFER_DESC bufferDescription{};
+	D3D11_BUFFER_DESC
+		bufferDescription{};
 
 	bufferDescription.Usage =
 		D3D11_USAGE_DYNAMIC;
@@ -307,9 +327,6 @@ ParticleRenderer::createVertexBuffer(
 
 	bufferDescription.CPUAccessFlags =
 		D3D11_CPU_ACCESS_WRITE;
-
-	bufferDescription.MiscFlags = 0;
-	bufferDescription.StructureByteStride = 0;
 
 	const HRESULT result =
 		device.CreateBuffer(
@@ -328,7 +345,7 @@ ParticleRenderer::createVertexBuffer(
 }
 
 //============================================================
-// CREAR BLEND ADITIVO
+// CREAR BLEND STATES
 //============================================================
 
 HRESULT
@@ -341,22 +358,19 @@ ParticleRenderer::createBlendState(
 	}
 
 	//========================================================
-	// MEZCLA ADITIVA
+	// ADDITIVE
 	//========================================================
 
-	D3D11_BLEND_DESC additiveDescription{};
-
-	additiveDescription.AlphaToCoverageEnable =
-		FALSE;
-
-	additiveDescription.IndependentBlendEnable =
-		FALSE;
+	D3D11_BLEND_DESC
+		additiveDescription{};
 
 	D3D11_RENDER_TARGET_BLEND_DESC&
 		additiveTarget =
-		additiveDescription.RenderTarget[0];
+		additiveDescription
+		.RenderTarget[0];
 
-	additiveTarget.BlendEnable = TRUE;
+	additiveTarget.BlendEnable =
+		TRUE;
 
 	additiveTarget.SrcBlend =
 		D3D11_BLEND_SRC_ALPHA;
@@ -380,7 +394,8 @@ ParticleRenderer::createBlendState(
 		D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	HRESULT result =
-		device.m_device->CreateBlendState(
+		device.m_device
+		->CreateBlendState(
 			&additiveDescription,
 			&m_additiveBlendState
 		);
@@ -391,22 +406,19 @@ ParticleRenderer::createBlendState(
 	}
 
 	//========================================================
-	// MEZCLA ALPHA TRADICIONAL
+	// ALPHA
 	//========================================================
 
-	D3D11_BLEND_DESC alphaDescription{};
-
-	alphaDescription.AlphaToCoverageEnable =
-		FALSE;
-
-	alphaDescription.IndependentBlendEnable =
-		FALSE;
+	D3D11_BLEND_DESC
+		alphaDescription{};
 
 	D3D11_RENDER_TARGET_BLEND_DESC&
 		alphaTarget =
-		alphaDescription.RenderTarget[0];
+		alphaDescription
+		.RenderTarget[0];
 
-	alphaTarget.BlendEnable = TRUE;
+	alphaTarget.BlendEnable =
+		TRUE;
 
 	alphaTarget.SrcBlend =
 		D3D11_BLEND_SRC_ALPHA;
@@ -430,17 +442,13 @@ ParticleRenderer::createBlendState(
 		D3D11_COLOR_WRITE_ENABLE_ALL;
 
 	result =
-		device.m_device->CreateBlendState(
+		device.m_device
+		->CreateBlendState(
 			&alphaDescription,
 			&m_alphaBlendState
 		);
 
-	if (FAILED(result))
-	{
-		return result;
-	}
-
-	return S_OK;
+	return result;
 }
 
 //============================================================
@@ -450,9 +458,95 @@ ParticleRenderer::createBlendState(
 void
 ParticleRenderer::buildBillboards(
 	const Camera& camera,
-	const std::vector<Particle>& particles)
+	const std::vector<Particle>& particles,
+	bool depthSorting)
 {
 	m_vertices.clear();
+	m_sortedParticles.clear();
+
+	for (const Particle& particle :
+		particles)
+	{
+		if (particle.alive)
+		{
+			m_sortedParticles.push_back(
+				&particle
+			);
+		}
+	}
+
+	if (depthSorting)
+	{
+		const EU::Vector3 cameraPosition =
+			camera.getPosition();
+
+		std::sort(
+			m_sortedParticles.begin(),
+			m_sortedParticles.end(),
+			[
+				cameraPosition
+			](
+				const Particle* first,
+				const Particle* second
+				)
+			{
+				if (!first || !second)
+				{
+					return first != nullptr;
+				}
+
+				const float firstDistance =
+					ParticleRenderer
+					::calculateSquaredDistance(
+						first->position,
+						cameraPosition
+					);
+
+				const float secondDistance =
+					ParticleRenderer
+					::calculateSquaredDistance(
+						second->position,
+						cameraPosition
+					);
+
+				// Las partículas lejanas se dibujan primero.
+				return
+					firstDistance >
+					secondDistance;
+			}
+					);
+	}
+
+	m_vertices.reserve(
+		m_sortedParticles.size() *
+		6
+	);
+
+	for (const Particle* particle :
+		m_sortedParticles)
+	{
+		if (particle)
+		{
+			addParticleBillboard(
+				camera,
+				*particle
+			);
+		}
+	}
+}
+
+//============================================================
+// AGREGAR BILLBOARD ROTADO
+//============================================================
+
+void
+ParticleRenderer::addParticleBillboard(
+	const Camera& camera,
+	const Particle& particle)
+{
+	const float halfSize =
+		particle.size *
+		0.5f;
 
 	const EU::Vector3 cameraRight =
 		camera.GetRight();
@@ -460,97 +554,173 @@ ParticleRenderer::buildBillboards(
 	const EU::Vector3 cameraUp =
 		camera.GetUp();
 
-	for (const Particle& particle : particles)
-	{
-		if (!particle.alive)
-		{
-			continue;
-		}
-
-		const float halfSize =
-			particle.size * 0.5f;
-
-		const EU::Vector3 right{
-			cameraRight.x * halfSize,
-			cameraRight.y * halfSize,
-			cameraRight.z * halfSize
-		};
-
-		const EU::Vector3 up{
-			cameraUp.x * halfSize,
-			cameraUp.y * halfSize,
-			cameraUp.z * halfSize
-		};
-
-		const EU::Vector3 bottomLeft{
-			particle.position.x - right.x - up.x,
-			particle.position.y - right.y - up.y,
-			particle.position.z - right.z - up.z
-		};
-
-		const EU::Vector3 topLeft{
-			particle.position.x - right.x + up.x,
-			particle.position.y - right.y + up.y,
-			particle.position.z - right.z + up.z
-		};
-
-		const EU::Vector3 topRight{
-			particle.position.x + right.x + up.x,
-			particle.position.y + right.y + up.y,
-			particle.position.z + right.z + up.z
-		};
-
-		const EU::Vector3 bottomRight{
-			particle.position.x + right.x - up.x,
-			particle.position.y + right.y - up.y,
-			particle.position.z + right.z - up.z
-		};
-
-		// Primer triángulo.
-		addBillboardVertex(
-			bottomLeft,
-			0.0f,
-			1.0f,
-			particle.color
+	const float rotationCosine =
+		std::cos(
+			particle.rotation
 		);
 
-		addBillboardVertex(
-			topLeft,
-			0.0f,
-			0.0f,
-			particle.color
+	const float rotationSine =
+		std::sin(
+			particle.rotation
 		);
 
-		addBillboardVertex(
-			topRight,
-			1.0f,
-			0.0f,
-			particle.color
-		);
+	// Rotar los ejes del billboard dentro del plano de cámara.
+	const EU::Vector3 rotatedRight{
+		(
+			cameraRight.x *
+			rotationCosine +
+			cameraUp.x *
+			rotationSine
+		) *
+		halfSize,
 
-		// Segundo triángulo.
-		addBillboardVertex(
-			bottomLeft,
-			0.0f,
-			1.0f,
-			particle.color
-		);
+		(
+			cameraRight.y *
+			rotationCosine +
+			cameraUp.y *
+			rotationSine
+		) *
+		halfSize,
 
-		addBillboardVertex(
-			topRight,
-			1.0f,
-			0.0f,
-			particle.color
-		);
+		(
+			cameraRight.z *
+			rotationCosine +
+			cameraUp.z *
+			rotationSine
+		) *
+		halfSize
+	};
 
-		addBillboardVertex(
-			bottomRight,
-			1.0f,
-			1.0f,
-			particle.color
-		);
-	}
+	const EU::Vector3 rotatedUp{
+		(
+			cameraUp.x *
+			rotationCosine -
+			cameraRight.x *
+			rotationSine
+		) *
+		halfSize,
+
+		(
+			cameraUp.y *
+			rotationCosine -
+			cameraRight.y *
+			rotationSine
+		) *
+		halfSize,
+
+		(
+			cameraUp.z *
+			rotationCosine -
+			cameraRight.z *
+			rotationSine
+		) *
+		halfSize
+	};
+
+	const EU::Vector3 bottomLeft{
+		particle.position.x -
+			rotatedRight.x -
+			rotatedUp.x,
+
+		particle.position.y -
+			rotatedRight.y -
+			rotatedUp.y,
+
+		particle.position.z -
+			rotatedRight.z -
+			rotatedUp.z
+	};
+
+	const EU::Vector3 topLeft{
+		particle.position.x -
+			rotatedRight.x +
+			rotatedUp.x,
+
+		particle.position.y -
+			rotatedRight.y +
+			rotatedUp.y,
+
+		particle.position.z -
+			rotatedRight.z +
+			rotatedUp.z
+	};
+
+	const EU::Vector3 topRight{
+		particle.position.x +
+			rotatedRight.x +
+			rotatedUp.x,
+
+		particle.position.y +
+			rotatedRight.y +
+			rotatedUp.y,
+
+		particle.position.z +
+			rotatedRight.z +
+			rotatedUp.z
+	};
+
+	const EU::Vector3 bottomRight{
+		particle.position.x +
+			rotatedRight.x -
+			rotatedUp.x,
+
+		particle.position.y +
+			rotatedRight.y -
+			rotatedUp.y,
+
+		particle.position.z +
+			rotatedRight.z -
+			rotatedUp.z
+	};
+
+	// Primer triángulo.
+	addBillboardVertex(
+		bottomLeft,
+		0.0f,
+		1.0f,
+		particle.color
+	);
+
+	addBillboardVertex(
+		topLeft,
+		0.0f,
+		0.0f,
+		particle.color
+	);
+
+	addBillboardVertex(
+		topRight,
+		1.0f,
+		0.0f,
+		particle.color
+	);
+
+	// Segundo triángulo.
+	addBillboardVertex(
+		bottomLeft,
+		0.0f,
+		1.0f,
+		particle.color
+	);
+
+	addBillboardVertex(
+		topRight,
+		1.0f,
+		0.0f,
+		particle.color
+	);
+
+	addBillboardVertex(
+		bottomRight,
+		1.0f,
+		1.0f,
+		particle.color
+	);
 }
+
+//============================================================
+// AGREGAR VERTICE
+//============================================================
 
 void
 ParticleRenderer::addBillboardVertex(
@@ -561,10 +731,17 @@ ParticleRenderer::addBillboardVertex(
 {
 	ParticleVertex vertex;
 
-	vertex.position = position;
-	vertex.texCoordX = texCoordX;
-	vertex.texCoordY = texCoordY;
-	vertex.color = color;
+	vertex.position =
+		position;
+
+	vertex.texCoordX =
+		texCoordX;
+
+	vertex.texCoordY =
+		texCoordY;
+
+	vertex.color =
+		color;
 
 	m_vertices.push_back(
 		vertex
@@ -572,7 +749,34 @@ ParticleRenderer::addBillboardVertex(
 }
 
 //============================================================
-// CARGAR TEXTURA DE PARTÍCULAS
+// DISTANCIA CUADRADA
+//============================================================
+
+float
+ParticleRenderer::calculateSquaredDistance(
+	const EU::Vector3& firstPosition,
+	const EU::Vector3& secondPosition)
+{
+	const float differenceX =
+		firstPosition.x -
+		secondPosition.x;
+
+	const float differenceY =
+		firstPosition.y -
+		secondPosition.y;
+
+	const float differenceZ =
+		firstPosition.z -
+		secondPosition.z;
+
+	return
+		differenceX * differenceX +
+		differenceY * differenceY +
+		differenceZ * differenceZ;
+}
+
+//============================================================
+// CARGAR TEXTURA
 //============================================================
 
 ID3D11ShaderResourceView*
@@ -589,7 +793,6 @@ ParticleRenderer::getOrLoadParticleTexture(
 	const std::string path =
 		texturePath;
 
-	// Si ya intentamos cargar esta ruta, reutilizar el resultado.
 	const auto cachedTexture =
 		m_particleTextures.find(
 			path
@@ -619,7 +822,9 @@ ParticleRenderer::getOrLoadParticleTexture(
 		[](unsigned char character)
 		{
 			return static_cast<char>(
-				std::tolower(character)
+				std::tolower(
+					character
+				)
 				);
 		}
 	);
@@ -637,7 +842,7 @@ ParticleRenderer::getOrLoadParticleTexture(
 		ERROR(
 			"ParticleRenderer",
 			"getOrLoadParticleTexture",
-			"Por ahora solamente se permiten texturas PNG"
+			"Solo se permiten texturas PNG"
 		);
 
 		m_particleTextures.emplace(
@@ -649,7 +854,6 @@ ParticleRenderer::getOrLoadParticleTexture(
 	}
 
 	// Texture::init agrega la extensión automáticamente.
-	// Por eso debemos retirarla de la ruta.
 	const std::string pathWithoutExtension =
 		path.substr(
 			0,
@@ -673,7 +877,7 @@ ParticleRenderer::getOrLoadParticleTexture(
 		ERROR(
 			"ParticleRenderer",
 			"getOrLoadParticleTexture",
-			"No se pudo cargar la textura PNG de particulas"
+			"No se pudo cargar la textura PNG"
 		);
 
 		texture->destroy();
@@ -686,12 +890,15 @@ ParticleRenderer::getOrLoadParticleTexture(
 		return nullptr;
 	}
 
-	ID3D11ShaderResourceView* shaderResource =
+	ID3D11ShaderResourceView*
+		shaderResource =
 		texture->m_textureFromImg;
 
 	m_particleTextures.emplace(
 		path,
-		std::move(texture)
+		std::move(
+			texture
+		)
 	);
 
 	MESSAGE(
@@ -722,32 +929,6 @@ ParticleRenderer::renderEmitter(
 		return;
 	}
 
-	ID3D11ShaderResourceView* nullParticleTexture =
-		nullptr;
-
-	deviceContext.m_deviceContext
-		->PSSetShaderResources(
-			0,
-			1,
-			&nullParticleTexture
-		);
-
-	ID3D11SamplerState* nullParticleSampler =
-		nullptr;
-
-	deviceContext.m_deviceContext
-		->PSSetSamplers(
-			0,
-			1,
-			&nullParticleSampler
-		);
-
-
-
-	//========================================================
-	// DATOS DE CÁMARA
-	//========================================================
-
 	ParticleFrameData frameData{};
 
 	const XMMATRIX viewProjection =
@@ -761,16 +942,6 @@ ParticleRenderer::renderEmitter(
 		)
 	);
 
-	m_frameBuffer.update(
-		deviceContext,
-		nullptr,
-		0,
-		nullptr,
-		&frameData,
-		0,
-		0
-	);
-
 	m_shader.render(
 		deviceContext
 	);
@@ -782,10 +953,6 @@ ParticleRenderer::renderEmitter(
 		true
 	);
 
-	//========================================================
-	// ESTADOS DE RENDER
-	//========================================================
-
 	deviceContext.IASetPrimitiveTopology(
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 	);
@@ -794,7 +961,6 @@ ParticleRenderer::renderEmitter(
 		m_noCullRasterizerState
 	);
 
-	// Leer la profundidad, pero no escribir en ella.
 	deviceContext.m_deviceContext
 		->OMSetDepthStencilState(
 			m_depthReadState,
@@ -802,7 +968,7 @@ ParticleRenderer::renderEmitter(
 		);
 
 	//========================================================
-	// DIBUJAR TODAS LAS CAPAS
+	// DIBUJAR CAPAS
 	//========================================================
 
 	for (std::size_t layerIndex = 0;
@@ -828,9 +994,16 @@ ParticleRenderer::renderEmitter(
 			continue;
 		}
 
+		// Alpha necesita ordenarse de atrás hacia delante.
+		const bool shouldSort =
+			layer.depthSorting &&
+			layer.blendMode ==
+			ParticleBlendMode::Alpha;
+
 		buildBillboards(
 			camera,
-			*particles
+			*particles,
+			shouldSort
 		);
 
 		if (m_vertices.empty())
@@ -839,25 +1012,26 @@ ParticleRenderer::renderEmitter(
 		}
 
 		//====================================================
-// TEXTURA DE ESTA CAPA
-//====================================================
+		// TEXTURA
+		//====================================================
 
-		ID3D11ShaderResourceView* particleTexture =
+		ID3D11ShaderResourceView*
+			particleTexture =
 			getOrLoadParticleTexture(
 				device,
 				layer.texturePath
 			);
 
-		// Indicar al shader si debe utilizar PNG o el círculo.
 		frameData.textureSettings =
 			XMFLOAT4(
-				particleTexture ? 1.0f : 0.0f,
+				particleTexture
+				? 1.0f
+				: 0.0f,
 				0.0f,
 				0.0f,
 				0.0f
 			);
 
-		// Actualizar el constant buffer para esta capa.
 		m_frameBuffer.update(
 			deviceContext,
 			nullptr,
@@ -868,8 +1042,14 @@ ParticleRenderer::renderEmitter(
 			0
 		);
 
-		// Vincular el PNG al slot t0.
-		// nullptr permite usar el círculo de respaldo.
+		// Volver a vincularlo para VS y PS.
+		m_frameBuffer.render(
+			deviceContext,
+			0,
+			1,
+			true
+		);
+
 		deviceContext.m_deviceContext
 			->PSSetShaderResources(
 				0,
@@ -877,7 +1057,6 @@ ParticleRenderer::renderEmitter(
 				&particleTexture
 			);
 
-		// Vincular el sampler al slot s0.
 		deviceContext.m_deviceContext
 			->PSSetSamplers(
 				0,
@@ -886,12 +1065,13 @@ ParticleRenderer::renderEmitter(
 			);
 
 		//====================================================
-		// AMPLIAR VERTEX BUFFER SI ES NECESARIO
+		// REDIMENSIONAR BUFFER
 		//====================================================
 
 		const unsigned int requiredParticles =
 			static_cast<unsigned int>(
-				m_vertices.size() / 6
+				m_vertices.size() /
+				6
 				);
 
 		if (requiredParticles >
@@ -928,14 +1108,15 @@ ParticleRenderer::renderEmitter(
 		}
 
 		//====================================================
-		// COPIAR VÉRTICES AL BUFFER
+		// ACTUALIZAR VERTEX BUFFER
 		//====================================================
 
 		D3D11_MAPPED_SUBRESOURCE
 			mappedResource{};
 
 		const HRESULT mapResult =
-			deviceContext.m_deviceContext->Map(
+			deviceContext.m_deviceContext
+			->Map(
 				m_vertexBuffer,
 				0,
 				D3D11_MAP_WRITE_DISCARD,
@@ -961,19 +1142,17 @@ ParticleRenderer::renderEmitter(
 			m_vertices.size()
 		);
 
-		deviceContext.m_deviceContext->Unmap(
-			m_vertexBuffer,
-			0
-		);
-
-		//====================================================
-		// CONFIGURAR VERTEX BUFFER
-		//====================================================
+		deviceContext.m_deviceContext
+			->Unmap(
+				m_vertexBuffer,
+				0
+			);
 
 		const unsigned int stride =
 			sizeof(ParticleVertex);
 
-		const unsigned int offset = 0;
+		const unsigned int offset =
+			0;
 
 		deviceContext.IASetVertexBuffers(
 			0,
@@ -984,12 +1163,8 @@ ParticleRenderer::renderEmitter(
 		);
 
 		//====================================================
-		// DIBUJAR ESTA CAPA
+		// BLEND MODE
 		//====================================================
-
-		//====================================================
-        // BLEND MODE DE ESTA CAPA
-        //====================================================
 
 		ID3D11BlendState* layerBlendState =
 			layer.blendMode ==
@@ -1003,22 +1178,43 @@ ParticleRenderer::renderEmitter(
 			0xffffffff
 		);
 
-		deviceContext.m_deviceContext->Draw(
-			static_cast<unsigned int>(
-				m_vertices.size()
-				),
-			0
-		);
+		deviceContext.m_deviceContext
+			->Draw(
+				static_cast<unsigned int>(
+					m_vertices.size()
+					),
+				0
+			);
 
 		++deviceContext.m_drawCallCount;
 	}
 
 	//========================================================
-	// RESTAURAR ESTADOS
+	// LIMPIAR RECURSOS Y ESTADOS
 	//========================================================
 
-	// Restaurar Blend State directamente con Direct3D.
-	// El wrapper del motor no acepta nullptr.
+	ID3D11ShaderResourceView*
+		nullTexture =
+		nullptr;
+
+	deviceContext.m_deviceContext
+		->PSSetShaderResources(
+			0,
+			1,
+			&nullTexture
+		);
+
+	ID3D11SamplerState*
+		nullSampler =
+		nullptr;
+
+	deviceContext.m_deviceContext
+		->PSSetSamplers(
+			0,
+			1,
+			&nullSampler
+		);
+
 	deviceContext.m_deviceContext
 		->OMSetBlendState(
 			nullptr,
@@ -1064,14 +1260,13 @@ ParticleRenderer::isReady() const
 void
 ParticleRenderer::destroy()
 {
-
-	// Destruir todas las texturas almacenadas en caché.
 	for (auto& textureEntry :
 		m_particleTextures)
 	{
 		if (textureEntry.second)
 		{
-			textureEntry.second->destroy();
+			textureEntry.second
+				->destroy();
 		}
 	}
 
@@ -1082,6 +1277,7 @@ ParticleRenderer::destroy()
 		m_particleSampler->Release();
 		m_particleSampler = nullptr;
 	}
+
 	if (m_noCullRasterizerState)
 	{
 		m_noCullRasterizerState->Release();
@@ -1116,5 +1312,7 @@ ParticleRenderer::destroy()
 	m_shader.destroy();
 
 	m_vertices.clear();
+	m_sortedParticles.clear();
+
 	m_particleCapacity = 0;
 }

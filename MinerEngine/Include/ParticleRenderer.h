@@ -7,10 +7,10 @@
 #include "Texture.h"
 
 #include <cstddef>
-#include <vector>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class Camera;
 class Device;
@@ -19,13 +19,14 @@ class ParticleEmitterComponent;
 
 /**
  * @class ParticleRenderer
- * @brief Convierte las partículas CPU en billboards y las dibuja.
+ * @brief Convierte partículas CPU en billboards y las dibuja.
  */
 class ParticleRenderer
 {
 public:
 
 	ParticleRenderer() = default;
+
 	~ParticleRenderer();
 
 	ParticleRenderer(
@@ -36,10 +37,18 @@ public:
 		const ParticleRenderer&
 		) = delete;
 
+	//========================================================
+	// INICIALIZACION
+	//========================================================
+
 	HRESULT init(
 		Device& device,
 		unsigned int initialParticleCapacity = 1000
 	);
+
+	//========================================================
+	// RENDER
+	//========================================================
 
 	void renderEmitter(
 		DeviceContext& deviceContext,
@@ -49,16 +58,20 @@ public:
 		const ParticleEmitterComponent& emitter
 	);
 
+	//========================================================
+	// DESTRUCCION
+	//========================================================
+
 	void destroy();
 
 	bool isReady() const;
 
 private:
 
-	/**
-	 * @struct ParticleVertex
-	 * @brief Vértice enviado al shader de partículas.
-	 */
+	//========================================================
+	// VERTICE DE PARTICULA
+	//========================================================
+
 	struct ParticleVertex
 	{
 		EU::Vector3 position{
@@ -78,16 +91,18 @@ private:
 		};
 	};
 
-	/**
-	 * @struct ParticleFrameData
-	 * @brief Matriz utilizada por Particle.hlsl.
-	 */
+	//========================================================
+	// CONSTANT BUFFER
+	//========================================================
+
 	struct ParticleFrameData
 	{
 		XMFLOAT4X4 viewProjection{};
 
-		// x = 1 cuando la capa utiliza una textura.
-		// x = 0 para utilizar el círculo generado por el shader.
+		/**
+		 * x = 1 cuando la capa utiliza una textura.
+		 * x = 0 cuando utiliza el círculo generado.
+		 */
 		XMFLOAT4 textureSettings{
 			0.0f,
 			0.0f,
@@ -95,6 +110,10 @@ private:
 			0.0f
 		};
 	};
+
+	//========================================================
+	// CREACION DE RECURSOS
+	//========================================================
 
 	HRESULT createVertexBuffer(
 		Device& device,
@@ -105,9 +124,28 @@ private:
 		Device& device
 	);
 
+	//========================================================
+	// BILLBOARDS
+	//========================================================
+
+	/**
+	 * @brief Construye los billboards de una capa.
+	 *
+	 * Cuando depthSorting es true, las partículas se ordenan
+	 * desde la más lejana hasta la más cercana a la cámara.
+	 */
 	void buildBillboards(
 		const Camera& camera,
-		const std::vector<Particle>& particles
+		const std::vector<Particle>& particles,
+		bool depthSorting
+	);
+
+	/**
+	 * @brief Agrega los seis vértices de una partícula.
+	 */
+	void addParticleBillboard(
+		const Camera& camera,
+		const Particle& particle
 	);
 
 	void addBillboardVertex(
@@ -118,38 +156,75 @@ private:
 	);
 
 	/**
-    * @brief Obtiene una textura del caché o carga un PNG nuevo.
-    * @param device Dispositivo gráfico.
-    * @param texturePath Ruta completa del PNG.
-    * @return SRV de la textura o nullptr si no existe.
-    */
+	 * @brief Calcula la distancia cuadrada entre dos posiciones.
+	 */
+	static float calculateSquaredDistance(
+		const EU::Vector3& firstPosition,
+		const EU::Vector3& secondPosition
+	);
+
+	//========================================================
+	// TEXTURAS
+	//========================================================
+
+	/**
+	 * @brief Obtiene una textura del caché o carga un PNG.
+	 */
 	ID3D11ShaderResourceView*
 		getOrLoadParticleTexture(
 			Device& device,
 			const char* texturePath
 		);
 
+	//========================================================
+	// RECURSOS
+	//========================================================
+
 	ShaderProgram m_shader;
+
 	Buffer m_frameBuffer;
 
-	ID3D11Buffer* m_vertexBuffer = nullptr;
-	ID3D11BlendState* m_additiveBlendState = nullptr;
-	ID3D11BlendState* m_alphaBlendState = nullptr;
-	ID3D11DepthStencilState* m_depthReadState = nullptr;
-	ID3D11RasterizerState* m_noCullRasterizerState = nullptr;
+	ID3D11Buffer* m_vertexBuffer =
+		nullptr;
 
-	// Sampler utilizado por los PNG de partículas.
-	ID3D11SamplerState* m_particleSampler = nullptr;
+	ID3D11BlendState* m_additiveBlendState =
+		nullptr;
 
-	// Cada archivo se carga una sola vez y después se reutiliza.
+	ID3D11BlendState* m_alphaBlendState =
+		nullptr;
+
+	ID3D11DepthStencilState* m_depthReadState =
+		nullptr;
+
+	ID3D11RasterizerState* m_noCullRasterizerState =
+		nullptr;
+
+	ID3D11SamplerState* m_particleSampler =
+		nullptr;
+
+	//========================================================
+	// CACHE DE TEXTURAS
+	//========================================================
+
 	std::unordered_map<
 		std::string,
 		std::unique_ptr<Texture>
 	> m_particleTextures;
 
+	//========================================================
+	// DATOS TEMPORALES
+	//========================================================
+
 	std::vector<ParticleVertex> m_vertices;
 
-	unsigned int m_particleCapacity = 0;
+	/**
+	 * @brief Punteros usados para ordenar sin copiar partículas.
+	 */
+	std::vector<const Particle*>
+		m_sortedParticles;
+
+	unsigned int m_particleCapacity =
+		0;
 
 	float m_blendFactor[4]{
 		0.0f,

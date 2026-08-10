@@ -39,16 +39,31 @@ enum class ParticleBlendMode
 };
 
 //============================================================
+// FORMA DE EMISION
+//============================================================
+
+enum class ParticleEmissionShape
+{
+	Box = 0,
+	Sphere,
+	Cone
+};
+
+//============================================================
 // CAPA DE PARTICULAS
 //============================================================
 
 /**
  * @struct ParticleLayer
- * @brief Configuración independiente de un tipo de partícula.
+ * @brief Configuración independiente de una capa de partículas.
  */
 struct ParticleLayer
 {
 	ParticleLayer() = default;
+
+	//========================================================
+	// INFORMACION GENERAL
+	//========================================================
 
 	bool enabled = true;
 
@@ -58,17 +73,55 @@ struct ParticleLayer
 	char texturePath[260] =
 		"";
 
+	//========================================================
+	// EMISION
+	//========================================================
+
 	float emissionRate = 20.0f;
 
 	unsigned int maxParticles = 500;
 
 	float particleLifetime = 2.0f;
+
+	bool randomizeLifetime = true;
+
+	float lifetimeVariation = 0.15f;
+
+	//========================================================
+	// VELOCIDAD
+	//========================================================
+
 	float startSpeed = 2.0f;
+
+	float speedVariation = 0.0f;
+
+	float gravityMultiplier = 0.0f;
+
+	//========================================================
+	// TAMAÑO
+	//========================================================
 
 	float startSize = 0.20f;
 	float endSize = 0.0f;
 
-	float gravityMultiplier = 0.0f;
+	float sizeVariation = 0.0f;
+
+	//========================================================
+	// ROTACION
+	//
+	// Todos los valores se muestran en grados en el Inspector.
+	// ParticleSystem los convierte internamente a radianes.
+	//========================================================
+
+	float minimumStartRotation = 0.0f;
+	float maximumStartRotation = 360.0f;
+
+	float minimumAngularVelocity = 0.0f;
+	float maximumAngularVelocity = 0.0f;
+
+	//========================================================
+	// COLOR
+	//========================================================
 
 	ParticleColor startColor{
 		1.0f,
@@ -84,14 +137,53 @@ struct ParticleLayer
 		0.0f
 	};
 
+	//========================================================
+	// FORMA DEL EMISOR
+	//========================================================
+
+	ParticleEmissionShape emissionShape =
+		ParticleEmissionShape::Box;
+
+	/**
+	 * @brief Tamaño utilizado por la forma Box.
+	 *
+	 * Para Cone, X y Z también determinan el tamaño de la
+	 * base desde la cual nacen las partículas.
+	 */
 	EU::Vector3 emitterSize{
 		0.25f,
 		0.25f,
 		0.25f
 	};
 
+	/**
+	 * @brief Radio utilizado por la forma Sphere.
+	 */
+	float sphereRadius = 0.50f;
+
+	/**
+	 * @brief Ángulo de apertura utilizado por Cone.
+	 */
+	float coneAngleDegrees = 25.0f;
+
+	/**
+	 * @brief Radio de la base desde donde nacen las partículas.
+	 */
+	float coneBaseRadius = 0.10f;
+
+	//========================================================
+	// RENDER
+	//========================================================
+
 	ParticleBlendMode blendMode =
 		ParticleBlendMode::Additive;
+
+	/**
+	 * @brief Ordena las partículas de atrás hacia delante.
+	 *
+	 * Es especialmente importante cuando Blend Mode es Alpha.
+	 */
+	bool depthSorting = true;
 };
 
 //============================================================
@@ -100,7 +192,7 @@ struct ParticleLayer
 
 /**
  * @class ParticleEmitterComponent
- * @brief Contiene una o más capas de partículas.
+ * @brief Contiene una o más capas independientes de partículas.
  */
 class ParticleEmitterComponent : public Component
 {
@@ -150,7 +242,7 @@ public:
 	bool looping = true;
 
 	/**
-	 * @brief Duración de la emisión cuando Looping está desactivado.
+	 * @brief Duración de la emisión cuando Looping está apagado.
 	 */
 	float duration = 5.0f;
 
@@ -160,14 +252,14 @@ public:
 	std::vector<ParticleLayer> layers;
 
 	//========================================================
-	// CONFIGURACION LEGACY TEMPORAL
+	// CONFIGURACION LEGACY
 	//
-	// Se conserva durante la migración para que ParticleSystem,
-	// ParticleRenderer y GUI continúen compilando.
-	// Se eliminará cuando todos utilicen layers.
+	// Estos valores se mantienen para conservar compatibilidad
+	// con otras partes actuales del motor.
 	//========================================================
 
 	float emissionRate = 20.0f;
+
 	unsigned int maxParticles = 500;
 
 	float particleLifetime = 2.0f;

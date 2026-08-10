@@ -4,11 +4,26 @@
 #include <cmath>
 
 //============================================================
+// CONSTANTES
+//============================================================
+
+namespace
+{
+	constexpr float PARTICLE_PI =
+		3.14159265358979323846f;
+
+	constexpr float PARTICLE_TWO_PI =
+		PARTICLE_PI * 2.0f;
+}
+
+//============================================================
 // CONSTRUCTOR / DESTRUCTOR
 //============================================================
 
 ParticleSystem::ParticleSystem()
-	: m_randomEngine(std::random_device{}())
+	: m_randomEngine(
+		std::random_device{}()
+	)
 {
 }
 
@@ -27,7 +42,8 @@ ParticleSystem::updateEmitter(
 	const EU::Vector3& emitterPosition,
 	float deltaTime)
 {
-	if (!emitter.isEnabled() || deltaTime <= 0.0f)
+	if (!emitter.isEnabled() ||
+		deltaTime <= 0.0f)
 	{
 		return;
 	}
@@ -35,12 +51,13 @@ ParticleSystem::updateEmitter(
 	EmitterRuntime& runtime =
 		m_emitters[&emitter];
 
-	// Mantener un runtime independiente para cada capa.
+	// Cada capa necesita su propio estado de simulación.
 	runtime.layers.resize(
 		emitter.layers.size()
 	);
 
-	runtime.elapsedTime += deltaTime;
+	runtime.elapsedTime +=
+		deltaTime;
 
 	const float validDuration =
 		(std::max)(
@@ -50,7 +67,8 @@ ParticleSystem::updateEmitter(
 
 	const bool allowEmission =
 		emitter.looping ||
-		runtime.elapsedTime < validDuration;
+		runtime.elapsedTime <
+		validDuration;
 
 	for (std::size_t layerIndex = 0;
 		layerIndex < emitter.layers.size();
@@ -65,7 +83,10 @@ ParticleSystem::updateEmitter(
 		if (!layer.enabled)
 		{
 			layerRuntime.particles.clear();
-			layerRuntime.emissionAccumulator = 0.0f;
+
+			layerRuntime.emissionAccumulator =
+				0.0f;
+
 			continue;
 		}
 
@@ -97,14 +118,19 @@ ParticleSystem::updateLayer(
 	if (maximumParticles == 0)
 	{
 		runtime.particles.clear();
-		runtime.emissionAccumulator = 0.0f;
+
+		runtime.emissionAccumulator =
+			0.0f;
+
 		return;
 	}
 
-	// Si el usuario reduce el máximo desde el Inspector,
-	// eliminamos las partículas sobrantes.
+	// Si el máximo se redujo desde el Inspector,
+	// eliminar las partículas sobrantes.
 	if (runtime.particles.size() >
-		static_cast<std::size_t>(maximumParticles))
+		static_cast<std::size_t>(
+			maximumParticles
+			))
 	{
 		runtime.particles.resize(
 			static_cast<std::size_t>(
@@ -113,26 +139,34 @@ ParticleSystem::updateLayer(
 		);
 	}
 
-	// Actualizar partículas vivas.
-	for (Particle& particle : runtime.particles)
+	//========================================================
+	// ACTUALIZAR PARTICULAS VIVAS
+	//========================================================
+
+	for (Particle& particle :
+		runtime.particles)
 	{
 		if (!particle.alive)
 		{
 			continue;
 		}
 
-		particle.age += deltaTime;
+		particle.age +=
+			deltaTime;
 
-		if (particle.age >= particle.lifetime)
+		if (particle.age >=
+			particle.lifetime)
 		{
 			particle.alive = false;
 			continue;
 		}
 
+		// Gravedad.
 		particle.velocity.y +=
 			layer.gravityMultiplier *
 			deltaTime;
 
+		// Movimiento.
 		particle.position.x +=
 			particle.velocity.x *
 			deltaTime;
@@ -145,17 +179,46 @@ ParticleSystem::updateLayer(
 			particle.velocity.z *
 			deltaTime;
 
+		// Rotación.
+		particle.rotation +=
+			particle.angularVelocity *
+			deltaTime;
+
+		// Mantener la rotación dentro de un intervalo estable.
+		if (particle.rotation >
+			PARTICLE_TWO_PI)
+		{
+			particle.rotation =
+				std::fmod(
+					particle.rotation,
+					PARTICLE_TWO_PI
+				);
+		}
+		else if (particle.rotation <
+			-PARTICLE_TWO_PI)
+		{
+			particle.rotation =
+				std::fmod(
+					particle.rotation,
+					PARTICLE_TWO_PI
+				);
+		}
+
+		const float safeLifetime =
+			(std::max)(
+				0.001f,
+				particle.lifetime
+				);
+
 		const float normalizedAge =
 			std::clamp(
 				particle.age /
-				(std::max)(
-					0.001f,
-					particle.lifetime
-					),
+				safeLifetime,
 				0.0f,
 				1.0f
 			);
 
+		// Interpolar tamaño.
 		particle.size =
 			lerp(
 				layer.startSize,
@@ -163,6 +226,7 @@ ParticleSystem::updateLayer(
 				normalizedAge
 			);
 
+		// Interpolar color.
 		particle.color =
 			lerpColor(
 				layer.startColor,
@@ -170,6 +234,10 @@ ParticleSystem::updateLayer(
 				normalizedAge
 			);
 	}
+
+	//========================================================
+	// EMISION
+	//========================================================
 
 	if (!allowEmission ||
 		layer.emissionRate <= 0.0f)
@@ -215,7 +283,6 @@ ParticleSystem::updateLayer(
 				)
 			);
 
-	// Crear las partículas calculadas para esta capa.
 	for (int particleIndex = 0;
 		particleIndex < particlesToEmit;
 		++particleIndex)
@@ -227,11 +294,9 @@ ParticleSystem::updateLayer(
 		);
 	}
 }
-	
-
 
 //============================================================
-// EMITIR PARTÍCULA
+// EMITIR PARTICULA
 //============================================================
 
 void
@@ -240,19 +305,23 @@ ParticleSystem::emitParticle(
 	const ParticleLayer& layer,
 	const EU::Vector3& emitterPosition)
 {
-	Particle* particleToUse = nullptr;
+	Particle* particleToUse =
+		nullptr;
 
 	// Reutilizar primero una partícula muerta.
-	for (Particle& particle : runtime.particles)
+	for (Particle& particle :
+		runtime.particles)
 	{
 		if (!particle.alive)
 		{
-			particleToUse = &particle;
+			particleToUse =
+				&particle;
+
 			break;
 		}
 	}
 
-	// Si no hay partículas libres, crear una nueva.
+	// Crear una nueva si todavía hay espacio.
 	if (!particleToUse)
 	{
 		const unsigned int maximumParticles =
@@ -272,142 +341,485 @@ ParticleSystem::emitParticle(
 			&runtime.particles.back();
 	}
 
-	std::uniform_real_distribution<float>
-		randomHorizontal(
-			-1.0f,
-			1.0f
-		);
-
-	std::uniform_real_distribution<float>
-		randomVertical(
-			0.25f,
-			1.0f
-		);
-
-	std::uniform_real_distribution<float>
-		randomLifetime(
-			0.85f,
-			1.15f
-		);
-
-	const float halfEmitterX =
-		(std::max)(
-			0.0f,
-			layer.emitterSize.x * 0.5f
-			);
-
-	const float halfEmitterY =
-		(std::max)(
-			0.0f,
-			layer.emitterSize.y * 0.5f
-			);
-
-	const float halfEmitterZ =
-		(std::max)(
-			0.0f,
-			layer.emitterSize.z * 0.5f
-			);
-
-	std::uniform_real_distribution<float>
-		randomPositionX(
-			-halfEmitterX,
-			halfEmitterX
-		);
-
-	std::uniform_real_distribution<float>
-		randomPositionY(
-			-halfEmitterY,
-			halfEmitterY
-		);
-
-	std::uniform_real_distribution<float>
-		randomPositionZ(
-			-halfEmitterZ,
-			halfEmitterZ
-		);
-
 	Particle& particle =
 		*particleToUse;
 
-	particle.position =
-		EU::Vector3(
-			emitterPosition.x +
-			randomPositionX(
-				m_randomEngine
-			),
-			emitterPosition.y +
-			randomPositionY(
-				m_randomEngine
-			),
-			emitterPosition.z +
-			randomPositionZ(
-				m_randomEngine
-			)
-		);
+	EU::Vector3 generatedPosition{
+		emitterPosition.x,
+		emitterPosition.y,
+		emitterPosition.z
+	};
 
-	float directionX =
-		randomHorizontal(
-			m_randomEngine
-		);
+	EU::Vector3 generatedDirection{
+		0.0f,
+		1.0f,
+		0.0f
+	};
 
-	float directionY =
-		randomVertical(
-			m_randomEngine
-		);
+	//========================================================
+	// FORMA DE EMISION
+	//========================================================
 
-	float directionZ =
-		randomHorizontal(
-			m_randomEngine
-		);
-
-	const float directionLength =
-		std::sqrt(
-			directionX * directionX +
-			directionY * directionY +
-			directionZ * directionZ
-		);
-
-	if (directionLength > 0.0001f)
+	switch (layer.emissionShape)
 	{
-		directionX /= directionLength;
-		directionY /= directionLength;
-		directionZ /= directionLength;
+	case ParticleEmissionShape::Sphere:
+
+		generateSphereEmission(
+			layer,
+			emitterPosition,
+			generatedPosition,
+			generatedDirection
+		);
+
+		break;
+
+	case ParticleEmissionShape::Cone:
+
+		generateConeEmission(
+			layer,
+			emitterPosition,
+			generatedPosition,
+			generatedDirection
+		);
+
+		break;
+
+	case ParticleEmissionShape::Box:
+	default:
+
+		generateBoxEmission(
+			layer,
+			emitterPosition,
+			generatedPosition,
+			generatedDirection
+		);
+
+		break;
 	}
 
-	const float startSpeed =
+	particle.position =
+		generatedPosition;
+
+	//========================================================
+	// VELOCIDAD
+	//========================================================
+
+	const float baseSpeed =
 		(std::max)(
 			0.0f,
 			layer.startSpeed
 			);
 
-	particle.velocity =
-		EU::Vector3(
-			directionX * startSpeed,
-			directionY * startSpeed,
-			directionZ * startSpeed
+	const float validSpeedVariation =
+		(std::max)(
+			0.0f,
+			layer.speedVariation
+			);
+
+	const float minimumSpeed =
+		(std::max)(
+			0.0f,
+			baseSpeed -
+			validSpeedVariation
+			);
+
+	const float maximumSpeed =
+		baseSpeed +
+		validSpeedVariation;
+
+	const float selectedSpeed =
+		randomRange(
+			minimumSpeed,
+			maximumSpeed
 		);
 
+	particle.velocity =
+		EU::Vector3(
+			generatedDirection.x *
+			selectedSpeed,
+			generatedDirection.y *
+			selectedSpeed,
+			generatedDirection.z *
+			selectedSpeed
+		);
+
+	//========================================================
+	// TIEMPO DE VIDA
+	//========================================================
+
 	particle.age = 0.0f;
+
+	float lifetimeMultiplier =
+		1.0f;
+
+	if (layer.randomizeLifetime)
+	{
+		const float validVariation =
+			std::clamp(
+				layer.lifetimeVariation,
+				0.0f,
+				0.95f
+			);
+
+		lifetimeMultiplier =
+			randomRange(
+				1.0f -
+				validVariation,
+				1.0f +
+				validVariation
+			);
+	}
 
 	particle.lifetime =
 		(std::max)(
 			0.01f,
 			layer.particleLifetime *
-			randomLifetime(
-				m_randomEngine
-			)
+			lifetimeMultiplier
+			);
+
+	//========================================================
+	// TAMAÑO
+	//========================================================
+
+	const float validSizeVariation =
+		(std::max)(
+			0.0f,
+			layer.sizeVariation
+			);
+
+	const float minimumSize =
+		(std::max)(
+			0.0f,
+			layer.startSize -
+			validSizeVariation
+			);
+
+	const float maximumSize =
+		(std::max)(
+			minimumSize,
+			layer.startSize +
+			validSizeVariation
 			);
 
 	particle.size =
-		(std::max)(
-			0.0f,
-			layer.startSize
-			);
+		randomRange(
+			minimumSize,
+			maximumSize
+		);
+
+	//========================================================
+	// ROTACION
+	//========================================================
+
+	float minimumRotation =
+		layer.minimumStartRotation;
+
+	float maximumRotation =
+		layer.maximumStartRotation;
+
+	if (minimumRotation >
+		maximumRotation)
+	{
+		std::swap(
+			minimumRotation,
+			maximumRotation
+		);
+	}
+
+	particle.rotation =
+		degreesToRadians(
+			randomRange(
+				minimumRotation,
+				maximumRotation
+			)
+		);
+
+	float minimumAngularVelocity =
+		layer.minimumAngularVelocity;
+
+	float maximumAngularVelocity =
+		layer.maximumAngularVelocity;
+
+	if (minimumAngularVelocity >
+		maximumAngularVelocity)
+	{
+		std::swap(
+			minimumAngularVelocity,
+			maximumAngularVelocity
+		);
+	}
+
+	particle.angularVelocity =
+		degreesToRadians(
+			randomRange(
+				minimumAngularVelocity,
+				maximumAngularVelocity
+			)
+		);
+
+	//========================================================
+	// COLOR Y ESTADO
+	//========================================================
 
 	particle.color =
 		layer.startColor;
 
 	particle.alive = true;
+}
+
+//============================================================
+// EMISION BOX
+//============================================================
+
+void
+ParticleSystem::generateBoxEmission(
+	const ParticleLayer& layer,
+	const EU::Vector3& emitterPosition,
+	EU::Vector3& outPosition,
+	EU::Vector3& outDirection)
+{
+	const float halfEmitterX =
+		(std::max)(
+			0.0f,
+			layer.emitterSize.x *
+			0.5f
+			);
+
+	const float halfEmitterY =
+		(std::max)(
+			0.0f,
+			layer.emitterSize.y *
+			0.5f
+			);
+
+	const float halfEmitterZ =
+		(std::max)(
+			0.0f,
+			layer.emitterSize.z *
+			0.5f
+			);
+
+	outPosition =
+		EU::Vector3(
+			emitterPosition.x +
+			randomRange(
+				-halfEmitterX,
+				halfEmitterX
+			),
+			emitterPosition.y +
+			randomRange(
+				-halfEmitterY,
+				halfEmitterY
+			),
+			emitterPosition.z +
+			randomRange(
+				-halfEmitterZ,
+				halfEmitterZ
+			)
+		);
+
+	// Dirección aleatoria con tendencia hacia arriba.
+	outDirection =
+		normalizeVector(
+			EU::Vector3(
+				randomRange(
+					-1.0f,
+					1.0f
+				),
+				randomRange(
+					0.25f,
+					1.0f
+				),
+				randomRange(
+					-1.0f,
+					1.0f
+				)
+			)
+		);
+}
+
+//============================================================
+// EMISION SPHERE
+//============================================================
+
+void
+ParticleSystem::generateSphereEmission(
+	const ParticleLayer& layer,
+	const EU::Vector3& emitterPosition,
+	EU::Vector3& outPosition,
+	EU::Vector3& outDirection)
+{
+	const float radius =
+		(std::max)(
+			0.0f,
+			layer.sphereRadius
+			);
+
+	const float azimuth =
+		randomRange(
+			0.0f,
+			PARTICLE_TWO_PI
+		);
+
+	const float verticalValue =
+		randomRange(
+			-1.0f,
+			1.0f
+		);
+
+	const float horizontalLength =
+		std::sqrt(
+			(std::max)(
+				0.0f,
+				1.0f -
+				verticalValue *
+				verticalValue
+				)
+		);
+
+	outDirection =
+		normalizeVector(
+			EU::Vector3(
+				horizontalLength *
+				std::cos(
+					azimuth
+				),
+				verticalValue,
+				horizontalLength *
+				std::sin(
+					azimuth
+				)
+			)
+		);
+
+	// Raíz cúbica para distribuir partículas
+	// uniformemente dentro del volumen.
+	const float randomRadius =
+		radius *
+		std::cbrt(
+			randomRange(
+				0.0f,
+				1.0f
+			)
+		);
+
+	outPosition =
+		EU::Vector3(
+			emitterPosition.x +
+			outDirection.x *
+			randomRadius,
+			emitterPosition.y +
+			outDirection.y *
+			randomRadius,
+			emitterPosition.z +
+			outDirection.z *
+			randomRadius
+		);
+}
+
+//============================================================
+// EMISION CONE
+//============================================================
+
+void
+ParticleSystem::generateConeEmission(
+	const ParticleLayer& layer,
+	const EU::Vector3& emitterPosition,
+	EU::Vector3& outPosition,
+	EU::Vector3& outDirection)
+{
+	const float baseRadius =
+		(std::max)(
+			0.0f,
+			layer.coneBaseRadius
+			);
+
+	// Distribución uniforme dentro del disco de la base.
+	const float baseAngle =
+		randomRange(
+			0.0f,
+			PARTICLE_TWO_PI
+		);
+
+	const float selectedBaseRadius =
+		baseRadius *
+		std::sqrt(
+			randomRange(
+				0.0f,
+				1.0f
+			)
+		);
+
+	outPosition =
+		EU::Vector3(
+			emitterPosition.x +
+			std::cos(
+				baseAngle
+			) *
+			selectedBaseRadius,
+			emitterPosition.y,
+			emitterPosition.z +
+			std::sin(
+				baseAngle
+			) *
+			selectedBaseRadius
+		);
+
+	const float clampedConeAngle =
+		std::clamp(
+			layer.coneAngleDegrees,
+			0.0f,
+			89.0f
+		);
+
+	const float coneAngleRadians =
+		degreesToRadians(
+			clampedConeAngle
+		);
+
+	const float minimumCosine =
+		std::cos(
+			coneAngleRadians
+		);
+
+	// Distribuir uniformemente dentro del cono.
+	const float selectedCosine =
+		randomRange(
+			minimumCosine,
+			1.0f
+		);
+
+	const float selectedSine =
+		std::sqrt(
+			(std::max)(
+				0.0f,
+				1.0f -
+				selectedCosine *
+				selectedCosine
+				)
+		);
+
+	const float directionAngle =
+		randomRange(
+			0.0f,
+			PARTICLE_TWO_PI
+		);
+
+	// El cono apunta hacia +Y.
+	outDirection =
+		normalizeVector(
+			EU::Vector3(
+				std::cos(
+					directionAngle
+				) *
+				selectedSine,
+				selectedCosine,
+				std::sin(
+					directionAngle
+				) *
+				selectedSine
+			)
+		);
 }
 
 //============================================================
@@ -418,12 +830,13 @@ void
 ParticleSystem::stopEmitter(
 	ParticleEmitterComponent& emitter)
 {
-	auto iterator =
+	const auto iterator =
 		m_emitters.find(
 			&emitter
 		);
 
-	if (iterator == m_emitters.end())
+	if (iterator ==
+		m_emitters.end())
 	{
 		return;
 	}
@@ -444,7 +857,7 @@ ParticleSystem::clear()
 }
 
 //============================================================
-// CONTAR TODAS LAS PARTÍCULAS
+// CONTAR TODAS LAS PARTICULAS
 //============================================================
 
 std::size_t
@@ -456,7 +869,8 @@ ParticleSystem::getAliveParticleCount(
 			&emitter
 		);
 
-	if (iterator == m_emitters.end())
+	if (iterator ==
+		m_emitters.end())
 	{
 		return 0;
 	}
@@ -480,7 +894,7 @@ ParticleSystem::getAliveParticleCount(
 }
 
 //============================================================
-// CONTAR PARTÍCULAS DE UNA CAPA
+// CONTAR PARTICULAS DE UNA CAPA
 //============================================================
 
 std::size_t
@@ -514,7 +928,7 @@ ParticleSystem::getAliveParticleCount(
 }
 
 //============================================================
-// OBTENER PRIMERA CAPA — COMPATIBILIDAD
+// OBTENER PRIMERA CAPA
 //============================================================
 
 const std::vector<Particle>*
@@ -528,7 +942,7 @@ ParticleSystem::getParticles(
 }
 
 //============================================================
-// OBTENER UNA CAPA ESPECÍFICA
+// OBTENER UNA CAPA
 //============================================================
 
 const std::vector<Particle>*
@@ -541,7 +955,8 @@ ParticleSystem::getParticles(
 			&emitter
 		);
 
-	if (iterator == m_emitters.end())
+	if (iterator ==
+		m_emitters.end())
 	{
 		return nullptr;
 	}
@@ -560,7 +975,88 @@ ParticleSystem::getParticles(
 }
 
 //============================================================
-// INTERPOLACIÓN
+// NUMERO ALEATORIO
+//============================================================
+
+float
+ParticleSystem::randomRange(
+	float minimumValue,
+	float maximumValue)
+{
+	if (minimumValue >
+		maximumValue)
+	{
+		std::swap(
+			minimumValue,
+			maximumValue
+		);
+	}
+
+	if (minimumValue ==
+		maximumValue)
+	{
+		return minimumValue;
+	}
+
+	std::uniform_real_distribution<float>
+		distribution(
+			minimumValue,
+			maximumValue
+		);
+
+	return distribution(
+		m_randomEngine
+	);
+}
+
+//============================================================
+// NORMALIZAR VECTOR
+//============================================================
+
+EU::Vector3
+ParticleSystem::normalizeVector(
+	const EU::Vector3& vector)
+{
+	const float length =
+		std::sqrt(
+			vector.x * vector.x +
+			vector.y * vector.y +
+			vector.z * vector.z
+		);
+
+	if (length <= 0.0001f)
+	{
+		return
+			EU::Vector3(
+				0.0f,
+				1.0f,
+				0.0f
+			);
+	}
+
+	return
+		EU::Vector3(
+			vector.x / length,
+			vector.y / length,
+			vector.z / length
+		);
+}
+
+//============================================================
+// GRADOS A RADIANES
+//============================================================
+
+float
+ParticleSystem::degreesToRadians(
+	float degrees)
+{
+	return
+		degrees *
+		(PARTICLE_PI / 180.0f);
+}
+
+//============================================================
+// INTERPOLACION
 //============================================================
 
 float

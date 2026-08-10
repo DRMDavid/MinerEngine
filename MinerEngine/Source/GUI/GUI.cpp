@@ -1821,6 +1821,8 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 			  );
 		  }
 	  }
+
+
 	  //============================================================
 	  // PARTICLE EMITTER COMPONENT
 	  //============================================================
@@ -1915,6 +1917,13 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 
 			  int layerToRemove = -1;
 
+			  // Lista compartida por todas las capas.
+			  static std::vector<std::string>
+				  particleTextureFiles =
+				  listParticleTextureFiles(
+					  "Assets/Textures/Particles"
+				  );
+
 			  //====================================================
 			  // DIBUJAR CAPAS
 			  //====================================================
@@ -1955,19 +1964,12 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 						  sizeof(layer.name)
 					  );
 
-					  //====================================================
-					  // TEXTURA DE LA CAPA
-					  //====================================================
+					  //================================================
+					  // TEXTURA
+					  //================================================
 
-					  static std::vector<std::string>
-						  particleTextureFiles =
-						  listParticleTextureFiles(
-							  "Assets/Textures/Particles"
-						  );
-
-					  //----------------------------------------------------
-					  // IMPORTAR PNG
-					  //----------------------------------------------------
+					  ImGui::Spacing();
+					  ImGui::TextDisabled("Texture");
 
 					  if (ImGui::Button(
 						  "Import PNG",
@@ -2000,10 +2002,6 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 
 					  ImGui::SameLine();
 
-					  //----------------------------------------------------
-					  // ACTUALIZAR LISTA
-					  //----------------------------------------------------
-
 					  if (ImGui::Button(
 						  "Refresh PNG",
 						  ImVec2(130.0f, 0.0f)))
@@ -2020,10 +2018,6 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 						  );
 					  }
 
-					  //----------------------------------------------------
-					  // SELECTOR DE TEXTURA
-					  //----------------------------------------------------
-
 					  const char* currentParticleTexture =
 						  layer.texturePath[0] != '\0'
 						  ? layer.texturePath
@@ -2033,7 +2027,6 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 						  "Texture",
 						  currentParticleTexture))
 					  {
-						  // Opción para regresar al círculo generado.
 						  const bool noTextureSelected =
 							  layer.texturePath[0] == '\0';
 
@@ -2041,7 +2034,8 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 							  "None - Generated Circle",
 							  noTextureSelected))
 						  {
-							  layer.texturePath[0] = '\0';
+							  layer.texturePath[0] =
+								  '\0';
 						  }
 
 						  if (noTextureSelected)
@@ -2099,6 +2093,14 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 						  );
 					  }
 
+					  //================================================
+					  // EMISION
+					  //================================================
+
+					  ImGui::Spacing();
+					  ImGui::Separator();
+					  ImGui::TextDisabled("Emission");
+
 					  ImGui::SliderFloat(
 						  "Emission Rate",
 						  &layer.emissionRate,
@@ -2132,6 +2134,115 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 						  "%.2f"
 					  );
 
+					  ImGui::Checkbox(
+						  "Randomize Lifetime",
+						  &layer.randomizeLifetime
+					  );
+
+					  if (layer.randomizeLifetime)
+					  {
+						  ImGui::SliderFloat(
+							  "Lifetime Variation",
+							  &layer.lifetimeVariation,
+							  0.0f,
+							  0.95f,
+							  "%.2f"
+						  );
+					  }
+
+					  //================================================
+					  // FORMA DE EMISION
+					  //================================================
+
+					  int emissionShape =
+						  static_cast<int>(
+							  layer.emissionShape
+							  );
+
+					  const char* emissionShapes[] =
+					  {
+						  "Box",
+						  "Sphere",
+						  "Cone"
+					  };
+
+					  if (ImGui::Combo(
+						  "Emission Shape",
+						  &emissionShape,
+						  emissionShapes,
+						  3))
+					  {
+						  layer.emissionShape =
+							  static_cast<
+							  ParticleEmissionShape
+							  >(
+								  emissionShape
+								  );
+					  }
+
+					  if (layer.emissionShape ==
+						  ParticleEmissionShape::Box)
+					  {
+						  ImGui::DragFloat3(
+							  "Box Size",
+							  &layer.emitterSize.x,
+							  0.01f,
+							  0.0f,
+							  20.0f,
+							  "%.2f"
+						  );
+
+						  ImGui::TextDisabled(
+							  "Particles spawn inside the box"
+						  );
+					  }
+					  else if (layer.emissionShape ==
+						  ParticleEmissionShape::Sphere)
+					  {
+						  ImGui::SliderFloat(
+							  "Sphere Radius",
+							  &layer.sphereRadius,
+							  0.0f,
+							  20.0f,
+							  "%.2f"
+						  );
+
+						  ImGui::TextDisabled(
+							  "Particles move out from the sphere"
+						  );
+					  }
+					  else if (layer.emissionShape ==
+						  ParticleEmissionShape::Cone)
+					  {
+						  ImGui::SliderFloat(
+							  "Cone Angle",
+							  &layer.coneAngleDegrees,
+							  0.0f,
+							  89.0f,
+							  "%.1f degrees"
+						  );
+
+						  ImGui::SliderFloat(
+							  "Cone Base Radius",
+							  &layer.coneBaseRadius,
+							  0.0f,
+							  20.0f,
+							  "%.2f"
+						  );
+
+						  ImGui::TextDisabled(
+							  "Cone points toward local +Y"
+						  );
+					  }
+
+					  //================================================
+					  // MOVIMIENTO
+					  //================================================
+
+					  ImGui::Spacing();
+					  ImGui::Separator();
+					  ImGui::TextDisabled("Movement");
+
 					  ImGui::SliderFloat(
 						  "Start Speed",
 						  &layer.startSpeed,
@@ -2139,6 +2250,30 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 						  30.0f,
 						  "%.2f"
 					  );
+
+					  ImGui::SliderFloat(
+						  "Speed Variation",
+						  &layer.speedVariation,
+						  0.0f,
+						  30.0f,
+						  "%.2f"
+					  );
+
+					  ImGui::SliderFloat(
+						  "Gravity",
+						  &layer.gravityMultiplier,
+						  -20.0f,
+						  20.0f,
+						  "%.2f"
+					  );
+
+					  //================================================
+					  // TAMAÑO
+					  //================================================
+
+					  ImGui::Spacing();
+					  ImGui::Separator();
+					  ImGui::TextDisabled("Size");
 
 					  ImGui::SliderFloat(
 						  "Start Size",
@@ -2157,12 +2292,54 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 					  );
 
 					  ImGui::SliderFloat(
-						  "Gravity",
-						  &layer.gravityMultiplier,
-						  -10.0f,
+						  "Size Variation",
+						  &layer.sizeVariation,
+						  0.0f,
 						  10.0f,
 						  "%.2f"
 					  );
+
+					  //================================================
+					  // ROTACION
+					  //================================================
+
+					  ImGui::Spacing();
+					  ImGui::Separator();
+					  ImGui::TextDisabled("Rotation");
+
+					  ImGui::DragFloatRange2(
+						  "Start Rotation",
+						  &layer.minimumStartRotation,
+						  &layer.maximumStartRotation,
+						  1.0f,
+						  -360.0f,
+						  360.0f,
+						  "Min: %.1f",
+						  "Max: %.1f"
+					  );
+
+					  ImGui::DragFloatRange2(
+						  "Angular Velocity",
+						  &layer.minimumAngularVelocity,
+						  &layer.maximumAngularVelocity,
+						  1.0f,
+						  -720.0f,
+						  720.0f,
+						  "Min: %.1f",
+						  "Max: %.1f"
+					  );
+
+					  ImGui::TextDisabled(
+						  "Rotation values use degrees"
+					  );
+
+					  //================================================
+					  // COLOR
+					  //================================================
+
+					  ImGui::Spacing();
+					  ImGui::Separator();
+					  ImGui::TextDisabled("Color");
 
 					  ImGui::ColorEdit4(
 						  "Start Color",
@@ -2174,14 +2351,13 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 						  &layer.endColor.x
 					  );
 
-					  ImGui::DragFloat3(
-						  "Emitter Size",
-						  &layer.emitterSize.x,
-						  0.01f,
-						  0.0f,
-						  20.0f,
-						  "%.2f"
-					  );
+					  //================================================
+					  // RENDER
+					  //================================================
+
+					  ImGui::Spacing();
+					  ImGui::Separator();
+					  ImGui::TextDisabled("Rendering");
 
 					  int blendMode =
 						  static_cast<int>(
@@ -2208,10 +2384,42 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 								  );
 					  }
 
-					  ImGui::Spacing();
+					  ImGui::Checkbox(
+						  "Depth Sorting",
+						  &layer.depthSorting
+					  );
 
-					  if (particleEmitter
-						  ->layers.size() > 1)
+					  if (layer.blendMode ==
+						  ParticleBlendMode::Alpha)
+					  {
+						  if (layer.depthSorting)
+						  {
+							  ImGui::TextDisabled(
+								  "Alpha particles sorted back to front"
+							  );
+						  }
+						  else
+						  {
+							  ImGui::TextDisabled(
+								  "Warning: Alpha may render incorrectly"
+							  );
+						  }
+					  }
+					  else
+					  {
+						  ImGui::TextDisabled(
+							  "Sorting is normally unnecessary for Additive"
+						  );
+					  }
+
+					  //================================================
+					  // ELIMINAR CAPA
+					  //================================================
+
+					  ImGui::Spacing();
+					  ImGui::Separator();
+
+					  if (particleEmitter->layers.size() > 1)
 					  {
 						  if (ImGui::Button(
 							  "Remove Layer",
@@ -2238,7 +2446,7 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 			  }
 
 			  //====================================================
-			  // ELIMINAR CAPA
+			  // ELIMINAR CAPA SELECCIONADA
 			  //====================================================
 
 			  if (layerToRemove >= 0 &&
@@ -2257,10 +2465,7 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 			  }
 
 			  //====================================================
-			  // SINCRONIZACION TEMPORAL CON EL SISTEMA ACTUAL
-			  //
-			  // Mientras migramos ParticleSystem, la primera capa
-			  // controla el efecto que ya funciona.
+			  // COMPATIBILIDAD LEGACY
 			  //====================================================
 
 			  if (!particleEmitter->layers.empty())
