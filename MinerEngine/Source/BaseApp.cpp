@@ -1,9 +1,11 @@
+#include "ECS/ParticleEmitterComponent.h"
 #include "BaseApp.h"
 #include "ResourceManager.h"
 #include "ECS/RigidbodyComponent.h"
 #include "ECS/BoxColliderComponent.h"
 #include <fstream>
 #include <memory>
+#include <string>
 
 
 namespace {
@@ -424,6 +426,9 @@ BaseApp::init() {
 	hr = m_renderPipeline.init(m_device, RendererType::Deferred);
 	if (FAILED(hr)) { ERROR("Main", "InitDevice", "Failed RenderPipeline."); return hr; }
 
+	hr = m_particleRenderer.init(m_device,1000);
+    if (FAILED(hr)) {ERROR("BaseApp","init","No se pudo inicializar ParticleRenderer");return hr;}
+
 	buildTextureThumbnails();
 
 	return S_OK;
@@ -444,6 +449,83 @@ BaseApp::update(float deltaTime) {
 	m_audioSystem.processPreviewRequests(
 		m_actors
 	);
+
+	//============================================================
+	// ACTUALIZAR SISTEMA DE PARTICULAS
+	//============================================================
+
+	if (m_engineMode == EngineMode::Play)
+	{
+		std::size_t totalAliveParticles = 0;
+
+		for (const auto& actor : m_actors)
+		{
+			if (actor.isNull())
+			{
+				continue;
+			}
+
+			auto particleEmitter =
+				actor->getComponent<
+				ParticleEmitterComponent
+				>();
+
+			if (!particleEmitter)
+			{
+				continue;
+			}
+
+			if (!particleEmitter->isEnabled() ||
+				!particleEmitter->playOnStart)
+			{
+				continue;
+			}
+
+			auto transform =
+				actor->getComponent<Transform>();
+
+			if (!transform)
+			{
+				continue;
+			}
+
+			const EU::Vector3& position =
+				transform->getPosition();
+
+			m_particleSystem.updateEmitter(
+				*particleEmitter,
+				position,
+				deltaTime
+			);
+
+			totalAliveParticles +=
+				m_particleSystem
+				.getAliveParticleCount(
+					*particleEmitter
+				);
+		}
+
+		static float particleLogTimer = 0.0f;
+
+		particleLogTimer += deltaTime;
+
+		if (particleLogTimer >= 1.0f)
+		{
+			particleLogTimer = 0.0f;
+
+			const std::string particleMessage =
+				"Particulas activas: " +
+				std::to_string(
+					totalAliveParticles
+				);
+
+			MESSAGE(
+				"ParticleSystem",
+				"update",
+				particleMessage.c_str()
+			);
+		}
+	}
 	/*
 	if (!m_initialStateCaptured) {
 		captureInitialState();
@@ -829,6 +911,53 @@ BaseApp::render() {
 	m_renderPipeline.setDeferredDebugViewMode(m_gui.m_deferredDebugViewMode);
 	m_renderPipeline.render(m_deviceContext, m_camera, m_renderScene, m_editorViewportPass);
 
+	//============================================================
+// PREPARAR VIEWPORT PARA LAS PARTICULAS
+//============================================================
+
+	ID3D11RenderTargetView* particleRenderTarget = m_editorViewportPass.getRTV();
+
+	ID3D11DepthStencilView* particleDepthStencil = m_editorViewportPass.getDSV();
+
+	if (particleRenderTarget)
+	{
+		m_deviceContext.OMSetRenderTargets(1,&particleRenderTarget,particleDepthStencil);
+
+		m_editorViewportPass.setViewport(
+			m_deviceContext
+		);
+	}
+	//============================================================
+// RENDERIZAR PARTICULAS
+//============================================================
+
+	for (const auto& actor : m_actors)
+	{
+		if (actor.isNull())
+		{
+			continue;
+		}
+
+		auto particleEmitter =
+			actor->getComponent<
+			ParticleEmitterComponent
+			>();
+
+		if (!particleEmitter ||
+			!particleEmitter->isEnabled())
+		{
+			continue;
+		}
+
+		m_particleRenderer.renderEmitter(
+			m_deviceContext,
+			m_device,
+			m_camera,
+			m_particleSystem,
+			*particleEmitter
+		);
+	}
+
 	m_lastDrawCalls = m_deviceContext.m_drawCallCount;
 
 	m_renderTargetView.render(m_deviceContext, m_depthStencilView, 1, ClearColor);
@@ -854,6 +983,8 @@ BaseApp::destroy()
 	}
 
 	m_sceneGraph.destroy();
+	m_particleRenderer.destroy();
+	m_particleSystem.clear();
 	m_renderPipeline.destroy();
 	m_editorViewportPass.destroy();
 

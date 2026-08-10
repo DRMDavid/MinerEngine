@@ -450,6 +450,8 @@
     <ClCompile Include="Source\GUI\GUI.cpp" />
     <ClCompile Include="Source\InputLayout.cpp" />
     <ClCompile Include="Source\Model3D.cpp" />
+    <ClCompile Include="Source\ParticleRenderer.cpp" />
+    <ClCompile Include="Source\ParticleSystem.cpp" />
     <ClCompile Include="Source\PhysicsSystem.cpp" />
     <ClCompile Include="Source\RasterizerState.cpp" />
     <ClCompile Include="Source\Rendering\DeferredRenderercpp.cpp" />
@@ -497,6 +499,7 @@
     <ClInclude Include="Include\ECS\Entity.h" />
     <ClInclude Include="Include\ECS\LightComponent.h" />
     <ClInclude Include="Include\ECS\MeshRendererComponent.h" />
+    <ClInclude Include="Include\ECS\ParticleEmitterComponent.h" />
     <ClInclude Include="Include\ECS\RigidbodyComponent.h" />
     <ClInclude Include="Include\ECS\RotateBehaviorComponent.h" />
     <ClInclude Include="Include\ECS\Transform.h" />
@@ -518,6 +521,8 @@
     <ClInclude Include="Include\Logger.h" />
     <ClInclude Include="Include\MeshComponent.h" />
     <ClInclude Include="Include\Model3D.h" />
+    <ClInclude Include="Include\ParticleRenderer.h" />
+    <ClInclude Include="Include\ParticleSystem.h" />
     <ClInclude Include="Include\PhysicsSystem.h" />
     <ClInclude Include="Include\Prerequisites.h" />
     <ClInclude Include="Include\RasterizerState.h" />
@@ -638,6 +643,21 @@
       <FileType>Document</FileType>
     </None>
     <None Include="bin\FXAA.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <FileType>Document</FileType>
+    </None>
+    <None Include="bin\Particle.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">Compute</ShaderType>

@@ -31,6 +31,8 @@
 #include "PhysicsSystem.h"
 #include "BehaviorSystem.h"
 #include "AudioSystem.h"
+#include "ParticleSystem.h"
+#include "ParticleRenderer.h"
 #include <string>   
 #include <memory>
 
@@ -209,6 +211,8 @@ private:
     PhysicsSystem       m_physicsSystem;
     BehaviorSystem      m_behaviorSystem;
     AudioSystem         m_audioSystem;
+    ParticleSystem      m_particleSystem;
+    ParticleRenderer    m_particleRenderer;
     
 
     EngineMode m_engineMode = EngineMode::Edit;

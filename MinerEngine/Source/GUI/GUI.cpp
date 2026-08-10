@@ -1,3 +1,4 @@
+#include "ECS/ParticleEmitterComponent.h"
 #include "GUI/GUI.h"
 #include "Viewport.h"
 #include "Window.h"
@@ -356,6 +357,251 @@ importAudioFile(std::string& outRelativePath)
 	return true;
 }
 
+//============================================================
+// LISTAR TEXTURAS DE PARTÍCULAS
+//============================================================
+
+static std::vector<std::string>
+listParticleTextureFiles(
+	const std::string& directory)
+{
+	std::vector<std::string> files;
+
+	const std::string pattern =
+		directory + "\\*";
+
+	WIN32_FIND_DATAA findData{};
+
+	HANDLE findHandle =
+		FindFirstFileA(
+			pattern.c_str(),
+			&findData
+		);
+
+	if (findHandle ==
+		INVALID_HANDLE_VALUE)
+	{
+		return files;
+	}
+
+	do
+	{
+		if (findData.dwFileAttributes &
+			FILE_ATTRIBUTE_DIRECTORY)
+		{
+			continue;
+		}
+
+		std::string fileName =
+			findData.cFileName;
+
+		std::string lowerName =
+			fileName;
+
+		std::transform(
+			lowerName.begin(),
+			lowerName.end(),
+			lowerName.begin(),
+			[](unsigned char character)
+			{
+				return static_cast<char>(
+					std::tolower(character)
+					);
+			}
+		);
+
+		const bool isPng =
+			lowerName.size() >= 4 &&
+			lowerName.substr(
+				lowerName.size() - 4
+			) == ".png";
+
+		if (isPng)
+		{
+			files.push_back(
+				fileName
+			);
+		}
+	} while (FindNextFileA(
+		findHandle,
+		&findData
+	));
+
+	FindClose(
+		findHandle
+	);
+
+	std::sort(
+		files.begin(),
+		files.end()
+	);
+
+	return files;
+}
+
+//============================================================
+// IMPORTAR TEXTURA DE PARTÍCULAS
+//============================================================
+
+static bool
+importParticleTexture(
+	std::string& outRelativePath)
+{
+	char selectedFile[MAX_PATH] = {};
+
+	OPENFILENAMEA dialog{};
+
+	dialog.lStructSize =
+		sizeof(OPENFILENAMEA);
+
+	dialog.hwndOwner =
+		nullptr;
+
+	dialog.lpstrFile =
+		selectedFile;
+
+	dialog.nMaxFile =
+		MAX_PATH;
+
+	dialog.lpstrFilter =
+		"PNG Images (*.png)\0*.png\0"
+		"All Files (*.*)\0*.*\0";
+
+	dialog.nFilterIndex = 1;
+
+	dialog.Flags =
+		OFN_PATHMUSTEXIST |
+		OFN_FILEMUSTEXIST |
+		OFN_NOCHANGEDIR;
+
+	dialog.lpstrTitle =
+		"Import Particle Texture";
+
+	if (!GetOpenFileNameA(
+		&dialog
+	))
+	{
+		// El usuario canceló el explorador.
+		return false;
+	}
+
+	const std::string sourcePath =
+		selectedFile;
+
+	std::string lowerSourcePath =
+		sourcePath;
+
+	std::transform(
+		lowerSourcePath.begin(),
+		lowerSourcePath.end(),
+		lowerSourcePath.begin(),
+		[](unsigned char character)
+		{
+			return static_cast<char>(
+				std::tolower(character)
+				);
+		}
+	);
+
+	const bool isPng =
+		lowerSourcePath.size() >= 4 &&
+		lowerSourcePath.substr(
+			lowerSourcePath.size() - 4
+		) == ".png";
+
+	if (!isPng)
+	{
+		ERROR(
+			"GUI",
+			"importParticleTexture",
+			"Solo se permiten archivos PNG"
+		);
+
+		return false;
+	}
+
+	const std::size_t separatorPosition =
+		sourcePath.find_last_of(
+			"\\/"
+		);
+
+	const std::string fileName =
+		separatorPosition ==
+		std::string::npos
+		? sourcePath
+		: sourcePath.substr(
+			separatorPosition + 1
+		);
+
+	if (fileName.empty())
+	{
+		ERROR(
+			"GUI",
+			"importParticleTexture",
+			"El archivo seleccionado no tiene nombre"
+		);
+
+		return false;
+	}
+
+	const std::string particleDirectory =
+		"Assets\\Textures\\Particles";
+
+	// Crear la carpeta si todavía no existe.
+	if (!CreateDirectoryA(
+		particleDirectory.c_str(),
+		nullptr
+	))
+	{
+		const DWORD directoryError =
+			GetLastError();
+
+		if (directoryError !=
+			ERROR_ALREADY_EXISTS)
+		{
+			ERROR(
+				"GUI",
+				"importParticleTexture",
+				"No se pudo crear la carpeta de particulas"
+			);
+
+			return false;
+		}
+	}
+
+	const std::string destinationPath =
+		particleDirectory +
+		"\\" +
+		fileName;
+
+	// FALSE permite reemplazar un PNG con el mismo nombre.
+	if (!CopyFileA(
+		sourcePath.c_str(),
+		destinationPath.c_str(),
+		FALSE
+	))
+	{
+		ERROR(
+			"GUI",
+			"importParticleTexture",
+			"No se pudo copiar la textura PNG"
+		);
+
+		return false;
+	}
+
+	outRelativePath =
+		"Assets/Textures/Particles/" +
+		fileName;
+
+	MESSAGE(
+		"GUI",
+		"importParticleTexture",
+		"Textura de particulas importada correctamente"
+	);
+
+	return true;
+}
 
 static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::TRANSLATE);
 
@@ -735,6 +981,8 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 	auto rotateBehavior =actor->getComponent<RotateBehaviorComponent>();
 
 	auto audioSource =actor->getComponent<AudioSourceComponent>();
+
+	auto particleEmitter=actor->getComponent<ParticleEmitterComponent>();
 
 	//============================================================
 	// PHYSICS
@@ -1573,7 +1821,509 @@ void GUI::inspectorGeneral(EU::TSharedPointer<Actor> actor)
 			  );
 		  }
 	  }
+	  //============================================================
+	  // PARTICLE EMITTER COMPONENT
+	  //============================================================
 
+	  ImGui::Spacing();
+	  ImGui::Separator();
+	  ImGui::Spacing();
+
+	  ImGui::Text("Particles");
+
+	  if (particleEmitter)
+	  {
+		  bool particleEnabled =
+			  particleEmitter->isEnabled();
+
+		  if (ImGui::Checkbox(
+			  "Particle Emitter",
+			  &particleEnabled))
+		  {
+			  particleEmitter->setEnabled(
+				  particleEnabled
+			  );
+		  }
+
+		  if (particleEnabled)
+		  {
+			  ImGui::Indent();
+
+			  //====================================================
+			  // CONFIGURACION GENERAL
+			  //====================================================
+
+			  ImGui::Checkbox(
+				  "Play On Start##Particles",
+				  &particleEmitter->playOnStart
+			  );
+
+			  ImGui::Checkbox(
+				  "Looping##Particles",
+				  &particleEmitter->looping
+			  );
+
+			  if (!particleEmitter->looping)
+			  {
+				  ImGui::SliderFloat(
+					  "Duration##Particles",
+					  &particleEmitter->duration,
+					  0.10f,
+					  60.0f,
+					  "%.2f"
+				  );
+			  }
+
+			  ImGui::Spacing();
+			  ImGui::Separator();
+			  ImGui::Spacing();
+
+			  ImGui::Text("Particle Layers");
+
+			  //====================================================
+			  // AGREGAR CAPA
+			  //====================================================
+
+			  if (ImGui::Button(
+				  "+ Add Particle Layer",
+				  ImVec2(-1.0f, 0.0f)))
+			  {
+				  ParticleLayer newLayer;
+
+				  const std::size_t newIndex =
+					  particleEmitter->layers.size();
+
+				  sprintf_s(
+					  newLayer.name,
+					  sizeof(newLayer.name),
+					  "Particle Layer %zu",
+					  newIndex
+				  );
+
+				  particleEmitter->layers.push_back(
+					  newLayer
+				  );
+
+				  MESSAGE(
+					  "GUI",
+					  "inspectorGeneral",
+					  "Nueva capa de particulas agregada"
+				  );
+			  }
+
+			  ImGui::Spacing();
+
+			  int layerToRemove = -1;
+
+			  //====================================================
+			  // DIBUJAR CAPAS
+			  //====================================================
+
+			  for (std::size_t layerIndex = 0;
+				  layerIndex <
+				  particleEmitter->layers.size();
+				  ++layerIndex)
+			  {
+				  ParticleLayer& layer =
+					  particleEmitter
+					  ->layers[layerIndex];
+
+				  ImGui::PushID(
+					  static_cast<int>(
+						  layerIndex
+						  )
+				  );
+
+				  const bool layerOpen =
+					  ImGui::CollapsingHeader(
+						  layer.name,
+						  ImGuiTreeNodeFlags_DefaultOpen
+					  );
+
+				  if (layerOpen)
+				  {
+					  ImGui::Indent();
+
+					  ImGui::Checkbox(
+						  "Enabled",
+						  &layer.enabled
+					  );
+
+					  ImGui::InputText(
+						  "Layer Name",
+						  layer.name,
+						  sizeof(layer.name)
+					  );
+
+					  //====================================================
+					  // TEXTURA DE LA CAPA
+					  //====================================================
+
+					  static std::vector<std::string>
+						  particleTextureFiles =
+						  listParticleTextureFiles(
+							  "Assets/Textures/Particles"
+						  );
+
+					  //----------------------------------------------------
+					  // IMPORTAR PNG
+					  //----------------------------------------------------
+
+					  if (ImGui::Button(
+						  "Import PNG",
+						  ImVec2(130.0f, 0.0f)))
+					  {
+						  std::string importedTexturePath;
+
+						  if (importParticleTexture(
+							  importedTexturePath
+						  ))
+						  {
+							  strcpy_s(
+								  layer.texturePath,
+								  sizeof(layer.texturePath),
+								  importedTexturePath.c_str()
+							  );
+
+							  particleTextureFiles =
+								  listParticleTextureFiles(
+									  "Assets/Textures/Particles"
+								  );
+
+							  MESSAGE(
+								  "GUI",
+								  "inspectorGeneral",
+								  "PNG importado y seleccionado"
+							  );
+						  }
+					  }
+
+					  ImGui::SameLine();
+
+					  //----------------------------------------------------
+					  // ACTUALIZAR LISTA
+					  //----------------------------------------------------
+
+					  if (ImGui::Button(
+						  "Refresh PNG",
+						  ImVec2(130.0f, 0.0f)))
+					  {
+						  particleTextureFiles =
+							  listParticleTextureFiles(
+								  "Assets/Textures/Particles"
+							  );
+
+						  MESSAGE(
+							  "GUI",
+							  "inspectorGeneral",
+							  "Lista de PNG actualizada"
+						  );
+					  }
+
+					  //----------------------------------------------------
+					  // SELECTOR DE TEXTURA
+					  //----------------------------------------------------
+
+					  const char* currentParticleTexture =
+						  layer.texturePath[0] != '\0'
+						  ? layer.texturePath
+						  : "Select Particle PNG";
+
+					  if (ImGui::BeginCombo(
+						  "Texture",
+						  currentParticleTexture))
+					  {
+						  // Opción para regresar al círculo generado.
+						  const bool noTextureSelected =
+							  layer.texturePath[0] == '\0';
+
+						  if (ImGui::Selectable(
+							  "None - Generated Circle",
+							  noTextureSelected))
+						  {
+							  layer.texturePath[0] = '\0';
+						  }
+
+						  if (noTextureSelected)
+						  {
+							  ImGui::SetItemDefaultFocus();
+						  }
+
+						  for (const std::string& fileName :
+							  particleTextureFiles)
+						  {
+							  const std::string fullPath =
+								  "Assets/Textures/Particles/" +
+								  fileName;
+
+							  const bool selected =
+								  fullPath ==
+								  layer.texturePath;
+
+							  if (ImGui::Selectable(
+								  fileName.c_str(),
+								  selected))
+							  {
+								  strcpy_s(
+									  layer.texturePath,
+									  sizeof(layer.texturePath),
+									  fullPath.c_str()
+								  );
+
+								  MESSAGE(
+									  "GUI",
+									  "inspectorGeneral",
+									  "Textura de particulas seleccionada"
+								  );
+							  }
+
+							  if (selected)
+							  {
+								  ImGui::SetItemDefaultFocus();
+							  }
+						  }
+
+						  ImGui::EndCombo();
+					  }
+
+					  if (particleTextureFiles.empty())
+					  {
+						  ImGui::TextDisabled(
+							  "No PNG files found"
+						  );
+					  }
+					  else if (layer.texturePath[0] == '\0')
+					  {
+						  ImGui::TextDisabled(
+							  "Using generated circle"
+						  );
+					  }
+
+					  ImGui::SliderFloat(
+						  "Emission Rate",
+						  &layer.emissionRate,
+						  0.0f,
+						  500.0f,
+						  "%.1f"
+					  );
+
+					  int maxParticles =
+						  static_cast<int>(
+							  layer.maxParticles
+							  );
+
+					  if (ImGui::SliderInt(
+						  "Max Particles",
+						  &maxParticles,
+						  1,
+						  10000))
+					  {
+						  layer.maxParticles =
+							  static_cast<unsigned int>(
+								  maxParticles
+								  );
+					  }
+
+					  ImGui::SliderFloat(
+						  "Lifetime",
+						  &layer.particleLifetime,
+						  0.10f,
+						  30.0f,
+						  "%.2f"
+					  );
+
+					  ImGui::SliderFloat(
+						  "Start Speed",
+						  &layer.startSpeed,
+						  0.0f,
+						  30.0f,
+						  "%.2f"
+					  );
+
+					  ImGui::SliderFloat(
+						  "Start Size",
+						  &layer.startSize,
+						  0.01f,
+						  10.0f,
+						  "%.2f"
+					  );
+
+					  ImGui::SliderFloat(
+						  "End Size",
+						  &layer.endSize,
+						  0.0f,
+						  10.0f,
+						  "%.2f"
+					  );
+
+					  ImGui::SliderFloat(
+						  "Gravity",
+						  &layer.gravityMultiplier,
+						  -10.0f,
+						  10.0f,
+						  "%.2f"
+					  );
+
+					  ImGui::ColorEdit4(
+						  "Start Color",
+						  &layer.startColor.x
+					  );
+
+					  ImGui::ColorEdit4(
+						  "End Color",
+						  &layer.endColor.x
+					  );
+
+					  ImGui::DragFloat3(
+						  "Emitter Size",
+						  &layer.emitterSize.x,
+						  0.01f,
+						  0.0f,
+						  20.0f,
+						  "%.2f"
+					  );
+
+					  int blendMode =
+						  static_cast<int>(
+							  layer.blendMode
+							  );
+
+					  const char* blendModes[] =
+					  {
+						  "Alpha",
+						  "Additive"
+					  };
+
+					  if (ImGui::Combo(
+						  "Blend Mode",
+						  &blendMode,
+						  blendModes,
+						  2))
+					  {
+						  layer.blendMode =
+							  static_cast<
+							  ParticleBlendMode
+							  >(
+								  blendMode
+								  );
+					  }
+
+					  ImGui::Spacing();
+
+					  if (particleEmitter
+						  ->layers.size() > 1)
+					  {
+						  if (ImGui::Button(
+							  "Remove Layer",
+							  ImVec2(-1.0f, 0.0f)))
+						  {
+							  layerToRemove =
+								  static_cast<int>(
+									  layerIndex
+									  );
+						  }
+					  }
+					  else
+					  {
+						  ImGui::TextDisabled(
+							  "An emitter needs at least one layer"
+						  );
+					  }
+
+					  ImGui::Unindent();
+				  }
+
+				  ImGui::PopID();
+				  ImGui::Spacing();
+			  }
+
+			  //====================================================
+			  // ELIMINAR CAPA
+			  //====================================================
+
+			  if (layerToRemove >= 0 &&
+				  particleEmitter->layers.size() > 1)
+			  {
+				  particleEmitter->layers.erase(
+					  particleEmitter->layers.begin() +
+					  layerToRemove
+				  );
+
+				  MESSAGE(
+					  "GUI",
+					  "inspectorGeneral",
+					  "Capa de particulas eliminada"
+				  );
+			  }
+
+			  //====================================================
+			  // SINCRONIZACION TEMPORAL CON EL SISTEMA ACTUAL
+			  //
+			  // Mientras migramos ParticleSystem, la primera capa
+			  // controla el efecto que ya funciona.
+			  //====================================================
+
+			  if (!particleEmitter->layers.empty())
+			  {
+				  const ParticleLayer& firstLayer =
+					  particleEmitter->layers[0];
+
+				  particleEmitter->emissionRate =
+					  firstLayer.emissionRate;
+
+				  particleEmitter->maxParticles =
+					  firstLayer.maxParticles;
+
+				  particleEmitter->particleLifetime =
+					  firstLayer.particleLifetime;
+
+				  particleEmitter->startSpeed =
+					  firstLayer.startSpeed;
+
+				  particleEmitter->startSize =
+					  firstLayer.startSize;
+
+				  particleEmitter->endSize =
+					  firstLayer.endSize;
+
+				  particleEmitter->gravityMultiplier =
+					  firstLayer.gravityMultiplier;
+
+				  particleEmitter->startColor =
+					  firstLayer.startColor;
+
+				  particleEmitter->endColor =
+					  firstLayer.endColor;
+
+				  particleEmitter->emitterSize =
+					  firstLayer.emitterSize;
+			  }
+
+			  ImGui::Unindent();
+		  }
+	  }
+	  else
+	  {
+		  if (ImGui::Button(
+			  "Add Particle Emitter",
+			  ImVec2(-1.0f, 0.0f)))
+		  {
+			  auto newParticleEmitter =
+				  EU::MakeShared<
+				  ParticleEmitterComponent
+				  >();
+
+			  actor->addComponent(
+				  newParticleEmitter
+			  );
+
+			  MESSAGE(
+				  "GUI",
+				  "inspectorGeneral",
+				  "Particle Emitter agregado al actor"
+			  );
+		  }
+	  }
 //============================================================
 // FINALIZAR INSPECTOR
 //============================================================
@@ -1727,7 +2477,12 @@ void GUI::outliner(const std::vector<EU::TSharedPointer<Actor>>& actors) {
 			ImGui::TreePop();
 		}
 
+
+
 		ImGui::PopID();
+
+
+
 	}
 	ImGui::PopStyleVar(2);
 	ImGui::End();

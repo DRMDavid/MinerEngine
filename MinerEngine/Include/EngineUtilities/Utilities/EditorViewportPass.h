@@ -82,6 +82,10 @@ public:
      */
     ID3D11ShaderResourceView* getSRV() const { return m_colorSRV.m_textureFromImg; }
 
+    ID3D11RenderTargetView* getRTV() const{return m_rtv.get();}
+
+    ID3D11DepthStencilView* getDSV() const{return m_dsv.m_depthStencilView;}
+
     /** @return unsigned int Ancho actual en píxeles del pase. */
     unsigned int getWidth() const { return m_width; }
 

@@ -130,4 +130,5 @@ enum ComponentType
     COLLIDER = 6,
     ROTATE_BEHAVIOR = 7,
     AUDIO_SOURCE = 8, 
+	PARTICLE_EMITTER = 9,
 };
